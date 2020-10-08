@@ -21,6 +21,8 @@ struct VoicesApp: App {
 
 struct VoicesApp_Previews: PreviewProvider {
     static var previews: some View {
-        /*@START_MENU_TOKEN@*/Text("Hello, World!")/*@END_MENU_TOKEN@*/
+        /*@START_MENU_TOKEN@*/List(/*@START_MENU_TOKEN@*/0 ..< 5/*@END_MENU_TOKEN@*/) { item in
+            Text("Hello, World!")
+        }/*@END_MENU_TOKEN@*/
     }
 }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import FlagKit
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -19,14 +20,29 @@ struct ContentView: View {
     var body: some View {
         List {
             ForEach(items) { item in
-                Text("Item at \(item.timestamp!, formatter: itemFormatter)")
+                HStack(alignment: .bottom) {
+                    Text("Title that is way to long to fit on the screen and I hopee it will at some point just... ").lineLimit(1)
+                        .font(.title)
+                        .padding()
+                    Spacer()
+                    
+                    VStack(alignment: .trailing) {
+                        getFlag()
+                        Spacer()
+                        Text("\(item.timestamp!, formatter: itemFormatter)")
+                            .font(.footnote)
+                            .fontWeight(.ultraLight)
+                    }.padding()
+
+                }
+       
             }
             .onDelete(perform: deleteItems)
         }
         .toolbar {
-            #if os(iOS)
+//            #if os(iOS)
             EditButton()
-            #endif
+//            #endif
 
             Button(action: addItem) {
                 Label("Add Item", systemImage: "plus")
@@ -77,4 +93,11 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
+}
+
+func getFlag() -> Image {
+    let countryCode = Locale.current.regionCode!
+    let bundle = FlagKit.assetBundle
+    let originalImage = UIImage(named: "PA", in: bundle, compatibleWith: nil)
+    return Image(uiImage: originalImage!)
 }
