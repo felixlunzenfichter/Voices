@@ -95,9 +95,10 @@ struct ContentView_Previews: PreviewProvider {
     }
 }
 
-func getFlag() -> Image {
+func getFlag() -> some View {
     let countryCode = Locale.current.regionCode!
     let bundle = FlagKit.assetBundle
     let originalImage = UIImage(named: "PA", in: bundle, compatibleWith: nil)
     return Image(uiImage: originalImage!)
+        .shadow(radius: 2)
 }
