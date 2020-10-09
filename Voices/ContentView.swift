@@ -21,8 +21,9 @@ struct ContentView: View {
         List {
             ForEach(voices) { voice in
                 HStack(alignment: .bottom) {
-                    Text("\(voice.transcript!)").lineLimit(1)
-                        .font(.title)
+                    Text("\(voice.transcript!)")
+                        .lineLimit(1)
+                        .font(.title2)
                         .padding()
                     Spacer()
                     VStack(alignment: .trailing) {
@@ -31,10 +32,9 @@ struct ContentView: View {
                         Text("\(voice.timestamp!, formatter: itemFormatter)")
                             .font(.footnote)
                             .fontWeight(.ultraLight)
-                    }.padding()
-
+                    }
+                    .padding([.top, .bottom, .trailing])
                 }
-       
             }
             .onDelete(perform: deleteItems)
         }
