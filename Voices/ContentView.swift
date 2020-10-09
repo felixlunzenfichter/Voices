@@ -13,13 +13,13 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: true)],
         animation: .default)
-    private var items: FetchedResults<Item>
+    private var voices: FetchedResults<Voice>
 
     var body: some View {
         List {
-            ForEach(items) { item in
+            ForEach(voices) { voice in
                 HStack(alignment: .bottom) {
                     Text("Title that is way to long to fit on the screen and I hopee it will at some point just... ").lineLimit(1)
                         .font(.title)
@@ -29,7 +29,7 @@ struct ContentView: View {
                     VStack(alignment: .trailing) {
                         getFlag()
                         Spacer()
-                        Text("\(item.timestamp!, formatter: itemFormatter)")
+                        Text("\(voice.timestamp!, formatter: itemFormatter)")
                             .font(.footnote)
                             .fontWeight(.ultraLight)
                     }.padding()
@@ -52,7 +52,7 @@ struct ContentView: View {
 
     private func addItem() {
         withAnimation {
-            let newItem = Item(context: viewContext)
+            let newItem = Voice(context: viewContext)
             newItem.timestamp = Date()
 
             do {
@@ -68,7 +68,7 @@ struct ContentView: View {
 
     private func deleteItems(offsets: IndexSet) {
         withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
+            offsets.map { voices[$0] }.forEach(viewContext.delete)
 
             do {
                 try viewContext.save()
@@ -96,7 +96,6 @@ struct ContentView_Previews: PreviewProvider {
 }
 
 func getFlag() -> some View {
-    let countryCode = Locale.current.regionCode!
     let bundle = FlagKit.assetBundle
     let originalImage = UIImage(named: "PA", in: bundle, compatibleWith: nil)
     return Image(uiImage: originalImage!)
