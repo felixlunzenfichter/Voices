@@ -15,33 +15,20 @@ struct ContentView: View {
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: true)],
         animation: .default)
+    
     private var voices: FetchedResults<Voice>
 
     var body: some View {
         List {
             ForEach(voices) { voice in
-                HStack(alignment: .bottom) {
-                    Text("\(voice.transcript!)")
-                        .lineLimit(1)
-                        .font(.title2)
-                        .padding()
-                    Spacer()
-                    VStack(alignment: .trailing) {
-                        Flag(countryCode: voice.language!)
-                        Spacer()
-                        Text("\(voice.timestamp!, formatter: itemFormatter)")
-                            .font(.footnote)
-                            .fontWeight(.ultraLight)
-                    }
-                    .padding([.top, .bottom, .trailing])
-                }
+                voiceRow(voice: voice)
             }
             .onDelete(perform: deleteItems)
         }
         .toolbar {
-//            #if os(iOS)
+            #if os(iOS)
             EditButton()
-//            #endif
+            #endif
 
             Button(action: addItem) {
                 Label("Add Item", systemImage: "plus")
@@ -80,13 +67,6 @@ struct ContentView: View {
         }
     }
 }
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
