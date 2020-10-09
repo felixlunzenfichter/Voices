@@ -21,13 +21,12 @@ struct ContentView: View {
         List {
             ForEach(voices) { voice in
                 HStack(alignment: .bottom) {
-                    Text("Title that is way to long to fit on the screen and I hopee it will at some point just... ").lineLimit(1)
+                    Text("\(voice.transcript!)").lineLimit(1)
                         .font(.title)
                         .padding()
                     Spacer()
-                    
                     VStack(alignment: .trailing) {
-                        getFlag()
+                        Flag(countryCode: voice.language!)
                         Spacer()
                         Text("\(voice.timestamp!, formatter: itemFormatter)")
                             .font(.footnote)
@@ -93,11 +92,4 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
-}
-
-func getFlag() -> some View {
-    let bundle = FlagKit.assetBundle
-    let originalImage = UIImage(named: "PA", in: bundle, compatibleWith: nil)
-    return Image(uiImage: originalImage!)
-        .shadow(radius: 2)
 }

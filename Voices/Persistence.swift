@@ -13,9 +13,26 @@ struct PersistenceController {
     static var preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
-        for _ in 0..<4 {
+        for i in 0..<5 {
             let newVoice = Voice(context: viewContext)
             newVoice.timestamp = Date()
+            switch i {
+            case 0:
+                newVoice.transcript = "Ich liebe dich."
+                newVoice.language = "DE"
+            case 1:
+                newVoice.transcript = "Je t'aime."
+                newVoice.language = "FR"
+            case 2:
+                newVoice.transcript = "I love you."
+                newVoice.language = "GB"
+            case 3:
+                newVoice.transcript = "Te amo."
+                newVoice.language = "PA"
+            default:
+                newVoice.transcript = "月が綺麗です。"
+                newVoice.language = "JP"
+            }
         }
         do {
             try viewContext.save()
