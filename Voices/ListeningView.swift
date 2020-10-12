@@ -6,8 +6,10 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct ListeningView: View {
+    
     var body: some View {
         VStack {
             Spacer()
@@ -15,7 +17,7 @@ struct ListeningView: View {
                 Spacer()
                 Image(systemName: "gobackward.minus")
                 Spacer()
-                Image(systemName: "play")
+                playButton()
                 Spacer()
                 Image(systemName: "goforward.plus")
                 Spacer()
@@ -29,3 +31,16 @@ struct ListeningView_Previews: PreviewProvider {
         ListeningView()
     }
 }
+
+struct playButton : View {
+    
+    var body: some View {
+        Button(
+            action:{
+                AudioPlayer.playVoice(soundfile: "monstress.m4a")
+        },  label: {
+            Image(systemName: "play")
+        })
+    }
+}
+
