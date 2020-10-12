@@ -32,6 +32,7 @@ struct PersistenceController {
             default:
                 newVoice.transcript = "月が綺麗ですねええ。"
                 newVoice.language = "JP"
+                
             }
         }
         do {
