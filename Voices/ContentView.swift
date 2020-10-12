@@ -19,11 +19,15 @@ struct ContentView: View {
     private var voices: FetchedResults<Voice>
 
     var body: some View {
-        List {
-            ForEach(voices) { voice in
-                voiceRow(voice: voice)
-            }
-            .onDelete(perform: deleteItems)
+        NavigationView {
+            List {
+                ForEach(voices) { voice in
+                    NavigationLink (destination: ListeningView()) {
+                        voiceRow(voice: voice)
+                    }
+                }
+                .onDelete(perform: deleteItems)
+            }.navigationBarTitle(Text("Voices"))
         }
         .toolbar {
             #if os(iOS)
