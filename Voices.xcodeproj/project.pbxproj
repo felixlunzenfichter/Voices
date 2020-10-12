@@ -17,6 +17,9 @@
 		73126259252DD7920083F52C /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
 		73126264252DD7920083F52C /* VoicesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73126263252DD7920083F52C /* VoicesTests.swift */; };
 		7312626F252DD7920083F52C /* VoicesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7312626E252DD7920083F52C /* VoicesUITests.swift */; };
+		735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCDB2533A17900FF7BE4 /* ListeningView.swift */; };
+		735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */; };
+		735ABCE72533DC3B00FF7BE4 /* Big Mouth The Very Best of Connie The Hormone Monstress (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE62533DC3B00FF7BE4 /* Big Mouth The Very Best of Connie The Hormone Monstress (mp3cut.net).m4a */; };
 		7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5992530BE4500137BF3 /* FlagImage.swift */; };
 		7363C5B32530EDE400137BF3 /* voiceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5B22530EDE400137BF3 /* voiceRow.swift */; };
 		86BA9B4E26B5C71117F0F91E /* Pods_VoicesTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2D9310B353BB233BD306E4D /* Pods_VoicesTests.framework */; };
@@ -58,6 +61,9 @@
 		7312626A252DD7920083F52C /* VoicesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoicesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7312626E252DD7920083F52C /* VoicesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicesUITests.swift; sourceTree = "<group>"; };
 		73126270252DD7920083F52C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		735ABCDB2533A17900FF7BE4 /* ListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningView.swift; sourceTree = "<group>"; };
+		735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a"; sourceTree = "<group>"; };
+		735ABCE62533DC3B00FF7BE4 /* Big Mouth The Very Best of Connie The Hormone Monstress (mp3cut.net).m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Big Mouth The Very Best of Connie The Hormone Monstress (mp3cut.net).m4a"; sourceTree = "<group>"; };
 		7363C5992530BE4500137BF3 /* FlagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagImage.swift; sourceTree = "<group>"; };
 		7363C5B22530EDE400137BF3 /* voiceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = voiceRow.swift; sourceTree = "<group>"; };
 		7CA16549206522F6FA4E6FB2 /* Pods-Voices.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Voices.release.xcconfig"; path = "Target Support Files/Pods-Voices/Pods-Voices.release.xcconfig"; sourceTree = "<group>"; };
@@ -143,8 +149,10 @@
 		7312624B252DD7900083F52C /* Voices */ = {
 			isa = PBXGroup;
 			children = (
+				735ABCE02533D8A900FF7BE4 /* sound */,
 				7312624C252DD7900083F52C /* VoicesApp.swift */,
 				7312624E252DD7900083F52C /* ContentView.swift */,
+				735ABCDB2533A17900FF7BE4 /* ListeningView.swift */,
 				7363C5B22530EDE400137BF3 /* voiceRow.swift */,
 				7363C5992530BE4500137BF3 /* FlagImage.swift */,
 				73126250252DD7920083F52C /* Assets.xcassets */,
@@ -180,6 +188,15 @@
 				73126270252DD7920083F52C /* Info.plist */,
 			);
 			path = VoicesUITests;
+			sourceTree = "<group>";
+		};
+		735ABCE02533D8A900FF7BE4 /* sound */ = {
+			isa = PBXGroup;
+			children = (
+				735ABCE62533DC3B00FF7BE4 /* Big Mouth The Very Best of Connie The Hormone Monstress (mp3cut.net).m4a */,
+				735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */,
+			);
+			path = sound;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -291,6 +308,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				73126254252DD7920083F52C /* Preview Assets.xcassets in Resources */,
+				735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */,
+				735ABCE72533DC3B00FF7BE4 /* Big Mouth The Very Best of Connie The Hormone Monstress (mp3cut.net).m4a in Resources */,
 				73126251252DD7920083F52C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -420,6 +439,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				73126259252DD7920083F52C /* Voices.xcdatamodeld in Sources */,
+				735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */,
 				73126256252DD7920083F52C /* Persistence.swift in Sources */,
 				7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */,
 				7312624F252DD7900083F52C /* ContentView.swift in Sources */,
