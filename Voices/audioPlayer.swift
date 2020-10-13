@@ -7,35 +7,42 @@
 
 import Foundation
 import AVFoundation
+import Combine
+import SwiftUI
 
-class AudioPlayer : NSObject, AVAudioPlayerDelegate {
+class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
     
-    static var audioPlayer:AVAudioPlayer!
+    var audioPlayer : AVAudioPlayer!
+    @Published var isListening : Bool = false
+    
+    override init() {
+        super.init()
         
-    static func playVoice(soundfile: String) {
-        
-        if let path = Bundle.main.path(forResource: soundfile, ofType: nil){
-        
+        if let path = Bundle.main.path(forResource: "monstress.m4a", ofType: nil){
             do {
                 audioPlayer = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
-                audioPlayer?.prepareToPlay()
-                audioPlayer?.play()
+                audioPlayer.delegate = self
+                audioPlayer.prepareToPlay()
+                print("success")
             } catch {
                 print("Error")
             }
         }
     }
     
-    static func pause() {
-        audioPlayer?.pause()
+    func play() {
+        audioPlayer.play()
+        isListening = true
     }
     
-    static func resume() {
-        audioPlayer?.play()
+    func pause() {
+        audioPlayer.pause()
+        isListening = false
     }
-    
+
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        //TODO: update isPlaying
+        isListening = false
     }
     
- }
+}
+
