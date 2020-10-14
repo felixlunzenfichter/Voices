@@ -13,7 +13,7 @@ struct VoicesApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            VoiceGallery()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

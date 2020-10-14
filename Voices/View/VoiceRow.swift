@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct voiceRow: View {
+struct VoiceRow: View {
     
     let voice: Voice
     
@@ -19,7 +19,7 @@ struct voiceRow: View {
                 .padding()
             Spacer()
             VStack(alignment: .trailing) {
-                Flag(countryCode: voice.language!)
+                Flag(countryCode: voice.languageTag!)
                 Spacer()
                 Text("\(voice.timestamp!, formatter: itemFormatter)")
                     .font(.footnote)
@@ -30,15 +30,10 @@ struct voiceRow: View {
     }
 }
 
-struct voiceRow_Previews: PreviewProvider {
-    static var previews: some View {
-        voiceRow(voice: Voice())
-    }
-}
-
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateStyle = .short
     formatter.timeStyle = .medium
     return formatter
 }()
+

@@ -19,20 +19,19 @@ struct PersistenceController {
             switch i {
             case 0:
                 newVoice.transcript = "Ich liebe dich."
-                newVoice.language = "DE"
+                newVoice.languageTag = "DE"
             case 1:
                 newVoice.transcript = "Je t'aime."
-                newVoice.language = "FR"
+                newVoice.languageTag = "FR"
             case 2:
                 newVoice.transcript = "I love you."
-                newVoice.language = "GB"
+                newVoice.languageTag = "GB"
             case 3:
                 newVoice.transcript = "Te amo."
-                newVoice.language = "PA"
+                newVoice.languageTag = "PA"
             default:
                 newVoice.transcript = "月が綺麗ですねええ。"
-                newVoice.language = "JP"
-                
+                newVoice.languageTag = "JP"
             }
         }
         do {

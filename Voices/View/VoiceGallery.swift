@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 import FlagKit
 
-struct ContentView: View {
+struct VoiceGallery: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
@@ -23,7 +23,7 @@ struct ContentView: View {
             List {
                 ForEach(voices) { voice in
                     NavigationLink (destination: ListeningView()) {
-                        voiceRow(voice: voice)
+                        VoiceRow(voice: voice)
                     }
                 }
                 .onDelete(perform: deleteItems)
@@ -74,6 +74,6 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        VoiceGallery().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }
