@@ -23,7 +23,6 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
                 audioPlayer = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
                 audioPlayer.delegate = self
                 audioPlayer.prepareToPlay()
-                print("success")
             } catch {
                 print("Error")
             }

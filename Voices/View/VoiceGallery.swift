@@ -17,17 +17,33 @@ struct VoiceGallery: View {
         animation: .default)
     
     private var voices: FetchedResults<Voice>
+    
+    
 
     var body: some View {
         NavigationView {
             List {
                 ForEach(voices) { voice in
-                    NavigationLink (destination: ListeningView()) {
+                    NavigationLink (destination: ListeningView(voice: voice)) {
                         VoiceRow(voice: voice)
                     }
                 }
                 .onDelete(perform: deleteItems)
             }.navigationBarTitle(Text("Voices"))
+            Button(action: {
+                var newVoice : Voice = Voice(context: viewContext)
+                newVoice.languageTag = "PA"
+                newVoice.transcript = "Te quiero"
+                newVoice.timestamp = Date()
+                do {
+                    try viewContext.save()
+                } catch {
+                    print(error)
+                }
+                
+            }, label: {
+                Text("Add Voice")
+            })
         }
         .toolbar {
             #if os(iOS)

@@ -17,6 +17,7 @@
 		73126259252DD7920083F52C /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
 		73126264252DD7920083F52C /* VoicesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73126263252DD7920083F52C /* VoicesTests.swift */; };
 		7312626F252DD7920083F52C /* VoicesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7312626E252DD7920083F52C /* VoicesUITests.swift */; };
+		73352ED52537E20300959775 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352ED42537E20300959775 /* Language.swift */; };
 		735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCDB2533A17900FF7BE4 /* ListeningView.swift */; };
 		735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */; };
 		735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */; };
@@ -62,6 +63,7 @@
 		7312626A252DD7920083F52C /* VoicesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoicesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7312626E252DD7920083F52C /* VoicesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicesUITests.swift; sourceTree = "<group>"; };
 		73126270252DD7920083F52C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		73352ED42537E20300959775 /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
 		735ABCDB2533A17900FF7BE4 /* ListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningView.swift; sourceTree = "<group>"; };
 		735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a"; sourceTree = "<group>"; };
 		735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
@@ -201,6 +203,7 @@
 				73126250252DD7920083F52C /* Assets.xcassets */,
 				73126257252DD7920083F52C /* Voices.xcdatamodeld */,
 				73126255252DD7920083F52C /* Persistence.swift */,
+				73352ED42537E20300959775 /* Language.swift */,
 				735ABCE02533D8A900FF7BE4 /* sounds */,
 			);
 			path = Model;
@@ -472,6 +475,7 @@
 				7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */,
 				7312624F252DD7900083F52C /* VoiceGallery.swift in Sources */,
 				7312624D252DD7900083F52C /* VoicesApp.swift in Sources */,
+				73352ED52537E20300959775 /* Language.swift in Sources */,
 				7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
