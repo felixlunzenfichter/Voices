@@ -79,8 +79,10 @@ struct ListeningView: View {
     }
     
     fileprivate func slider() -> some View {
-        return Slider(value: $position)
-            .padding(.all)
+        return Slider(value: $audioPlayer.currentTime, in: TimeInterval(0.0)...audioPlayer.audioPlayer.duration, onEditingChanged: {_ in self.audioPlayer.onDragSlider()})
+            .onReceive(audioPlayer.timer, perform: { _ in
+                audioPlayer.currentTime = audioPlayer.audioPlayer.currentTime
+            })
     }
     
     fileprivate func transcriptionSection() -> some View {
@@ -99,23 +101,4 @@ struct ListeningView: View {
         }
     }
     
-}
-
-//struct playButton : View {
-//    @Binding var isListening : Bool
-//    var audioPlayer : AudioPlayer
-//    var body: some View {
-//        Button(
-//            action:{
-//                isListening ? audioPlayer.pause() : audioPlayer.play()
-//        },  label: {
-//            Image(systemName: isListening ? "pause" : "play" )
-//        })
-//    }
-//}
-
-struct ListeningView_Previews: PreviewProvider {
-    static var previews: some View {
-        ListeningView(voice: Voice())
-    }
 }

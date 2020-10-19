@@ -31,7 +31,7 @@ struct VoiceGallery: View {
                 .onDelete(perform: deleteItems)
             }.navigationBarTitle(Text("Voices"))
             Button(action: {
-                var newVoice : Voice = Voice(context: viewContext)
+                let newVoice : Voice = Voice(context: viewContext)
                 newVoice.languageTag = "PA"
                 newVoice.transcript = "Te quiero"
                 newVoice.timestamp = Date()
