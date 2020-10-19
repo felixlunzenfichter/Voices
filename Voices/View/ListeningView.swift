@@ -17,7 +17,6 @@ struct ListeningView: View {
     
     @State private var selectedLanguage : Language = Language.English
     @State private var isPickingLanguage : Bool = false
-    @State private var position : Double = 0
     
     fileprivate func visualVoice() -> some View {
         return Image("sound").resizable().aspectRatio(contentMode: .fit)
@@ -30,6 +29,9 @@ struct ListeningView: View {
     
     fileprivate func languagePicker() -> some View {
         return Button(action: {
+            if(audioPlayer.isListening) {
+                audioPlayer.pause()
+            } 
             isPickingLanguage.toggle()
         }) {
             Flag(countryCode: voice.languageTag!)

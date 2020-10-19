@@ -20,7 +20,7 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var isListening : Bool = false
     @Published var currentTime : TimeInterval = 0.0
     var isDragging = false
-    var timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    var timer = Timer.publish(every: 100, on: .main, in: .common).autoconnect()
     
     override init() {
         audioPlayer = AVAudioPlayer()
