@@ -40,16 +40,14 @@ private let itemFormatter: DateFormatter = {
 
 struct VoiceRow_Previews: PreviewProvider {
     static var previews: some View {
-        VoiceRow(voice: getVoice()).previewLayout(.fixed(width: 400, height: 130))
+        VoiceRow(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "I an di soo liäb.")).previewLayout(.fixed(width: 400, height: 130))
     }
 }
 
-
-
-func getVoice () -> Voice {
+func getVoice (languageTag: String, timeStamp: Date, transcript: String) -> Voice {
     let newVoice : Voice = Voice(context: PersistenceController.preview.container.viewContext)
-    newVoice.languageTag = "CH"
-    newVoice.timestamp = Date()
-    newVoice.transcript = "I han di mega gern."
+    newVoice.languageTag = languageTag
+    newVoice.timestamp = timeStamp
+    newVoice.transcript = transcript
     return newVoice
 }

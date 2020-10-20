@@ -103,6 +103,6 @@ struct ListeningView: View {
 
 struct ListeningView_Previews: PreviewProvider {
     static var previews: some View {
-        Text("Hello, World!")
+        ListeningView(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "Ich liäb di."))
     }
 }
