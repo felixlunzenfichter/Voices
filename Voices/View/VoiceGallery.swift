@@ -33,7 +33,7 @@ struct VoiceGallery: View {
             Button(action: {
                 let newVoice : Voice = Voice(context: viewContext)
                 newVoice.languageTag = "PA"
-                newVoice.transcript = "Te quiero"
+                newVoice.transcript = "Te quiero muchoooooooooooo"
                 newVoice.timestamp = Date()
                 do {
                     try viewContext.save()

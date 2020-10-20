@@ -13,45 +13,43 @@ struct VoiceRow: View {
     @ObservedObject var voice: Voice
     
     var body: some View {
-        HStack(alignment: .bottom) {
+        HStack(alignment: .center) {
             Text("\(voice.transcript!)")
                 .lineLimit(1)
                 .font(.title2)
-                .padding()
             Spacer()
-            VStack(alignment: .trailing) {
+            VStack(alignment: .center) {
                 Flag(countryCode: voice.languageTag!)
                 Spacer()
                 Text("\(voice.timestamp!, formatter: itemFormatter)")
                     .font(.footnote)
                     .fontWeight(.ultraLight)
             }
-            .padding([.top, .bottom, .trailing])
+            .padding([.top, .bottom])
         }
+        .padding()
     }
 }
 
 private let itemFormatter: DateFormatter = {
     let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
+    formatter.dateFormat = "HH:mm:ss\nYY/MM/dd"
     return formatter
 }()
 
 
 struct VoiceRow_Previews: PreviewProvider {
     static var previews: some View {
-        let voice = getVoice()
-        VoiceRow(voice: voice)
+        VoiceRow(voice: getVoice()).previewLayout(.fixed(width: 400, height: 130))
     }
 }
 
 
 
 func getVoice () -> Voice {
-    let newVoice : Voice = Voice()
+    let newVoice : Voice = Voice(context: PersistenceController.preview.container.viewContext)
     newVoice.languageTag = "CH"
     newVoice.timestamp = Date()
-    newVoice.transcript = "Mol"
+    newVoice.transcript = "I han di mega gern."
     return newVoice
 }

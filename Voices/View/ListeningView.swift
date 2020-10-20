@@ -31,12 +31,6 @@ struct ListeningView: View {
     
     fileprivate func languagePicker() -> some View {
         return Button(action: {
-            
-//            #warning("The language picker should not intervein with the slider.")
-//            if(audioPlayer.isListening) {
-//                audioPlayer.pause()
-//            }
-            
             isPickingLanguage.toggle()
         }) {
             Flag(countryCode: voice.languageTag!)
@@ -87,10 +81,6 @@ struct ListeningView: View {
     
     fileprivate func slider() -> some View {
         MySlider(audioPlayer: audioPlayer)
-//        return Slider(value: $audioPlayer.currentTime, in: TimeInterval(0.0)...audioPlayer.audioPlayer.duration, onEditingChanged: {_ in self.audioPlayer.onDragSlider()})
-//            .onReceive(audioPlayer.timer, perform: { _ in
-//                audioPlayer.currentTime = audioPlayer.audioPlayer.currentTime
-//            })
     }
     
     fileprivate func transcriptionSection() -> some View {
@@ -109,4 +99,10 @@ struct ListeningView: View {
         }
     }
     
+}
+
+struct ListeningView_Previews: PreviewProvider {
+    static var previews: some View {
+        Text("Hello, World!")
+    }
 }
