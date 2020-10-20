@@ -49,7 +49,7 @@ struct VoiceRow_Previews: PreviewProvider {
 
 
 func getVoice () -> Voice {
-    var newVoice : Voice = Voice()
+    let newVoice : Voice = Voice()
     newVoice.languageTag = "CH"
     newVoice.timestamp = Date()
     newVoice.transcript = "Mol"

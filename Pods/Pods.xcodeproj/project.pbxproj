@@ -56,7 +56,7 @@
 		0566C09C1D7E0EE9EB097C2FD3612483 /* NSImage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NSImage.swift; path = Sources/Swift/FlagKit/NSImage.swift; sourceTree = "<group>"; };
 		13EB984441E6C34577978F63031B132E /* Pods-Voices-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-Voices-Info.plist"; sourceTree = "<group>"; };
 		13FA976F424DF5B7BA41942F97A88F6A /* FlagKit.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = FlagKit.release.xcconfig; sourceTree = "<group>"; };
-		14E55B5C7AE18334ED8F0D97F1ABB3E7 /* Pods_Voices.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Pods_Voices.framework; path = "Pods-Voices.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		14E55B5C7AE18334ED8F0D97F1ABB3E7 /* Pods_Voices.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Voices.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		22554949208FEC9F2D6B6D1939BA45E3 /* Pods-Voices-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-Voices-acknowledgements.plist"; sourceTree = "<group>"; };
 		23716C5508886433079FF86C2D9C26B9 /* FlagKit-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "FlagKit-prefix.pch"; sourceTree = "<group>"; };
 		28CCE759E01887F032807FC94148A4BD /* FlagKit-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "FlagKit-Info.plist"; sourceTree = "<group>"; };
@@ -68,15 +68,15 @@
 		4852B466C1E5E2322E6E99E965712989 /* Pods-Voices-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-Voices-dummy.m"; sourceTree = "<group>"; };
 		505079E16E6E51C4729DBE0073EA2B44 /* Pods-Voices-VoicesUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Voices-VoicesUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		635E84112A1574EFB9955F0C945EB872 /* FlagKit.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = FlagKit.debug.xcconfig; sourceTree = "<group>"; };
-		6D4BFD88E7EA9981FCEEB31ADFE53270 /* Pods_VoicesTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Pods_VoicesTests.framework; path = "Pods-VoicesTests.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D4BFD88E7EA9981FCEEB31ADFE53270 /* Pods_VoicesTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_VoicesTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6FABB4A579404DAC379A59CF8D3AC5E2 /* Pods-Voices-VoicesUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Voices-VoicesUITests.release.xcconfig"; sourceTree = "<group>"; };
 		828AE5A6F58AD8791B45F673009CB611 /* Pods-VoicesTests-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-VoicesTests-acknowledgements.markdown"; sourceTree = "<group>"; };
-		8A915E7CD2863ACF15D304B948BD70AC /* FlagKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = FlagKit.framework; path = FlagKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		8A915E7CD2863ACF15D304B948BD70AC /* FlagKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FlagKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		90346C219D9AD3A90C2970984662E378 /* FlagKit.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = FlagKit.modulemap; sourceTree = "<group>"; };
 		909B39A317EFE25ADB2B31D4B3DB0B01 /* FlagKit.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = FlagKit.xcassets; path = Assets/FlagKit.xcassets; sourceTree = "<group>"; };
 		90B8526E01E4F59EBDA7A96BFB2C33A6 /* Pods-Voices-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-Voices-acknowledgements.markdown"; sourceTree = "<group>"; };
 		91D5A52D4B288FB34EBB8D857A3A4757 /* Pods-VoicesTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-VoicesTests.release.xcconfig"; sourceTree = "<group>"; };
-		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		9EED0380F518285BC57890E77808CB65 /* Pods-VoicesTests-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-VoicesTests-dummy.m"; sourceTree = "<group>"; };
 		A09B96854BB45D754BD970D80CFF9016 /* Pods-Voices.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-Voices.debug.xcconfig"; sourceTree = "<group>"; };
 		A0A023FD5D223ECF8E1C84B781D20689 /* UIImage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UIImage.swift; path = Sources/Swift/FlagKit/UIImage.swift; sourceTree = "<group>"; };
@@ -90,7 +90,7 @@
 		D0C695D8E9FD37246574163B627B64B6 /* Pods-Voices-VoicesUITests.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-Voices-VoicesUITests.modulemap"; sourceTree = "<group>"; };
 		D936CBC09134742AEAC6CBEF530BF2F1 /* Pods-VoicesTests.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-VoicesTests.modulemap"; sourceTree = "<group>"; };
 		DB0AD704526232BEE030C259CF1CFAA5 /* Pods-Voices-VoicesUITests-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-Voices-VoicesUITests-dummy.m"; sourceTree = "<group>"; };
-		E357E3519BF0AA9BDB7DABAF276DB82B /* Pods_Voices_VoicesUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Pods_Voices_VoicesUITests.framework; path = "Pods-Voices-VoicesUITests.framework"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E357E3519BF0AA9BDB7DABAF276DB82B /* Pods_Voices_VoicesUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Voices_VoicesUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E35CCCCE7D26BE3A21B19B91FEBE98B6 /* Pods-VoicesTests-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-VoicesTests-umbrella.h"; sourceTree = "<group>"; };
 		E3AAEFADFAD8257F67E1B180ECECBC10 /* Pods-Voices-VoicesUITests-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-Voices-VoicesUITests-acknowledgements.markdown"; sourceTree = "<group>"; };
 		E85847B0EE54F76A7E4F67D4A81C1D5F /* FlagKit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FlagKit.swift; path = Sources/Swift/FlagKit/FlagKit.swift; sourceTree = "<group>"; };
@@ -190,7 +190,6 @@
 				FCFE70985971DE980703C47BE406C759 /* Resources */,
 				A1C4A72F3129D29AE1BD2B2CC5A7C8D2 /* Support Files */,
 			);
-			name = FlagKit;
 			path = FlagKit;
 			sourceTree = "<group>";
 		};
@@ -399,7 +398,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1100;
-				LastUpgradeCheck = 1100;
+				LastUpgradeCheck = 1200;
 			};
 			buildConfigurationList = 4821239608C13582E20E6DA73FD5F1F9 /* Build configuration list for PBXProject "Pods" */;
 			compatibilityVersion = "Xcode 10.0";
@@ -648,7 +647,7 @@
 				GCC_PREFIX_HEADER = "Target Support Files/FlagKit/FlagKit-prefix.pch";
 				INFOPLIST_FILE = "Target Support Files/FlagKit/FlagKit-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -694,6 +693,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -758,6 +758,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -886,7 +887,7 @@
 				GCC_PREFIX_HEADER = "Target Support Files/FlagKit/FlagKit-prefix.pch";
 				INFOPLIST_FILE = "Target Support Files/FlagKit/FlagKit-Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

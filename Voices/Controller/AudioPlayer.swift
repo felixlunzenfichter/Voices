@@ -18,11 +18,11 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
     
     @ObservedObject var audioPlayer : AVAudioPlayer
     @Published var isListening : Bool = false
-    @Published var currentTime : TimeInterval = 0.0
-    var isDragging = false
-    var timer = Timer.publish(every: 100, on: .main, in: .common).autoconnect()
-    
+        
     override init() {
+        
+        print("init audioPlayer")
+        
         audioPlayer = AVAudioPlayer()
         super.init()
     
@@ -37,21 +37,11 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
     
-    fileprivate func startTimer() {
-        timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
-    }
-    
-    fileprivate func stopTimer() {
-        timer.upstream.connect().cancel()
-    }
-    
     fileprivate func goToPlayState() {
-        startTimer()
         isListening = true
     }
     
     fileprivate func goToPauseState() {
-        stopTimer()
         isListening = false
     }
     
@@ -67,16 +57,6 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         goToPauseState()
-        currentTime = 0.0
-    }
-    
-    func onDragSlider() {
-        if isDragging {
-            audioPlayer.currentTime = self.currentTime
-        } else {
-            pause()
-        }
-        isDragging.toggle()
     }
 }
 

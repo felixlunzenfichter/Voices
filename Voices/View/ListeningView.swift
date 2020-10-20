@@ -13,6 +13,8 @@ struct ListeningView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     @ObservedObject var voice : Voice
+    
+    #warning("This initialization is executed multiple times.")
     @ObservedObject private var audioPlayer : AudioPlayer = AudioPlayer()
     
     @State private var selectedLanguage : Language = Language.English
@@ -29,9 +31,12 @@ struct ListeningView: View {
     
     fileprivate func languagePicker() -> some View {
         return Button(action: {
-            if(audioPlayer.isListening) {
-                audioPlayer.pause()
-            } 
+            
+//            #warning("The language picker should not intervein with the slider.")
+//            if(audioPlayer.isListening) {
+//                audioPlayer.pause()
+//            }
+            
             isPickingLanguage.toggle()
         }) {
             Flag(countryCode: voice.languageTag!)
@@ -81,10 +86,11 @@ struct ListeningView: View {
     }
     
     fileprivate func slider() -> some View {
-        return Slider(value: $audioPlayer.currentTime, in: TimeInterval(0.0)...audioPlayer.audioPlayer.duration, onEditingChanged: {_ in self.audioPlayer.onDragSlider()})
-            .onReceive(audioPlayer.timer, perform: { _ in
-                audioPlayer.currentTime = audioPlayer.audioPlayer.currentTime
-            })
+        MySlider(audioPlayer: audioPlayer)
+//        return Slider(value: $audioPlayer.currentTime, in: TimeInterval(0.0)...audioPlayer.audioPlayer.duration, onEditingChanged: {_ in self.audioPlayer.onDragSlider()})
+//            .onReceive(audioPlayer.timer, perform: { _ in
+//                audioPlayer.currentTime = audioPlayer.audioPlayer.currentTime
+//            })
     }
     
     fileprivate func transcriptionSection() -> some View {
