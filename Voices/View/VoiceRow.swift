@@ -40,7 +40,7 @@ private let itemFormatter: DateFormatter = {
 
 struct VoiceRow_Previews: PreviewProvider {
     static var previews: some View {
-        VoiceRow(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "I an di soo liäb.")).previewLayout(.fixed(width: 400, height: 130))
+        VoiceRow(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "I han di soo liäb!")).previewLayout(.fixed(width: 400, height: 130))
     }
 }
 
