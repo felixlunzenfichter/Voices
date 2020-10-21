@@ -18,8 +18,6 @@ struct VoiceGallery: View {
     
     private var voices: FetchedResults<Voice>
     
-    
-
     var body: some View {
         NavigationView {
             List {
@@ -33,7 +31,7 @@ struct VoiceGallery: View {
             Button(action: {
                 let newVoice : Voice = Voice(context: viewContext)
                 newVoice.languageTag = "PA"
-                newVoice.transcript = "Te quiero muchoooooooooooo"
+                newVoice.transcript = "Te quiero muuuuchoooooooooooo"
                 newVoice.timestamp = Date()
                 do {
                     try viewContext.save()

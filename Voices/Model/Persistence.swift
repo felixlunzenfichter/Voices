@@ -45,10 +45,10 @@ struct PersistenceController {
         return result
     }()
 
-    let container: NSPersistentContainer
+    let container: NSCustomPersistentContainer
 
     init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "Voices")
+        container = NSCustomPersistentContainer(name: "Voices")
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }

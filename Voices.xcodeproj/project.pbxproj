@@ -19,6 +19,9 @@
 		7312626F252DD7920083F52C /* VoicesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7312626E252DD7920083F52C /* VoicesUITests.swift */; };
 		73352ED52537E20300959775 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352ED42537E20300959775 /* Language.swift */; };
 		73352FCE253F257800959775 /* MySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352FCD253F257800959775 /* MySlider.swift */; };
+		7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
+		7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
+		7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCDB2533A17900FF7BE4 /* ListeningView.swift */; };
 		735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */; };
 		735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */; };
@@ -90,6 +93,9 @@
 		73126270252DD7920083F52C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		73352ED42537E20300959775 /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
 		73352FCD253F257800959775 /* MySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MySlider.swift; sourceTree = "<group>"; };
+		7358D0DD2540AFE9006EB739 /* Voices.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Voices.entitlements; sourceTree = "<group>"; };
+		7358D0E22540AFFE006EB739 /* importAudioShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = importAudioShareExtension.entitlements; sourceTree = "<group>"; };
+		7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPersistentContainer.swift; sourceTree = "<group>"; };
 		735ABCDB2533A17900FF7BE4 /* ListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningView.swift; sourceTree = "<group>"; };
 		735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a"; sourceTree = "<group>"; };
 		735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
@@ -192,6 +198,7 @@
 		7312624B252DD7900083F52C /* Voices */ = {
 			isa = PBXGroup;
 			children = (
+				7358D0DD2540AFE9006EB739 /* Voices.entitlements */,
 				7312625A252DD7920083F52C /* Info.plist */,
 				735C4FEE2537352700F48B04 /* Controller */,
 				735C4FED2537352100F48B04 /* View */,
@@ -243,6 +250,7 @@
 				73126257252DD7920083F52C /* Voices.xcdatamodeld */,
 				73126255252DD7920083F52C /* Persistence.swift */,
 				73352ED42537E20300959775 /* Language.swift */,
+				7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */,
 				735ABCE02533D8A900FF7BE4 /* sounds */,
 			);
 			path = Model;
@@ -272,6 +280,7 @@
 		73E210CD253F6DBF001B74A9 /* importAudioShareExtension */ = {
 			isa = PBXGroup;
 			children = (
+				7358D0E22540AFFE006EB739 /* importAudioShareExtension.entitlements */,
 				73E210CE253F6DBF001B74A9 /* ShareViewController.swift */,
 				73E210D0253F6DBF001B74A9 /* MainInterface.storyboard */,
 				73E210D3253F6DBF001B74A9 /* Info.plist */,
@@ -555,6 +564,7 @@
 				73126256252DD7920083F52C /* Persistence.swift in Sources */,
 				735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */,
 				7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */,
+				7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */,
 				7312624F252DD7900083F52C /* VoiceGallery.swift in Sources */,
 				7312624D252DD7900083F52C /* VoicesApp.swift in Sources */,
 				73352ED52537E20300959775 /* Language.swift in Sources */,
@@ -582,7 +592,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */,
 				73E210CF253F6DBF001B74A9 /* ShareViewController.swift in Sources */,
+				7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -741,6 +753,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Voices/Voices.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"Voices/Preview Content\"";
 				DEVELOPMENT_TEAM = W26GVS4M5S;
@@ -765,6 +778,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Voices/Voices.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"Voices/Preview Content\"";
 				DEVELOPMENT_TEAM = W26GVS4M5S;
@@ -873,6 +887,7 @@
 		73E210D8253F6DBF001B74A9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = importAudioShareExtension/importAudioShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W26GVS4M5S;
 				INFOPLIST_FILE = importAudioShareExtension/Info.plist;
@@ -892,6 +907,7 @@
 		73E210D9253F6DBF001B74A9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = importAudioShareExtension/importAudioShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W26GVS4M5S;
 				INFOPLIST_FILE = importAudioShareExtension/Info.plist;
