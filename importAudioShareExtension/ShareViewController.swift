@@ -6,23 +6,70 @@
 //
 
 import UIKit
-import Social
-import AVFoundation
 import CoreData
+import AVFoundation
 
-//class MyViewController: UIViewController {
-//
-//}
 
 class ShareViewController: UIViewController {
     
+    @IBOutlet var duration: UILabel!
+    
+    fileprivate func setDuration(_ voiceURL: URL) throws {
+        let audioPlayer = try AVAudioPlayer(contentsOf: voiceURL)
+        DispatchQueue.main.async {
+            self.duration.text = String("Length of selected audio: \(audioPlayer.duration)s")
+        }
+    }
+    
+    fileprivate func saveVoice(voiceURL: URL, context: NSManagedObjectContext) throws {
+        
+        let newVoice = Voice(context: context)
+        do {
+            newVoice.languageTag = "GB"
+            newVoice.transcript = "empty"
+            newVoice.timestamp = Date()
+            try context.save()
+        } catch {
+            print(error)
+        }
+        
+        saveVoiceInFileSystem(voice: newVoice, voiceURL: voiceURL)
+    }
+    
+    override func viewDidLoad() {
+        let context = getStorage().viewContext
+        var typeIdentifier = "public.file-url"
+        
+        let content = extensionContext?.inputItems[0] as! NSExtensionItem
+
+        for attachment in content.attachments! {
+            if attachment.hasItemConformingToTypeIdentifier(typeIdentifier) {
+                attachment.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { data, error in
+                    let voiceURL = data as! URL
+                    
+                    do {
+                        try self.setDuration(voiceURL)
+                    } catch {
+                        print(error)
+                    }
+                        
+                    do {
+                        try self.saveVoice(voiceURL: voiceURL, context: context)
+                    } catch {
+                        print(error)
+                    }
+                }
+            } else {
+                print("Tryied to import item from share extension with incompatible type: \(attachment.registeredTypeIdentifiers).")
+            }
+        }
+    
+    }
+}
+
+//MARK:- Database functions.
+extension ShareViewController {
     func getStorage() -> NSCustomPersistentContainer {
-       /*
-        The persistent container for the application. This implementation
-        creates and returns a container, having loaded the store for the
-        application to it. This property is optional since there are legitimate
-        error conditions that could cause the creation of the store to fail.
-        */
        let container = NSCustomPersistentContainer(name: "Voices")
 
        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
@@ -31,53 +78,5 @@ class ShareViewController: UIViewController {
            }
        })
        return container
-    }
-    
-    @IBOutlet var duration: UILabel!
-    
-    override func viewDidLoad() {
-        let content = extensionContext?.inputItems[0] as! NSExtensionItem
-        
-        let container = getStorage()
-        let context = container.viewContext
-        let voice: Voice = Voice(context: context)
-        voice.transcript = "hii"
-        voice.languageTag = "US"
-        voice.timestamp = Date()
-        do {
-            try context.save()
-        } catch {
-            print("failed to save in extension.")
-        }
-  
-        
-        var typeIdentifier = "public.file-url"
-        var url : URL!
-
-        for attachment in content.attachments! {
-            if attachment.hasItemConformingToTypeIdentifier(typeIdentifier) {
-                attachment.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { [self]data, error in
-                    print("data: \(data)")
-                    url = data as! URL
-                    
-                    var audioPlayer: AVAudioPlayer!
-                    
-                    do {
-                        try audioPlayer = AVAudioPlayer(contentsOf: url)
-                    } catch {
-                        print(error)
-                    }
-                    
-                    print("duration: \(audioPlayer.duration)")
-                    DispatchQueue.main.async {
-                        duration.text = String("Length of selected audio: \(audioPlayer.duration)s")
-                        }
-                    
-                }
-            } else {
-                "Wrong type: \(attachment.registeredTypeIdentifiers)"
-            }
-        }
-    
     }
 }

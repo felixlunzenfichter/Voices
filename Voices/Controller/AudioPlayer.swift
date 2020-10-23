@@ -18,23 +18,25 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
     
     @ObservedObject var audioPlayer : AVAudioPlayer
     @Published var isListening : Bool = false
+    var voice : Voice
         
-    override init() {
+    init(voice: Voice) {
         
-        print("init audioPlayer")
-        
-        audioPlayer = AVAudioPlayer()
+        self.audioPlayer = AVAudioPlayer()
+        self.voice = voice
+
         super.init()
     
-        if let path = Bundle.main.path(forResource: "monstress.m4a", ofType: nil){
-            do {
-                audioPlayer = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: path))
-                audioPlayer.delegate = self
-                audioPlayer.prepareToPlay()
-            } catch {
-                print("Error")
-            }
+        do {
+            let voiceURL = getVoiceURLFromFileSystem(voice: voice)
+            audioPlayer = try AVAudioPlayer(contentsOf: voiceURL)
+            audioPlayer.delegate = self
+            audioPlayer.prepareToPlay()
+        } catch {
+            print("Error")
         }
+        
+        print("init audioPlayer successfull")
     }
     
     fileprivate func goToPlayState() {

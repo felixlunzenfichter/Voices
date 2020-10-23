@@ -22,6 +22,10 @@
 		7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
 		7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
+		7358D1082540E049006EB739 /* SpeechToText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1072540E049006EB739 /* SpeechToText.swift */; };
+		7358D1092540E049006EB739 /* SpeechToText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1072540E049006EB739 /* SpeechToText.swift */; };
+		7358D17A2542F55E006EB739 /* FileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1792542F55E006EB739 /* FileSystem.swift */; };
+		7358D17B2542F55E006EB739 /* FileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1792542F55E006EB739 /* FileSystem.swift */; };
 		735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCDB2533A17900FF7BE4 /* ListeningView.swift */; };
 		735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */; };
 		735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */; };
@@ -96,6 +100,8 @@
 		7358D0DD2540AFE9006EB739 /* Voices.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Voices.entitlements; sourceTree = "<group>"; };
 		7358D0E22540AFFE006EB739 /* importAudioShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = importAudioShareExtension.entitlements; sourceTree = "<group>"; };
 		7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPersistentContainer.swift; sourceTree = "<group>"; };
+		7358D1072540E049006EB739 /* SpeechToText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechToText.swift; sourceTree = "<group>"; };
+		7358D1792542F55E006EB739 /* FileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystem.swift; sourceTree = "<group>"; };
 		735ABCDB2533A17900FF7BE4 /* ListeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningView.swift; sourceTree = "<group>"; };
 		735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a"; sourceTree = "<group>"; };
 		735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
@@ -252,6 +258,8 @@
 				73352ED42537E20300959775 /* Language.swift */,
 				7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */,
 				735ABCE02533D8A900FF7BE4 /* sounds */,
+				7358D1072540E049006EB739 /* SpeechToText.swift */,
+				7358D1792542F55E006EB739 /* FileSystem.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -560,6 +568,7 @@
 			files = (
 				73126259252DD7920083F52C /* Voices.xcdatamodeld in Sources */,
 				735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */,
+				7358D17A2542F55E006EB739 /* FileSystem.swift in Sources */,
 				73352FCE253F257800959775 /* MySlider.swift in Sources */,
 				73126256252DD7920083F52C /* Persistence.swift in Sources */,
 				735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */,
@@ -567,6 +576,7 @@
 				7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */,
 				7312624F252DD7900083F52C /* VoiceGallery.swift in Sources */,
 				7312624D252DD7900083F52C /* VoicesApp.swift in Sources */,
+				7358D1082540E049006EB739 /* SpeechToText.swift in Sources */,
 				73352ED52537E20300959775 /* Language.swift in Sources */,
 				7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */,
 			);
@@ -593,6 +603,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */,
+				7358D17B2542F55E006EB739 /* FileSystem.swift in Sources */,
+				7358D1092540E049006EB739 /* SpeechToText.swift in Sources */,
 				73E210CF253F6DBF001B74A9 /* ShareViewController.swift in Sources */,
 				7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */,
 			);

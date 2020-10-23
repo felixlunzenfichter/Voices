@@ -15,8 +15,13 @@ struct ListeningView: View {
     @ObservedObject var voice : Voice
     
     #warning("This initialization is executed multiple times.")
-    @ObservedObject private var audioPlayer : AudioPlayer = AudioPlayer()
+    @ObservedObject private var audioPlayer : AudioPlayer
+//    @ObservedObject private var speechToText = SpeechToText(url: )
     
+    init(voice: Voice) {
+        self.voice = voice
+        self.audioPlayer = AudioPlayer(voice: voice)
+    }
     @State private var selectedLanguage : Language = Language.English
     @State private var isPickingLanguage : Bool = false
     
@@ -92,6 +97,7 @@ struct ListeningView: View {
     
     var body: some View {
         VStack {
+//            Text(speechToText.transcription)
             transcriptionSection()
             visualVoice()
             slider()

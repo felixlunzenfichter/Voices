@@ -19,7 +19,8 @@ struct Flag: View {
     init(countryCode: String) {
         let bundle = FlagKit.assetBundle
         let originalImage = UIImage(named: countryCode, in: bundle, compatibleWith: nil)
-        image = Image(uiImage: originalImage!)
+        let defaultImage = UIImage(named: "GB", in: bundle, compatibleWith: nil)
+        image = Image(uiImage: originalImage ?? defaultImage!)
     }
 }
 
