@@ -16,18 +16,47 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="y16-i2-wVG">
-                                <rect key="frame" x="186" y="94" width="42" height="21"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="theWaterLilyPond" translatesAutoresizingMaskIntoConstraints="NO" id="czS-QJ-4R2">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                            </imageView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="pw1-QQ-Jch">
+                                <rect key="frame" x="50" y="244" width="314" height="200"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="y16-i2-wVG">
+                                        <rect key="frame" x="8" y="8" width="298" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="50" id="mab-kK-cVL"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="200" id="KGu-Tk-2Z1"/>
+                                    <constraint firstAttribute="trailing" secondItem="y16-i2-wVG" secondAttribute="trailing" constant="8" id="Umd-l8-QwW"/>
+                                    <constraint firstItem="y16-i2-wVG" firstAttribute="top" secondItem="pw1-QQ-Jch" secondAttribute="top" constant="8" id="qVd-he-e0L"/>
+                                    <constraint firstItem="y16-i2-wVG" firstAttribute="leading" secondItem="pw1-QQ-Jch" secondAttribute="leading" constant="8" id="tIa-ZW-dYN"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="35"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="UmK-xE-hKN"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="y16-i2-wVG" firstAttribute="centerX" secondItem="OIt-pc-Otp" secondAttribute="centerX" id="F0g-1g-uA2"/>
-                            <constraint firstItem="y16-i2-wVG" firstAttribute="top" secondItem="UmK-xE-hKN" secondAttribute="top" constant="50" id="XKE-lL-DbO"/>
+                            <constraint firstAttribute="bottom" secondItem="czS-QJ-4R2" secondAttribute="bottom" id="1YC-2H-5Qg"/>
+                            <constraint firstItem="czS-QJ-4R2" firstAttribute="leading" secondItem="UmK-xE-hKN" secondAttribute="leading" id="Cbd-eB-rlJ"/>
+                            <constraint firstItem="pw1-QQ-Jch" firstAttribute="top" secondItem="UmK-xE-hKN" secondAttribute="top" constant="200" id="EtL-7K-mxv"/>
+                            <constraint firstItem="czS-QJ-4R2" firstAttribute="top" secondItem="OIt-pc-Otp" secondAttribute="top" id="cZN-Gy-LSh"/>
+                            <constraint firstItem="czS-QJ-4R2" firstAttribute="trailing" secondItem="UmK-xE-hKN" secondAttribute="trailing" id="hsP-Iu-HRz"/>
+                            <constraint firstItem="pw1-QQ-Jch" firstAttribute="leading" secondItem="UmK-xE-hKN" secondAttribute="leading" constant="50" id="lTT-5G-6nu"/>
+                            <constraint firstItem="UmK-xE-hKN" firstAttribute="trailing" secondItem="pw1-QQ-Jch" secondAttribute="trailing" constant="50" id="mPc-7y-55p"/>
                         </constraints>
                     </view>
                     <connections>
@@ -40,6 +69,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="theWaterLilyPond" width="1498" height="1360"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

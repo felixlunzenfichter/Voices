@@ -26,6 +26,7 @@
 		7358D1092540E049006EB739 /* SpeechToText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1072540E049006EB739 /* SpeechToText.swift */; };
 		7358D19925430C84006EB739 /* file_system_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D19825430C84006EB739 /* file_system_interface.swift */; };
 		7358D19A25430C84006EB739 /* file_system_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D19825430C84006EB739 /* file_system_interface.swift */; };
+		7358D1AF25434461006EB739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 73126250252DD7920083F52C /* Assets.xcassets */; };
 		735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCDB2533A17900FF7BE4 /* ListeningView.swift */; };
 		735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */; };
 		735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */; };
@@ -452,6 +453,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7358D1AF25434461006EB739 /* Assets.xcassets in Resources */,
 				73E210D2253F6DBF001B74A9 /* MainInterface.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

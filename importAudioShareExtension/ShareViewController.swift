@@ -15,9 +15,14 @@ class ShareViewController: UIViewController {
     @IBOutlet var duration: UILabel!
     
     fileprivate func setDuration(_ voiceURL: URL) throws {
+        
+        
+        
         let audioPlayer = try AVAudioPlayer(contentsOf: voiceURL)
+        
+        let duration = (audioPlayer.duration * 10).rounded()/10
         DispatchQueue.main.async {
-            self.duration.text = String("Length of selected audio: \(audioPlayer.duration)s")
+            self.duration.text = String("Successfully stored voice of length \(duration)s in your library.")
         }
     }
     
@@ -37,6 +42,9 @@ class ShareViewController: UIViewController {
     }
     
     override func viewDidLoad() {
+        
+        
+        
         let context = getStorage().viewContext
         var typeIdentifier = "public.file-url"
         
@@ -46,15 +54,15 @@ class ShareViewController: UIViewController {
             if attachment.hasItemConformingToTypeIdentifier(typeIdentifier) {
                 attachment.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { data, error in
                     let voiceURL = data as! URL
-                    
-                    do {
-                        try self.setDuration(voiceURL)
-                    } catch {
-                        print(error)
-                    }
                         
                     do {
                         try self.saveVoice(voiceURL: voiceURL, context: context)
+                    } catch {
+                        print(error)
+                    }
+                    
+                    do {
+                        try self.setDuration(voiceURL)
                     } catch {
                         print(error)
                     }
