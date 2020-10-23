@@ -13,7 +13,7 @@ struct VoiceGallery: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: false)],
         animation: .default)
     
     private var voices: FetchedResults<Voice>

@@ -26,7 +26,7 @@ class ShareViewController: UIViewController {
         let newVoice = Voice(context: context)
         do {
             newVoice.languageTag = "GB"
-            newVoice.transcript = "empty"
+            newVoice.transcript = "Importet voice"
             newVoice.timestamp = Date()
             try context.save()
         } catch {
