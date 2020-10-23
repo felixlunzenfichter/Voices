@@ -7,27 +7,30 @@
 
 import Foundation
 
-func voicePath (voice: Voice) -> URL {
-    let voiceID = voice.objectID.description
-    guard let voiceURL = FileManager().containerURL(forSecurityApplicationGroupIdentifier: "group.voices")?.appendingPathComponent("\(voice.timestamp?.description).m4a") else {
+// THE DESCIPTION OF THE TIMESTAMP IS USED AS THE ID OF A VOICE.
+// If the database entry of a voice does not have a valid timestamp
+// we will refer to a default audio in the file system.
+func getVoiceURLFromFileSystem (voice: Voice) -> URL {
+    let voiceID = voice.timestamp?.description ?? "not_available"
+    guard let voiceURL = FileManager().containerURL(forSecurityApplicationGroupIdentifier: "group.voices")?.appendingPathComponent("\(voiceID)).m4a") else {
         print("Failed to create the path for voice message with id: \(voiceID) in function voicePath()")
         return URL(fileURLWithPath: "invalid Path")
     }
     return voiceURL
 }
 
+fileprivate func writeAudioDataToDestinaion(_ voiceURL: URL, _ voiceDestinaionURL: URL) throws {
+    let voiceData = try Data(contentsOf: voiceURL)
+    try voiceData.write(to: voiceDestinaionURL)
+}
+
 func saveVoiceInFileSystem(voice: Voice, voiceURL: URL) -> Bool {
-    let voiceDestinaionURL = voicePath(voice: voice)
+    let voiceDestinaionURL = getVoiceURLFromFileSystem(voice: voice)
     do {
-        let voiceData = try Data(contentsOf: voiceURL)
-        try voiceData.write(to: voiceDestinaionURL)
+        try writeAudioDataToDestinaion(voiceURL, voiceDestinaionURL)
     } catch {
         print(error)
         return false
     }
     return true
-}
-
-func getVoiceURLFromFileSystem(voice: Voice) -> URL {
-    return voicePath(voice: voice)
 }
