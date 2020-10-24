@@ -12,16 +12,19 @@ struct ListeningView: View {
     
     @Environment(\.managedObjectContext) private var viewContext
     
-    @ObservedObject var voice : Voice
+    var voice : Voice
     
-    #warning("This initialization is executed multiple times.")
     @ObservedObject private var audioPlayer : AudioPlayer
-//    @ObservedObject private var speechToText = SpeechToText(url: )
+    private var speechToText : SpeechToText
+    @State private var isTranscribing = false
     
     init(voice: Voice) {
         self.voice = voice
         self.audioPlayer = AudioPlayer(voice: voice)
+        self.speechToText = SpeechToText(voice: voice)
+        
     }
+    
     @State private var selectedLanguage : Language = Language.English
     @State private var isPickingLanguage : Bool = false
     
@@ -30,8 +33,13 @@ struct ListeningView: View {
     }
     
     fileprivate func transcriptionText() -> some View {
-        return ProgressView("transcribing")
-            .padding()
+        print("show")
+        print(isTranscribing)
+        if (isTranscribing) {
+            return AnyView(ProgressView("transcribing").padding())
+        } else {
+            return AnyView(Text(voice.transcript!))
+        }
     }
     
     fileprivate func languagePicker() -> some View {
@@ -97,7 +105,10 @@ struct ListeningView: View {
     
     var body: some View {
         VStack {
-//            Text(speechToText.transcription)
+            Text(voice.transcript!)
+            Button(action: speechToText.transcribe, label: {
+                Text("transcribe")
+            })
             transcriptionSection()
             visualVoice()
             slider()

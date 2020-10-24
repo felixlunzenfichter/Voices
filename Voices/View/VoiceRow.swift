@@ -26,8 +26,7 @@ struct VoiceRow: View {
                     .fontWeight(.ultraLight)
             }
             .padding([.top, .bottom])
-        }
-        .padding()
+        }.padding()
     }
 }
 

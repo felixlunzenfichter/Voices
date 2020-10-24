@@ -18,11 +18,13 @@ struct VoiceGallery: View {
     
     private var voices: FetchedResults<Voice>
     
+    @State var needRefresh: Bool = false
+    
     var body: some View {
         NavigationView {
             List {
                 ForEach(voices) { voice in
-                    NavigationLink (destination: ListeningView(voice: voice)) {
+                    NavigationLink (destination: NavigationLazyView(ListeningView(voice: voice))) {
                         VoiceRow(voice: voice)
                     }
                 }
@@ -89,5 +91,16 @@ struct VoiceGallery: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         VoiceGallery().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    }
+}
+
+// MARK:- Helper struct 
+struct NavigationLazyView<Content: View>: View {
+    let build: () -> Content
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    var body: Content {
+        build()
     }
 }
