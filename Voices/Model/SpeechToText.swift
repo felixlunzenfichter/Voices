@@ -17,9 +17,32 @@ class SpeechToText: NSObject, SFSpeechRecognizerDelegate, ObservableObject {
     
     @Published var isTranscribing : Bool = false
     
+    func setLocale(voice: Voice) {
+        if (voice.languageTag! == "GB") {
+            self.locale = "eng"
+        } else if (voice.languageTag! == "DE") {
+            self.locale = "ger"
+            print("deutsch")
+        } else if (voice.languageTag! == "FR") {
+            self.locale = "fre"
+        } else if (voice.languageTag! == "JP") {
+            self.locale = "jpn"
+        } else if (voice.languageTag! == "ES") {
+            self.locale = "es"
+        } else if (voice.languageTag! == "CH") {
+//            voice.transcript = "Swiss German coming soon."
+            self.locale = "chg"
+            self.voiceURL = URL(fileURLWithPath: "invalid")
+        } else {
+            print("default")
+            self.locale = "en"
+        }
+    }
+    
     init(voice: Voice) {
         self.voice = voice
         print(voice.languageTag)
+        print("init voice")
         
         if (voice.languageTag! == "GB") {
             self.locale = "eng"
@@ -33,19 +56,19 @@ class SpeechToText: NSObject, SFSpeechRecognizerDelegate, ObservableObject {
         } else if (voice.languageTag! == "ES") {
             self.locale = "es"
         } else if (voice.languageTag! == "CH") {
-            voice.transcript = "Swiss German coming soon."
+//            voice.transcript = "Swiss German coming soon."
             self.locale = "chg"
             self.voiceURL = URL(fileURLWithPath: "invalid")
-            super.init()
-            return
         } else {
             print("default")
             self.locale = "en"
         }
         
-        self.voiceURL = getVoiceURLFromFileSystem(voice: voice)
         
+    
+        self.voiceURL = getVoiceURLFromFileSystem(voice: voice)
         super.init()
+        
     }
     
     func transcribe() {

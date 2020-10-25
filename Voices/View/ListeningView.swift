@@ -12,114 +12,162 @@ struct ListeningView: View {
     
     @Environment(\.managedObjectContext) private var viewContext
     
-    var voice : Voice
-    
-    @ObservedObject private var audioPlayer : AudioPlayer
-    private var speechToText : SpeechToText
-    @State private var isTranscribing = false
+    private var voice : Voice
+    var audioPlayer : AudioPlayer
     
     init(voice: Voice) {
+        print("init Listeningview")
         self.voice = voice
         self.audioPlayer = AudioPlayer(voice: voice)
-        self.speechToText = SpeechToText(voice: voice)
-        
     }
     
     @State private var selectedLanguage : Language = Language.English
     @State private var isPickingLanguage : Bool = false
     
-    fileprivate func visualVoice() -> some View {
-        return Image("sound").resizable().aspectRatio(contentMode: .fit)
-    }
-    
-    fileprivate func transcriptionText() -> some View {
-        print("show")
-        print(isTranscribing)
-        if (isTranscribing) {
-            return AnyView(ProgressView("transcribing").padding())
-        } else {
-            return AnyView(Text(voice.transcript!))
+    private struct VisualVoice : View {
+        var body: some View {
+            Image("sound").resizable().aspectRatio(contentMode: .fit)
         }
     }
     
-    fileprivate func languagePicker() -> some View {
-        return Button(action: {
-            isPickingLanguage.toggle()
-        }) {
-            Flag(countryCode: voice.languageTag!)
-                .padding()
-                .popover(isPresented: $isPickingLanguage) {
-                    VStack {
-                        Picker(selection: $selectedLanguage, label: Text("Select a language")) {
-                            ForEach (Language.allCases) { language in
-                                Flag(countryCode: languageToTagMap[language]!).tag(language)
+    private struct LanguagePicker : View {
+        
+        @Environment(\.managedObjectContext) private var viewContext
+        
+        @State var isPickingLanguage = false
+        @State var voice: Voice
+        @State var selectedLanguage = Language.English
+        
+        var body: some View {
+            Button(action: {
+                isPickingLanguage.toggle()
+            }) {
+                Flag(countryCode: voice.languageTag!)
+                    .padding()
+                    .popover(isPresented: $isPickingLanguage) {
+                        VStack {
+                            Picker(selection: $selectedLanguage, label: Text("Select a language")) {
+                                ForEach (Language.allCases) { language in
+                                    Flag(countryCode: languageToTagMap[language]!).tag(language)
+                                }
                             }
+                            Button(action: {
+                                voice.languageTag = languageToTagMap[selectedLanguage]
+                                do {
+                                    try viewContext.save()
+                                } catch {
+                                    print(error)
+                                }
+                                isPickingLanguage.toggle()
+                            }, label: {
+                                Text("save")
+                            }).padding()
                         }
-                        Button(action: {
-                            voice.languageTag = languageToTagMap[selectedLanguage]
-                            do {
-                                try viewContext.save()
-                            } catch {
-                                print(error)
-                            }
-                            isPickingLanguage.toggle()
-                        }, label: {
-                            Text("save")
-                        }).padding()
                     }
-                }
+            }
         }
     }
     
-    fileprivate func playButton() -> some View {
-        return Button(
-            action:{
-                audioPlayer.isListening ? audioPlayer.pause() : audioPlayer.play()
-        },  label: {
-            Image(systemName: audioPlayer.isListening ? "pause" : "play" )
-        })
-    }
-    
-    fileprivate func playerControls() -> some View{
-        return HStack {
-            Spacer()
-            Image(systemName: "gobackward.minus")
-            Spacer()
-            playButton()
-            Spacer()
-            Image(systemName: "goforward.plus")
-            Spacer()
+    struct PlayButton : View {
+        
+        @ObservedObject private var audioPlayer : AudioPlayer
+        
+        public init (audioPlayer: AudioPlayer) {
+            self.audioPlayer = audioPlayer
+        }
+        
+        var body: some View {
+            Button(
+                action:{
+                    audioPlayer.isListening ? audioPlayer.pause() : audioPlayer.play()
+            },  label: {
+                Image(systemName: audioPlayer.isListening ? "pause" : "play" )
+            })
         }
     }
     
-    fileprivate func slider() -> some View {
-        MySlider(audioPlayer: audioPlayer)
-    }
-    
-    fileprivate func transcriptionSection() -> some View {
-        return HStack(alignment: .center) {
-            transcriptionText()
-            languagePicker()
+    struct PlayerControls : View {
+        
+        private var audioPlayer : AudioPlayer
+        
+        public init(audioPlayer:  AudioPlayer) {
+            self.audioPlayer = audioPlayer
+        }
+        
+        var body: some View {
+            return HStack {
+                Spacer()
+                Image(systemName: "gobackward.minus")
+                Spacer()
+                PlayButton(audioPlayer: audioPlayer)
+                Spacer()
+                Image(systemName: "goforward.plus")
+                Spacer()
+            }
         }
     }
     
     var body: some View {
         VStack {
-            Text(voice.transcript!)
-            Button(action: speechToText.transcribe, label: {
-                Text("transcribe")
-            })
-            transcriptionSection()
-            visualVoice()
-            slider()
-            playerControls()
+            HStack(alignment: .center) {
+                TranscriptionView(voice: voice)
+                Spacer()
+                LanguagePicker(voice: voice)
+            }
+            VisualVoice()
+            MySlider(audioPlayer: audioPlayer)
+            PlayerControls(audioPlayer: audioPlayer)
         }
     }
     
 }
+
+
 
 struct ListeningView_Previews: PreviewProvider {
     static var previews: some View {
         ListeningView(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "Ich liäb di."))
     }
 }
+
+struct TranscriptionView : View {
+    
+    @ObservedObject private var voice: Voice
+ 
+    public init(voice: Voice) {
+        self.voice = voice
+    }
+    
+    var body: some View {
+        transcriptionView(voice: voice)
+    }
+
+}
+
+func transcriptionView(voice: Voice) -> some View {
+    let speechToText = SpeechToText(voice: voice)
+    return somerandomStruct(speechToText: speechToText, voice: voice)
+}
+
+struct somerandomStruct : View {
+    
+    @ObservedObject var speechToText : SpeechToText
+    var voice : Voice
+    
+    var body: some View {
+        HStack {
+            Button(action: speechToText.transcribe, label: {
+                Text("transcribe")
+                    .multilineTextAlignment(.leading)
+            }).padding()
+            
+            if (speechToText.isTranscribing) {
+                AnyView(ProgressView("transcribing").padding())
+            } else {
+                AnyView(Text(voice.transcript!))
+            }
+        }
+    }
+}
+
+
