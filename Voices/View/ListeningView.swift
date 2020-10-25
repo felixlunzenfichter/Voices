@@ -79,7 +79,7 @@ struct ListeningView: View {
                 action:{
                     audioPlayer.isListening ? audioPlayer.pause() : audioPlayer.play()
             },  label: {
-                Image(systemName: audioPlayer.isListening ? "pause" : "play" )
+                Image(systemName: audioPlayer.isListening ? "pause" : "play" ).frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
             })
         }
     }
@@ -126,7 +126,7 @@ struct ListeningView: View {
                 Spacer()
                 LanguagePicker(voice: voice)
             }
-            VisualVoice()
+//            VisualVoice()
             MySlider(audioPlayer: audioPlayer)
             PlayerControls(audioPlayer: audioPlayer)
         }
@@ -146,17 +146,18 @@ struct TranscriptionViewContentView : View {
     
     var body: some View {
         HStack {
-            Button(action: speechToText.transcribe, label: {
-                Text("transcribe")
-                    .multilineTextAlignment(.leading)
-            }).padding()
-            
             if (speechToText.isTranscribing) {
                 ProgressView("transcribing").padding()
             } else {
-                Text(voice.transcript!)
+                HStack{
+                    Button(action: speechToText.transcribe, label: {
+                        Text("transcribe")
+                            .multilineTextAlignment(.leading)
+                    }).padding()
+                    Text(voice.transcript!)
+                }
             }
-        }
+        }.frame(height: 100)
     }
 }
 

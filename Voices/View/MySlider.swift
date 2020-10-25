@@ -23,7 +23,7 @@ struct MySlider : View {
         Slider(
             value: $currentTime,
             in: TimeInterval(0.0)...TimeInterval(audioPlayer.audioPlayer.duration),
-            onEditingChanged: {_ in dragEvent()})
+            onEditingChanged: {_ in dragEvent()}).padding()
             .onReceive(timer, perform: {_ in currentTime = audioPlayer.audioPlayer.currentTime})
     }
     
