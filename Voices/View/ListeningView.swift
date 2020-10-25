@@ -21,8 +21,6 @@ struct ListeningView: View {
         self.audioPlayer = AudioPlayer(voice: voice)
     }
     
-    @State private var selectedLanguage : Language = Language.English
-    @State private var isPickingLanguage : Bool = false
     
     private struct VisualVoice : View {
         var body: some View {
@@ -107,6 +105,20 @@ struct ListeningView: View {
         }
     }
     
+    struct TranscriptionView : View {
+        
+        @ObservedObject private var voice: Voice
+     
+        public init(voice: Voice) {
+            self.voice = voice
+        }
+        
+        var body: some View {
+            buildTranscriptionView(voice: voice)
+        }
+
+    }
+    
     var body: some View {
         VStack {
             HStack(alignment: .center) {
@@ -122,34 +134,12 @@ struct ListeningView: View {
     
 }
 
-
-
-struct ListeningView_Previews: PreviewProvider {
-    static var previews: some View {
-        ListeningView(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "Ich liäb di."))
-    }
-}
-
-struct TranscriptionView : View {
-    
-    @ObservedObject private var voice: Voice
- 
-    public init(voice: Voice) {
-        self.voice = voice
-    }
-    
-    var body: some View {
-        transcriptionView(voice: voice)
-    }
-
-}
-
-func transcriptionView(voice: Voice) -> some View {
+func buildTranscriptionView(voice: Voice) -> some View {
     let speechToText = SpeechToText(voice: voice)
-    return somerandomStruct(speechToText: speechToText, voice: voice)
+    return TranscriptionViewContentView(speechToText: speechToText, voice: voice)
 }
 
-struct somerandomStruct : View {
+struct TranscriptionViewContentView : View {
     
     @ObservedObject var speechToText : SpeechToText
     var voice : Voice
@@ -162,12 +152,20 @@ struct somerandomStruct : View {
             }).padding()
             
             if (speechToText.isTranscribing) {
-                AnyView(ProgressView("transcribing").padding())
+                ProgressView("transcribing").padding()
             } else {
-                AnyView(Text(voice.transcript!))
+                Text(voice.transcript!)
             }
         }
     }
 }
+
+struct ListeningView_Previews: PreviewProvider {
+    static var previews: some View {
+        ListeningView(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "Ich liäb di."))
+    }
+}
+
+
 
 
