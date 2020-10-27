@@ -13,6 +13,7 @@ struct VoiceGallery: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
+        entity: Voice.entity(),
         sortDescriptors: [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: false)],
         animation: .default)
     
@@ -29,7 +30,8 @@ struct VoiceGallery: View {
                     }
                 }
                 .onDelete(perform: deleteItems)
-            }.navigationBarTitle(Text("Voices"))
+            }.onAppear() {needRefresh.toggle(); print("hi")}
+            .navigationBarTitle(Text("Voices"))
             Button(action: {
                 let newVoice : Voice = Voice(context: viewContext)
                 newVoice.languageTag = "PA"
@@ -40,7 +42,6 @@ struct VoiceGallery: View {
                 } catch {
                     print(error)
                 }
-                
             }, label: {
                 Text("Add Voice")
             })

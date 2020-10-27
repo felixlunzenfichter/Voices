@@ -95,11 +95,15 @@ struct ListeningView: View {
         var body: some View {
             return HStack {
                 Spacer()
-                Image(systemName: "gobackward.minus")
+                Button(action: {audioPlayer.audioPlayer.currentTime = audioPlayer.audioPlayer.currentTime - 5}, label: {
+                    Image(systemName: "gobackward.minus").frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/)
+                })
                 Spacer()
                 PlayButton(audioPlayer: audioPlayer)
                 Spacer()
-                Image(systemName: "goforward.plus")
+                Button(action: {audioPlayer.audioPlayer.currentTime = audioPlayer.audioPlayer.currentTime + 5}, label: {
+                    Image(systemName: "goforward.plus").frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+                })
                 Spacer()
             }
         }
