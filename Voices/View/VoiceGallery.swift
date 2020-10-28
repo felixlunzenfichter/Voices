@@ -11,14 +11,8 @@ import FlagKit
 
 struct VoiceGallery: View {
     @Environment(\.managedObjectContext) private var viewContext
-//
-//    @FetchRequest(fetchRequest: Voice.voiceData)
-//
-//    private var voices: FetchedResults<Voice>
-//
-//    @State var needRefresh: Bool = false
+
     @ObservedObject var voiceStorage : VoiceStorage
-    
     
     var body: some View {
         NavigationView {
@@ -32,19 +26,6 @@ struct VoiceGallery: View {
             }
             .onAppear() {voiceStorage.updateContent()}
             .navigationBarTitle(Text("Voices"))
-            Button(action: {
-                let newVoice : Voice = Voice(context: viewContext)
-                newVoice.languageTag = "PA"
-                newVoice.transcript = "Te quiero muuuuchoooooooooooo"
-                newVoice.timestamp = Date()
-                do {
-                    try viewContext.save()
-                } catch {
-                    print(error)
-                }
-            }, label: {
-                Text("Add Voice")
-            })
         }
         .toolbar {
             #if os(iOS)
@@ -91,7 +72,7 @@ struct VoiceGallery: View {
 
 //struct ContentView_Previews: PreviewProvider {
 //    static var previews: some View {
-//        VoiceGallery().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+//        VoiceGallery(voiceStorage: <#VoiceStorage#>).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 //    }
 //}
 
@@ -105,3 +86,4 @@ struct NavigationLazyView<Content: View>: View {
         build()
     }
 }
+
