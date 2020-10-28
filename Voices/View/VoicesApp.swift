@@ -6,14 +6,23 @@
 //
 
 import SwiftUI
+import CoreData
 
 @main
 struct VoicesApp: App {
     let persistenceController = PersistenceController.shared
-
+    
+    @StateObject var voiceStorage : VoiceStorage
+    
+    init() {
+        let managedObjectContext = persistenceController.container.viewContext
+        let storage = VoiceStorage(managedObjectContext: managedObjectContext)
+        self._voiceStorage = StateObject(wrappedValue: storage)
+    }
+    
     var body: some Scene {
         WindowGroup {
-            VoiceGallery()
+            VoiceGallery(voiceStorage: voiceStorage)
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

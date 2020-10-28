@@ -11,26 +11,26 @@ import FlagKit
 
 struct VoiceGallery: View {
     @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        entity: Voice.entity(),
-        sortDescriptors: [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: false)],
-        animation: .default)
+//
+//    @FetchRequest(fetchRequest: Voice.voiceData)
+//
+//    private var voices: FetchedResults<Voice>
+//
+//    @State var needRefresh: Bool = false
+    @ObservedObject var voiceStorage : VoiceStorage
     
-    private var voices: FetchedResults<Voice>
-    
-    @State var needRefresh: Bool = false
     
     var body: some View {
         NavigationView {
             List {
-                ForEach(voices) { voice in
+                ForEach(voiceStorage.voices) { voice in
                     NavigationLink (destination: NavigationLazyView(ListeningView(voice: voice))) {
                         VoiceRow(voice: voice)
                     }
                 }
                 .onDelete(perform: deleteItems)
-            }.onAppear() {needRefresh.toggle(); print("hi")}
+            }
+            .onAppear() {voiceStorage.updateContent()}
             .navigationBarTitle(Text("Voices"))
             Button(action: {
                 let newVoice : Voice = Voice(context: viewContext)
@@ -75,7 +75,7 @@ struct VoiceGallery: View {
 
     private func deleteItems(offsets: IndexSet) {
         withAnimation {
-            offsets.map { voices[$0] }.forEach(viewContext.delete)
+            offsets.map { voiceStorage.voices[$0] }.forEach(viewContext.delete)
 
             do {
                 try viewContext.save()
@@ -89,11 +89,11 @@ struct VoiceGallery: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        VoiceGallery().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-    }
-}
+//struct ContentView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        VoiceGallery().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+//    }
+//}
 
 // MARK:- Helper struct 
 struct NavigationLazyView<Content: View>: View {

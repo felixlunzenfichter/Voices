@@ -23,7 +23,6 @@
 		7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		7358D1082540E049006EB739 /* SpeechToText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1072540E049006EB739 /* SpeechToText.swift */; };
-		7358D1092540E049006EB739 /* SpeechToText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D1072540E049006EB739 /* SpeechToText.swift */; };
 		7358D19925430C84006EB739 /* file_system_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D19825430C84006EB739 /* file_system_interface.swift */; };
 		7358D19A25430C84006EB739 /* file_system_interface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D19825430C84006EB739 /* file_system_interface.swift */; };
 		7358D1AF25434461006EB739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 73126250252DD7920083F52C /* Assets.xcassets */; };
@@ -33,6 +32,7 @@
 		735ABCFF2533E84100FF7BE4 /* monstress.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCFE2533E84100FF7BE4 /* monstress.m4a */; };
 		7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5992530BE4500137BF3 /* FlagImage.swift */; };
 		7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5B22530EDE400137BF3 /* VoiceRow.swift */; };
+		73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C71A1E2548577D0039CB8F /* StorageInterface.swift */; };
 		73E210CF253F6DBF001B74A9 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E210CE253F6DBF001B74A9 /* ShareViewController.swift */; };
 		73E210D2253F6DBF001B74A9 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 73E210D0253F6DBF001B74A9 /* MainInterface.storyboard */; };
 		73E210D6253F6DBF001B74A9 /* importAudioShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 73E210CC253F6DBF001B74A9 /* importAudioShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -109,6 +109,7 @@
 		735ABCFE2533E84100FF7BE4 /* monstress.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = monstress.m4a; sourceTree = "<group>"; };
 		7363C5992530BE4500137BF3 /* FlagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagImage.swift; sourceTree = "<group>"; };
 		7363C5B22530EDE400137BF3 /* VoiceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRow.swift; sourceTree = "<group>"; };
+		73C71A1E2548577D0039CB8F /* StorageInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageInterface.swift; sourceTree = "<group>"; };
 		73E210CC253F6DBF001B74A9 /* importAudioShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = importAudioShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		73E210CE253F6DBF001B74A9 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		73E210D1253F6DBF001B74A9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
@@ -260,6 +261,7 @@
 				7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */,
 				7358D19825430C84006EB739 /* file_system_interface.swift */,
 				7358D1072540E049006EB739 /* SpeechToText.swift */,
+				73C71A1E2548577D0039CB8F /* StorageInterface.swift */,
 				735ABCE02533D8A900FF7BE4 /* sounds */,
 			);
 			path = Model;
@@ -581,6 +583,7 @@
 				7358D1082540E049006EB739 /* SpeechToText.swift in Sources */,
 				73352ED52537E20300959775 /* Language.swift in Sources */,
 				7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */,
+				73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,7 +609,6 @@
 			files = (
 				7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */,
 				7358D19A25430C84006EB739 /* file_system_interface.swift in Sources */,
-				7358D1092540E049006EB739 /* SpeechToText.swift in Sources */,
 				73E210CF253F6DBF001B74A9 /* ShareViewController.swift in Sources */,
 				7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */,
 			);

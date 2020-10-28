@@ -14,6 +14,7 @@ func getVoiceURLFromFileSystem (voice: Voice) -> URL {
     let voiceID = voice.timestamp?.description ?? "not_available"
     guard let voiceURL = FileManager().containerURL(forSecurityApplicationGroupIdentifier: "group.voices")?.appendingPathComponent("\(voiceID)).m4a") else {
         print("Failed to create the path for voice message with id: \(voiceID) in function voicePath()")
+        #warning("Put some the path of a default audio into the this URL.")
         return URL(fileURLWithPath: "invalid Path")
     }
     return voiceURL

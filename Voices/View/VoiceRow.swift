@@ -14,14 +14,14 @@ struct VoiceRow: View {
     
     var body: some View {
         HStack(alignment: .center) {
-            Text("\(voice.transcript!)")
+            Text(voice.transcript ?? "no transcript found error")
                 .lineLimit(1)
                 .font(.title2)
             Spacer()
             VStack(alignment: .center) {
-                Flag(countryCode: voice.languageTag!)
+                Flag(countryCode: voice.languageTag ?? "PA")
                 Spacer()
-                Text("\(voice.timestamp!, formatter: itemFormatter)")
+                Text("\(voice.timestamp ?? Date(), formatter: itemFormatter)")
                     .font(.footnote)
                     .fontWeight(.ultraLight)
             }
