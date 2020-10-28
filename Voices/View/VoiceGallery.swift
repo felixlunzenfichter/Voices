@@ -23,8 +23,9 @@ struct VoiceGallery: View {
                     }
                 }
                 .onDelete(perform: deleteItems)
-            }
-            .onAppear() {voiceStorage.updateContent()}
+            }.onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification), perform: { _ in
+                voiceStorage.updateContent()
+            })
             .navigationBarTitle(Text("Voices"))
         }
         .toolbar {
