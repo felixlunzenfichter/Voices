@@ -62,7 +62,6 @@ struct VoiceGallery: View {
     private func deleteItems(offsets: IndexSet) {
         withAnimation {
             offsets.map { voiceStorage.voices[$0] }.forEach(viewContext.delete)
-
             do {
                 try viewContext.save()
             } catch {
@@ -75,11 +74,16 @@ struct VoiceGallery: View {
     }
 }
 
-//struct ContentView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        VoiceGallery(voiceStorage: <#VoiceStorage#>).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-//    }
-//}
+struct ContentView_Previews: PreviewProvider {
+    
+    let persistenceController = PersistenceController.preview
+    
+    @StateObject static var voiceStorage : VoiceStorage = VoiceStorage(managedObjectContext: PersistenceController.preview.container.viewContext)
+    
+    static var previews: some View {
+        VoiceGallery(voiceStorage: voiceStorage).environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    }
+}
 
 // MARK:- Helper struct 
 struct NavigationLazyView<Content: View>: View {

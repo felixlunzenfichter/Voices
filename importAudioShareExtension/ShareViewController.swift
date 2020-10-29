@@ -43,8 +43,6 @@ class ShareViewController: UIViewController {
     
     override func viewDidLoad() {
         
-        
-        
         let context = getStorage().viewContext
         var typeIdentifier = "public.file-url"
         
