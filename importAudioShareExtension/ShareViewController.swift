@@ -16,12 +16,12 @@ class ShareViewController: UIViewController {
     
     fileprivate func setDuration(_ voiceURL: URL) throws {
         
-        
-        
         let audioPlayer = try AVAudioPlayer(contentsOf: voiceURL)
         
         let duration = (audioPlayer.duration * 10).rounded()/10
+        
         DispatchQueue.main.async {
+            self.duration.numberOfLines = 3
             self.duration.text = String("Successfully stored voice of length \(duration)s in your library.")
         }
     }
