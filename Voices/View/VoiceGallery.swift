@@ -16,6 +16,9 @@ struct VoiceGallery: View {
     
     var body: some View {
         NavigationView {
+            if (voiceStorage.voices.count == 0) {
+                Text("No voices in your gallery.").padding()
+            } else {
             List {
                 ForEach(voiceStorage.voices) { voice in
                     NavigationLink (destination: NavigationLazyView(ListeningView(voice: voice))) {
@@ -27,6 +30,7 @@ struct VoiceGallery: View {
                 voiceStorage.updateContent()
             })
             .navigationBarTitle(Text("Voices"))
+            }
         }
         .toolbar {
             #if os(iOS)
