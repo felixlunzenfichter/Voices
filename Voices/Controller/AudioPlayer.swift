@@ -28,12 +28,13 @@ class AudioPlayer : NSObject, ObservableObject, AVAudioPlayerDelegate {
         super.init()
     
         do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
             let voiceURL = getVoiceURLFromFileSystem(voice: voice)
             audioPlayer = try AVAudioPlayer(contentsOf: voiceURL)
             audioPlayer.delegate = self
             audioPlayer.prepareToPlay()
         } catch {
-            print("Error")
+            print(error)
         }
         
         print("init audioPlayer successfull")
