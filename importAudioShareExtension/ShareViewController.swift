@@ -76,13 +76,14 @@ class ShareViewController: UIViewController {
 //MARK:- Database functions.
 extension ShareViewController {
     func getStorage() -> NSCustomPersistentContainer {
-       let container = NSCustomPersistentContainer(name: "Voices")
-
-       container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-           if let error = error as NSError? {
-               fatalError("Unresolved error \(error), \(error.userInfo)")
-           }
-       })
-       return container
+        let container = NSCustomPersistentContainer(name: "Voices")
+        let description = container.persistentStoreDescriptions.first
+        description?.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+            if let error = error as NSError? {
+                fatalError("Unresolved error \(error), \(error.userInfo)")
+            }
+        })
+        return container
     }
 }

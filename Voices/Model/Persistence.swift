@@ -49,6 +49,8 @@ struct PersistenceController {
 
     init(inMemory: Bool = false) {
         container = NSCustomPersistentContainer(name: "Voices")
+        let description = container.persistentStoreDescriptions.first
+        description?.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }

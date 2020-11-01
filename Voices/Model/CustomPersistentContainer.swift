@@ -7,7 +7,7 @@
 
 import CoreData
 
-class NSCustomPersistentContainer: NSPersistentCloudKitContainer {
+class NSCustomPersistentContainer: NSPersistentContainer {
     override open class func defaultDirectoryURL() -> URL {
         let storeURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.voices")
         print(storeURL)

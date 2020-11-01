@@ -103,7 +103,7 @@ struct LanguagePicker : View {
         Button(action: {
             isPickingLanguage.toggle()
         }) {
-            Flag(countryCode: voice.languageTag!)
+            Flag(countryCode: voice.languageTag ?? "CN")
                 .padding()
                 .popover(isPresented: $isPickingLanguage) {
                     VStack {

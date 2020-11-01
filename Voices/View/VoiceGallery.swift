@@ -19,7 +19,7 @@ struct VoiceGallery: View {
     var body: some View {
         NavigationView {
             if (voiceStorage.voices.count == 0) {
-                Text("No voices in your gallery.").padding()
+                Text("No voices in your gallery. Go to the app where you want to import audio from. Then select the audio you want to import, select share and select this app as the app you want to share the audio with.").padding()
             } else {
                 List {
                     ForEach(voiceStorage.voices) { voice in
@@ -49,8 +49,8 @@ struct VoiceGallery: View {
         
                 // Replace this implementation with code to handle the error appropriately.
                 // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+//                let nsError = error as NSError
+//                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
             }
         }
     }
