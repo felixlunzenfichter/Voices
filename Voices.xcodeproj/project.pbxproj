@@ -777,6 +777,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Voices/Voices.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Voices/Preview Content\"";
 				DEVELOPMENT_TEAM = W26GVS4M5S;
 				ENABLE_PREVIEWS = YES;
@@ -786,6 +787,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.connect.Voices;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -802,6 +804,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Voices/Voices.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Voices/Preview Content\"";
 				DEVELOPMENT_TEAM = W26GVS4M5S;
 				ENABLE_PREVIEWS = YES;
@@ -811,6 +814,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.connect.Voices;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -911,6 +915,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = importAudioShareExtension/importAudioShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = W26GVS4M5S;
 				INFOPLIST_FILE = importAudioShareExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -918,6 +923,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.connect.Voices.importAudioShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -931,6 +937,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = importAudioShareExtension/importAudioShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = W26GVS4M5S;
 				INFOPLIST_FILE = importAudioShareExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -938,6 +945,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.connect.Voices.importAudioShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
