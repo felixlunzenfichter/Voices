@@ -41,7 +41,8 @@ let MapTagToLocale : Dictionary = [
     "DE" : "ger",
     "FR" : "fre",
     "JP" : "jpn",
-    "ES" : "es"
+    "ES" : "es",
+    "CH" : "swger"
 ]
 
 
