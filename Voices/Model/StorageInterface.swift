@@ -10,44 +10,61 @@ import CoreData
 
 class VoiceStorage : NSObject, ObservableObject {
     @Published var voices : [Voice] = []
-    private let fetchVoicesController : NSFetchedResultsController<Voice>
+    private var fetchVoicesController : NSFetchedResultsController<Voice> = NSFetchedResultsController()
     
     init(managedObjectContext: NSManagedObjectContext) {
-        fetchVoicesController = NSFetchedResultsController(fetchRequest: Voice.voiceFetchRequest, managedObjectContext: managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
-        
         super.init()
-        
+        initFetchedResultControllere(managedObjectContext: managedObjectContext)
+        fetchVoices()
+    }
+
+    private func initFetchedResultControllere(managedObjectContext: NSManagedObjectContext) {
+        fetchVoicesController = NSFetchedResultsController(fetchRequest: Voice.voiceFetchRequest, managedObjectContext: managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
         fetchVoicesController.delegate = self
-        
+    }
+
+    private func fetchVoices() {
         do {
-            try fetchVoicesController.performFetch()
-            voices = fetchVoicesController.fetchedObjects ?? []
+            try setVoices()
         } catch {
             print("Failed to fetch voices from database.")
         }
+    }
+
+    private func setVoices() throws {
+        try fetchVoicesController.performFetch()
+        voices = fetchVoicesController.fetchedObjects ?? []
     }
 }
 
 extension VoiceStorage : NSFetchedResultsControllerDelegate {
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+
         guard let newVoices = controller.fetchedObjects as? [Voice] else {
             print("Failed to fetch voices.")
             return
         }
-        print("Updated voiceData")
+
+        print("Updated voiceData. voices.count: \(newVoices.count)")
         voices = newVoices
     }
     
-    func updateContent() {
+    func updateContentExplicitly() {
+        tryFetchingVoices()
+
+        guard let newVoices = fetchVoicesController.fetchedObjects else {
+            print("Failed to fetch voices.")
+            return
+        }
+
+        voices = newVoices
+        print("Updated voiceData. voices.count: \(newVoices.count)")
+
+    }
+
+    private func tryFetchingVoices() {
         do {
             try fetchVoicesController.performFetch()
-            guard let newVoices = fetchVoicesController.fetchedObjects as? [Voice] else {
-                print("Failed to fetch voices.")
-                return
-            }
-            print("Updated voiceData")
-            voices = newVoices
-            print(newVoices.count)
         } catch {
             print("failed to update Content of List.")
         }
@@ -55,14 +72,14 @@ extension VoiceStorage : NSFetchedResultsControllerDelegate {
 }
 
 extension Voice {
-    static var  voiceFetchRequest : NSFetchRequest<Voice> {
+    static var voiceFetchRequest : NSFetchRequest<Voice> {
         let request : NSFetchRequest<Voice> = Voice.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Voice.timestamp, ascending: false)]
         return request
     }
 }
 
-func saveVoice(_ viewContext: NSManagedObjectContext) {
+func saveStateOfDatabase(_ viewContext: NSManagedObjectContext) {
     do {
         try viewContext.save()
     } catch {

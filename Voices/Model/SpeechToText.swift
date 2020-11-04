@@ -17,7 +17,7 @@ class SpeechToText: NSObject, SFSpeechRecognizerDelegate, ObservableObject {
     fileprivate func doneTranscribing(result: String, voice: Voice, viewContext: NSManagedObjectContext) {
         isTranscribing = false
         voice.transcript = result
-        saveVoice(viewContext)
+        saveStateOfDatabase(viewContext)
     }
     
     func transcribe(voice: Voice, viewContext: NSManagedObjectContext) {
