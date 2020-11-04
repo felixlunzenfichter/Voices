@@ -14,11 +14,11 @@ class VoiceStorage : NSObject, ObservableObject {
     
     init(managedObjectContext: NSManagedObjectContext) {
         super.init()
-        initFetchedResultControllere(managedObjectContext: managedObjectContext)
+        initFetchVoiceController(managedObjectContext: managedObjectContext)
         fetchVoices()
     }
 
-    private func initFetchedResultControllere(managedObjectContext: NSManagedObjectContext) {
+    private func initFetchVoiceController(managedObjectContext: NSManagedObjectContext) {
         fetchVoicesController = NSFetchedResultsController(fetchRequest: Voice.voiceFetchRequest, managedObjectContext: managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
         fetchVoicesController.delegate = self
     }
