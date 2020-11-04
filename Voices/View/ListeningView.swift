@@ -45,6 +45,7 @@ struct AudioSection : View {
     init(voice: Voice) {
         self.voice = voice
         audioPlayer = AudioPlayer(voice: voice)
+        print("init AudioSection")
     }
     
     var body: some View {
