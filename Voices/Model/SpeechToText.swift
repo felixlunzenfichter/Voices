@@ -53,11 +53,9 @@ class SpeechToText: NSObject, SFSpeechRecognizerDelegate, ObservableObject {
 
                 guard let result = result else {
                     // Recognition failed, so check error for details and handle it
-                    print("Failed to transcribe.")
                     isTranscribing = false
                     voice.transcript = "Apple failed to transcribe this voice."
-                        print(error)
-                    
+                    print(error!)
                     return
                 }
               // Print the speech that has been recognized so far
