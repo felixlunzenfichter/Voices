@@ -44,7 +44,7 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         
         let context = getStorage().viewContext
-        var typeIdentifier = "public.file-url"
+        var typeIdentifier = "com.apple.m4a-audio"
         
         let content = extensionContext?.inputItems[0] as! NSExtensionItem
 
@@ -52,7 +52,7 @@ class ShareViewController: UIViewController {
             if attachment.hasItemConformingToTypeIdentifier(typeIdentifier) {
                 attachment.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { data, error in
                     let voiceURL = data as! URL
-                        
+                
                     do {
                         try self.saveVoice(voiceURL: voiceURL, context: context)
                     } catch {
