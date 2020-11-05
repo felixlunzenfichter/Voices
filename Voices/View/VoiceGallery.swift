@@ -30,6 +30,9 @@ struct VoiceGallery: View {
                     .onDelete(perform: deleteItems)
                 }
                 .navigationBarTitle(Text("Voices"))
+                .navigationBarItems(trailing: NavigationLink(destination: ConversationView(voices: voiceStorage.voices)) {
+                    Text("Talk to Felix")
+                })
             }
         }.alert(isPresented: $showError, content: {
             Alert(title: Text("Error"), message: Text(errorMessage), dismissButton: .default(Text("Got it!")))
@@ -37,6 +40,7 @@ struct VoiceGallery: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification), perform: { _ in
             voiceStorage.updateContentExplicitly()
         })
+        
     }
 
     private func deleteItems(offsets: IndexSet) {

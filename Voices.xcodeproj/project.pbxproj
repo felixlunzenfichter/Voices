@@ -32,6 +32,8 @@
 		735ABCFF2533E84100FF7BE4 /* monstress.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCFE2533E84100FF7BE4 /* monstress.m4a */; };
 		7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5992530BE4500137BF3 /* FlagImage.swift */; };
 		7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5B22530EDE400137BF3 /* VoiceRow.swift */; };
+		73AD2827255452F50025B201 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD2826255452F50025B201 /* ConversationView.swift */; };
+		73AD282D2554586A0025B201 /* VoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD282C2554586A0025B201 /* VoiceView.swift */; };
 		73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C71A1E2548577D0039CB8F /* StorageInterface.swift */; };
 		73C71A82254D8BA70039CB8F /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73C71A81254D8BA70039CB8F /* CloudKit.framework */; };
 		73C71AE5254EFB0F0039CB8F /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73C71A81254D8BA70039CB8F /* CloudKit.framework */; };
@@ -111,6 +113,8 @@
 		735ABCFE2533E84100FF7BE4 /* monstress.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = monstress.m4a; sourceTree = "<group>"; };
 		7363C5992530BE4500137BF3 /* FlagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagImage.swift; sourceTree = "<group>"; };
 		7363C5B22530EDE400137BF3 /* VoiceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRow.swift; sourceTree = "<group>"; };
+		73AD2826255452F50025B201 /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; tabWidth = 4; };
+		73AD282C2554586A0025B201 /* VoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceView.swift; sourceTree = "<group>"; };
 		73C71A1E2548577D0039CB8F /* StorageInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageInterface.swift; sourceTree = "<group>"; };
 		73C71A81254D8BA70039CB8F /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		73E210CC253F6DBF001B74A9 /* importAudioShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = importAudioShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -282,6 +286,8 @@
 				7363C5B22530EDE400137BF3 /* VoiceRow.swift */,
 				7363C5992530BE4500137BF3 /* FlagImage.swift */,
 				73352FCD253F257800959775 /* MySlider.swift */,
+				73AD2826255452F50025B201 /* ConversationView.swift */,
+				73AD282C2554586A0025B201 /* VoiceView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -587,9 +593,11 @@
 				7312624F252DD7900083F52C /* VoiceGallery.swift in Sources */,
 				7312624D252DD7900083F52C /* VoicesApp.swift in Sources */,
 				7358D1082540E049006EB739 /* SpeechToText.swift in Sources */,
+				73AD282D2554586A0025B201 /* VoiceView.swift in Sources */,
 				73352ED52537E20300959775 /* Language.swift in Sources */,
 				7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */,
 				73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */,
+				73AD2827255452F50025B201 /* ConversationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
