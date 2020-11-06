@@ -40,6 +40,7 @@
 		73E210CF253F6DBF001B74A9 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E210CE253F6DBF001B74A9 /* ShareViewController.swift */; };
 		73E210D2253F6DBF001B74A9 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 73E210D0253F6DBF001B74A9 /* MainInterface.storyboard */; };
 		73E210D6253F6DBF001B74A9 /* importAudioShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 73E210CC253F6DBF001B74A9 /* importAudioShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		80AD153C3688CCE8A5238652 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AD1F1C8835E646FC34F9C8 /* Audio.swift */; };
 		86BA9B4E26B5C71117F0F91E /* Pods_VoicesTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2D9310B353BB233BD306E4D /* Pods_VoicesTests.framework */; };
 /* End PBXBuildFile section */
 
@@ -122,6 +123,7 @@
 		73E210D1253F6DBF001B74A9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
 		73E210D3253F6DBF001B74A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7CA16549206522F6FA4E6FB2 /* Pods-Voices.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Voices.release.xcconfig"; path = "Target Support Files/Pods-Voices/Pods-Voices.release.xcconfig"; sourceTree = "<group>"; };
+		80AD1F1C8835E646FC34F9C8 /* Audio.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
 		8BD5AADF714A39E1325A3AF0 /* Pods-Voices-VoicesUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Voices-VoicesUITests.debug.xcconfig"; path = "Target Support Files/Pods-Voices-VoicesUITests/Pods-Voices-VoicesUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		8D7A64AE2365417F50D34ACA /* Pods_Voices.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Voices.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A644AE074ED4EB76F242847C /* Pods_Voices_VoicesUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Voices_VoicesUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -296,6 +298,7 @@
 			isa = PBXGroup;
 			children = (
 				735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */,
+				80AD1F1C8835E646FC34F9C8 /* Audio.swift */,
 			);
 			path = Controller;
 			sourceTree = "<group>";
@@ -598,6 +601,7 @@
 				7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */,
 				73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */,
 				73AD2827255452F50025B201 /* ConversationView.swift in Sources */,
+				80AD153C3688CCE8A5238652 /* Audio.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
