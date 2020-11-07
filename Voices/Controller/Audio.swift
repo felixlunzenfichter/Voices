@@ -3,8 +3,14 @@
 //
 
 import Foundation
+import AVFoundation
 
 class Audio {
+
+    var recorder: AVAudioRecorder!
+    var audioSession: AVAudioSession!
+
+
 
     func startRecording() {
         
@@ -13,4 +19,15 @@ class Audio {
     func stopRecording() {
 
     }
+
+}
+
+func getDocumentsDirectory() -> URL {
+    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    let documentsDirectory = paths[0]
+    return documentsDirectory
+}
+
+func getVoiceURL() -> URL {
+    return getDocumentsDirectory().appendingPathComponent("voice.m4a")
 }
