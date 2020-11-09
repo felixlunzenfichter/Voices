@@ -220,7 +220,7 @@
 			children = (
 				7358D0DD2540AFE9006EB739 /* Voices.entitlements */,
 				7312625A252DD7920083F52C /* Info.plist */,
-				735C4FEE2537352700F48B04 /* Controller */,
+				735C4FEE2537352700F48B04 /* AudioCapabilities */,
 				735C4FED2537352100F48B04 /* View */,
 				735C4FE92537350700F48B04 /* Model */,
 				73126252252DD7920083F52C /* Preview Content */,
@@ -294,13 +294,13 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		735C4FEE2537352700F48B04 /* Controller */ = {
+		735C4FEE2537352700F48B04 /* AudioCapabilities */ = {
 			isa = PBXGroup;
 			children = (
 				735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */,
 				80AD1F1C8835E646FC34F9C8 /* Audio.swift */,
 			);
-			path = Controller;
+			path = AudioCapabilities;
 			sourceTree = "<group>";
 		};
 		73E210CD253F6DBF001B74A9 /* importAudioShareExtension */ = {
