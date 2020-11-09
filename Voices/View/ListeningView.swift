@@ -86,7 +86,7 @@ struct TranscriptionViewContentView : View {
                         Text("transcribe").lineLimit(0).frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                     }).padding()
                     ScrollView {
-                        Text(voice.transcript ?? "error no transcript found.").offset().offset(x: 0, y: /*@START_MENU_TOKEN@*/31.0/*@END_MENU_TOKEN@*/)
+                        Text(voice.transcript ?? "error no transcript found.")
                     }.border(/*@START_MENU_TOKEN@*/Color.black/*@END_MENU_TOKEN@*/, width: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/)
                 }
             }
