@@ -85,7 +85,9 @@ struct TranscriptionViewContentView : View {
                     Button(action: {speechToText.transcribe(voice: voice, viewContext: viewContext)}, label: {
                         Text("transcribe").lineLimit(0).frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                     }).padding()
-                    Text(voice.transcript ?? "error no transcript found.")
+                    ScrollView {
+                        Text(voice.transcript ?? "error no transcript found.").offset().offset(x: 0, y: /*@START_MENU_TOKEN@*/31.0/*@END_MENU_TOKEN@*/)
+                    }.border(/*@START_MENU_TOKEN@*/Color.black/*@END_MENU_TOKEN@*/, width: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/)
                 }
             }
         }.frame(height: 100)
