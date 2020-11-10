@@ -86,11 +86,11 @@ struct TranscriptionViewContentView : View {
                         Text("transcribe").lineLimit(0).frame(width: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, height: /*@START_MENU_TOKEN@*/100/*@END_MENU_TOKEN@*/, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
                     }).padding()
                     ScrollView {
-                        Text(voice.transcript ?? "error no transcript found.")
+                        Text(voice.transcript ?? "error no transcript found.").frame(maxWidth: .infinity).padding(1)
                     }.border(/*@START_MENU_TOKEN@*/Color.black/*@END_MENU_TOKEN@*/, width: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/)
                 }
             }
-        }.frame(height: 100)
+        }.frame(height: 200)
     }
 }
 
@@ -175,7 +175,7 @@ struct PlayButton : View {
 
 struct ListeningView_Previews: PreviewProvider {
     static var previews: some View {
-        ListeningView(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "Ich liäb di."))
+        ListeningView(voice: getVoice(languageTag: "CH", timeStamp: Date(), transcript: "Ich liäb di. I libi di. I liäb di. "))
     }
 }
 
