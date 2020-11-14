@@ -26,26 +26,13 @@ class VoicesUITests: XCTestCase {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()
         app.launch()
-        
-        app.navigationBars["_TtGC7SwiftUI19UIHosting"]/*@START_MENU_TOKEN@*/.buttons["BackButton"]/*[[".buttons[\"Voices\"]",".buttons[\"BackButton\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
-        
-    
-        let table = app.tables
-        while (table.count > 0) {
-            let firstCell = table.cells.firstMatch
-            firstCell.tap()
-            
-            app.navigationBars["_TtGC7SwiftUIP10$19356e90428DestinationHosting"]/*@START_MENU_TOKEN@*/.buttons["BackButton"]/*[[".buttons[\"Voices\"]",".buttons[\"BackButton\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
-            
-            let tablesQuery = app.tables
-            firstCell.swipeLeft()
-            tablesQuery/*@START_MENU_TOKEN@*/.buttons["Delete"]/*[[".cells[\"Imported voice\\n00:01:41\\n20\/11\/05\"].buttons[\"Delete\"]",".buttons[\"Delete\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
-        }
-        
-        assert(table.cells.count == 0)
 
-        // Use recording to get started writing UI tests.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        print(app.cells)
+        app.navigationBars["_TtGC7SwiftUI19UIHosting"]/*@START_MENU_TOKEN@*/.buttons["BackButton"]/*[[".buttons[\"Voices\"]",".buttons[\"BackButton\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
+        app.cells.element(boundBy: 0).tap()
+        app.buttons["play"].tap()
+        app.buttons["pause"].tap()
+        
     }
 
     func testLaunchPerformance() throws {
