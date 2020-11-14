@@ -10,8 +10,8 @@ import CoreData
 
 @main
 struct VoicesApp: App {
-    let persistenceController = PersistenceController.shared
     
+    let persistenceController = PersistenceController.shared
     @StateObject var voiceStorage : VoiceStorage
     
     init() {
@@ -25,13 +25,5 @@ struct VoicesApp: App {
             VoiceGallery(voiceStorage: voiceStorage)
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
-    }
-}
-
-struct VoicesApp_Previews: PreviewProvider {
-    static var previews: some View {
-        /*@START_MENU_TOKEN@*/List(/*@START_MENU_TOKEN@*/0 ..< 5/*@END_MENU_TOKEN@*/)  { item in
-            Text("Hello, World!")
-        }/*@END_MENU_TOKEN@*/
     }
 }

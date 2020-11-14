@@ -283,13 +283,8 @@
 			isa = PBXGroup;
 			children = (
 				7312624C252DD7900083F52C /* VoicesApp.swift */,
-				7312624E252DD7900083F52C /* VoiceGallery.swift */,
-				735ABCDB2533A17900FF7BE4 /* ListeningView.swift */,
-				7363C5B22530EDE400137BF3 /* VoiceRow.swift */,
-				7363C5992530BE4500137BF3 /* FlagImage.swift */,
-				73352FCD253F257800959775 /* MySlider.swift */,
-				73AD2826255452F50025B201 /* ConversationView.swift */,
-				73AD282C2554586A0025B201 /* VoiceView.swift */,
+				7363AD5F25604311002BEF41 /* VoiceGallery */,
+				7363AD6525604358002BEF41 /* Conversation */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -301,6 +296,27 @@
 				80AD1F1C8835E646FC34F9C8 /* Audio.swift */,
 			);
 			path = AudioCapabilities;
+			sourceTree = "<group>";
+		};
+		7363AD5F25604311002BEF41 /* VoiceGallery */ = {
+			isa = PBXGroup;
+			children = (
+				7312624E252DD7900083F52C /* VoiceGallery.swift */,
+				7363C5B22530EDE400137BF3 /* VoiceRow.swift */,
+				735ABCDB2533A17900FF7BE4 /* ListeningView.swift */,
+				73352FCD253F257800959775 /* MySlider.swift */,
+				7363C5992530BE4500137BF3 /* FlagImage.swift */,
+			);
+			path = VoiceGallery;
+			sourceTree = "<group>";
+		};
+		7363AD6525604358002BEF41 /* Conversation */ = {
+			isa = PBXGroup;
+			children = (
+				73AD2826255452F50025B201 /* ConversationView.swift */,
+				73AD282C2554586A0025B201 /* VoiceView.swift */,
+			);
+			path = Conversation;
 			sourceTree = "<group>";
 		};
 		73E210CD253F6DBF001B74A9 /* importAudioShareExtension */ = {
