@@ -15,7 +15,7 @@ struct RecordButton: View {
     let radiusRecording: CGFloat
     let outerCircleSize: CGFloat
 
-    @Binding var recording: Bool
+    @Binding var isRecording: Bool
     @State var size: CGFloat!
     @State var radius: CGFloat!
     @State var color : Color!
@@ -31,14 +31,14 @@ struct RecordButton: View {
         _radius = State(initialValue: 100)
         _size = State(initialValue: sizeNotRecording)
         _color = State(initialValue: Color.gray)
-        _recording = isRecording
+        _isRecording = isRecording
     }
 
     var body: some View {
         VStack{
             Button(action: {
-                recording.toggle()
-                if (recording) {
+                isRecording.toggle()
+                if (isRecording) {
                     setUIToRecording()
                 } else {
                     setUIToNotRecording()
