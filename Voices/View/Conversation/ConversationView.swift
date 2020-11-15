@@ -19,27 +19,9 @@ struct ConversationView: View {
                 VoiceView(voice: voice)
             }
             Spacer()
-            if (!isRecording) {
-                Button(action: {audio.startRecording(); isRecording.toggle()}, label: {
-                    Image(systemName: "music.mic").font(.system(size: 200))
-                })
-            } else {
-                Button(
-                    action: {
-                        isRecording.toggle()
-                        audio.stopRecording()
-//                      CloudKitInterface.send()
-                        return
-                    },
-                    label: {
-                        Image(systemName: "stop.circle").font(.system(size: 200))
-                    })
+            RecordButton(scale: 0.6, isRecording: $isRecording).padding()
             }
-
-
-            
         }
-    }
 }
 
 struct ConversationView_Previews: PreviewProvider {

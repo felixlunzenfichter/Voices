@@ -30,6 +30,7 @@
 		735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */; };
 		735ABCF42533E1F800FF7BE4 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */; };
 		735ABCFF2533E84100FF7BE4 /* monstress.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 735ABCFE2533E84100FF7BE4 /* monstress.m4a */; };
+		7363AD9225615886002BEF41 /* RecordButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363AD9125615886002BEF41 /* RecordButton.swift */; };
 		7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5992530BE4500137BF3 /* FlagImage.swift */; };
 		7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5B22530EDE400137BF3 /* VoiceRow.swift */; };
 		73AD2827255452F50025B201 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD2826255452F50025B201 /* ConversationView.swift */; };
@@ -112,6 +113,7 @@
 		735ABCE12533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a"; sourceTree = "<group>"; };
 		735ABCF32533E1F800FF7BE4 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		735ABCFE2533E84100FF7BE4 /* monstress.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = monstress.m4a; sourceTree = "<group>"; };
+		7363AD9125615886002BEF41 /* RecordButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordButton.swift; sourceTree = "<group>"; };
 		7363C5992530BE4500137BF3 /* FlagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagImage.swift; sourceTree = "<group>"; };
 		7363C5B22530EDE400137BF3 /* VoiceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRow.swift; sourceTree = "<group>"; };
 		73AD2826255452F50025B201 /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; tabWidth = 4; };
@@ -315,6 +317,7 @@
 			children = (
 				73AD2826255452F50025B201 /* ConversationView.swift */,
 				73AD282C2554586A0025B201 /* VoiceView.swift */,
+				7363AD9125615886002BEF41 /* RecordButton.swift */,
 			);
 			path = Conversation;
 			sourceTree = "<group>";
@@ -603,6 +606,7 @@
 			files = (
 				73126259252DD7920083F52C /* Voices.xcdatamodeld in Sources */,
 				735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */,
+				7363AD9225615886002BEF41 /* RecordButton.swift in Sources */,
 				7358D19925430C84006EB739 /* file_system_interface.swift in Sources */,
 				73352FCE253F257800959775 /* MySlider.swift in Sources */,
 				73126256252DD7920083F52C /* Persistence.swift in Sources */,
