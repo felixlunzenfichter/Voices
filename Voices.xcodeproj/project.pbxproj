@@ -19,6 +19,7 @@
 		7312626F252DD7920083F52C /* VoicesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7312626E252DD7920083F52C /* VoicesUITests.swift */; };
 		73352ED52537E20300959775 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352ED42537E20300959775 /* Language.swift */; };
 		73352FCE253F257800959775 /* MySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352FCD253F257800959775 /* MySlider.swift */; };
+		7349311C2562A0C70097D26C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7349311B2562A0C70097D26C /* GoogleService-Info.plist */; };
 		7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
 		7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
@@ -104,6 +105,7 @@
 		73126270252DD7920083F52C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		73352ED42537E20300959775 /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
 		73352FCD253F257800959775 /* MySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MySlider.swift; sourceTree = "<group>"; };
+		7349311B2562A0C70097D26C /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		7358D0DD2540AFE9006EB739 /* Voices.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Voices.entitlements; sourceTree = "<group>"; };
 		7358D0E22540AFFE006EB739 /* importAudioShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = importAudioShareExtension.entitlements; sourceTree = "<group>"; };
 		7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPersistentContainer.swift; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 				735C4FED2537352100F48B04 /* View */,
 				735C4FE92537350700F48B04 /* Model */,
 				73126252252DD7920083F52C /* Preview Content */,
+				7349311B2562A0C70097D26C /* GoogleService-Info.plist */,
 			);
 			path = Voices;
 			sourceTree = "<group>";
@@ -464,6 +467,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7349311C2562A0C70097D26C /* GoogleService-Info.plist in Resources */,
 				73126254252DD7920083F52C /* Preview Assets.xcassets in Resources */,
 				735ABCE22533D8BC00FF7BE4 /* Fenneko laugh - Aggretsuko 5 languages comparison (mp3cut.net).m4a in Resources */,
 				735ABCFF2533E84100FF7BE4 /* monstress.m4a in Resources */,

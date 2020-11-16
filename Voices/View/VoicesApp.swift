@@ -7,6 +7,8 @@
 
 import SwiftUI
 import CoreData
+import Firebase
+
 
 @main
 struct VoicesApp: App {
@@ -18,6 +20,8 @@ struct VoicesApp: App {
         let managedObjectContext = persistenceController.container.viewContext
         let storage = VoiceStorage(managedObjectContext: managedObjectContext)
         self._voiceStorage = StateObject(wrappedValue: storage)
+        
+        FirebaseApp.configure()
     }
     
     var body: some Scene {

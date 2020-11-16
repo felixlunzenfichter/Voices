@@ -7,6 +7,8 @@ target 'Voices' do
 
   # Pods for Voices
   pod 'FlagKit'
+  pod 'Firebase/Firestore'
+  pod 'FirebaseFirestoreSwift'
 
   target 'VoicesTests' do
     inherit! :search_paths
