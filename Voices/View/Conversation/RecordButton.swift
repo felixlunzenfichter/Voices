@@ -16,11 +16,12 @@ struct RecordButton: View {
     let outerCircleSize: CGFloat
 
     @Binding var isRecording: Bool
+    @Binding var canSend: Bool
     @State var size: CGFloat!
     @State var radius: CGFloat!
     @State var color : Color!
     
-    init(scale: CGFloat, isRecording: Binding<Bool>) {
+    init(scale: CGFloat, isRecording: Binding<Bool>, canSend: Binding<Bool>) {
         self.scale = scale
         sizeNotRecording = 100 * scale
         radiusNotRecording = 100
@@ -32,6 +33,7 @@ struct RecordButton: View {
         _size = State(initialValue: sizeNotRecording)
         _color = State(initialValue: Color.gray)
         _isRecording = isRecording
+        _canSend = canSend
     }
 
     var body: some View {
@@ -42,6 +44,7 @@ struct RecordButton: View {
                     setUIToRecording()
                 } else {
                     setUIToNotRecording()
+                    canSend = true
                 }
             }, label: {
                 Text("")
@@ -70,7 +73,8 @@ struct RecordButton: View {
 
 struct RecordButton_Previews: PreviewProvider {
     @State static var isRecording = false
+    @State static var canSend = false
     static var previews: some View {
-        RecordButton(scale: 1, isRecording: $isRecording)
+        RecordButton(scale: 1, isRecording: $isRecording, canSend: $canSend)
     }
 }

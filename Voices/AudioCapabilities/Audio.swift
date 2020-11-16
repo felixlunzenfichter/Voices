@@ -9,9 +9,7 @@ class Audio {
 
     var recorder: AVAudioRecorder!
     var audioSession: AVAudioSession!
-
-
-
+    
     func startRecording() {
         
     }
