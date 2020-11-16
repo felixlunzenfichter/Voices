@@ -38,13 +38,13 @@ class ShareViewController: UIViewController {
             print(error)
         }
         
-        saveVoiceInFileSystem(voice: newVoice, voiceURL: voiceURL)
+        _ = saveVoiceInFileSystem(voice: newVoice, voiceURL: voiceURL)
     }
     
     override func viewDidLoad() {
         
         let context = getStorage().viewContext
-        var typeIdentifier = "com.apple.m4a-audio"
+        let typeIdentifier = "com.apple.m4a-audio"
         
         let content = extensionContext?.inputItems[0] as! NSExtensionItem
 
