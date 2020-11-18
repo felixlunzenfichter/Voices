@@ -21,7 +21,10 @@ struct RecordButton: View {
     @State var radius: CGFloat!
     @State var color : Color!
     
-    init(scale: CGFloat, isRecording: Binding<Bool>, canSend: Binding<Bool>) {
+    var startRecording: () -> ()
+    var pauseRecording: () -> ()
+    
+    init(scale: CGFloat, isRecording: Binding<Bool>, canSend: Binding<Bool>, startRecording: @escaping () -> (), pauseRecording: @escaping () -> ()) {
         self.scale = scale
         sizeNotRecording = 100 * scale
         radiusNotRecording = 100
@@ -34,6 +37,9 @@ struct RecordButton: View {
         _color = State(initialValue: Color.gray)
         _isRecording = isRecording
         _canSend = canSend
+        
+        self.startRecording = startRecording
+        self.pauseRecording = pauseRecording
     }
 
     var body: some View {
@@ -42,8 +48,10 @@ struct RecordButton: View {
                 isRecording.toggle()
                 if (isRecording) {
                     setUIToRecording()
+                    startRecording()
                 } else {
                     setUIToNotRecording()
+                    pauseRecording()
                     canSend = true
                 }
             }, label: {
@@ -75,6 +83,6 @@ struct RecordButton_Previews: PreviewProvider {
     @State static var isRecording = false
     @State static var canSend = false
     static var previews: some View {
-        RecordButton(scale: 1, isRecording: $isRecording, canSend: $canSend)
+        RecordButton(scale: 1, isRecording: $isRecording, canSend: $canSend, startRecording: {}, pauseRecording: {})
     }
 }

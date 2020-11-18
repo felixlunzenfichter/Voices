@@ -21,12 +21,12 @@ struct ConversationView: View {
             }
             ZStack{
                 HStack {
-                    RecordButton(scale: 0.6, isRecording: $isRecording, canSend: $canSend).padding()
+                    RecordButton(scale: 0.6, isRecording: $isRecording, canSend: $canSend, startRecording: audio.startRecording, pauseRecording: audio.stopRecording).padding()
                 }
                 if (canSend) {
                     HStack {
                         Spacer()
-                        Button(action: {canSend = false}, label: {
+                        Button(action: {canSend = false; audio.playVoice()}, label: {
                             Image(systemName: "arrow.up").font(.system(size: 70)).padding()
                         })
                     }
