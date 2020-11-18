@@ -19,7 +19,12 @@ struct VoiceGallery: View {
     var body: some View {
         NavigationView {
             if (voiceStorage.voices.count == 0) {
-                Text("No voices in your gallery. Go to the app where you want to import audio from. Then select the audio you want to import, select share and select this app as the app you want to share the audio with.").padding()
+                Text("No voices in your gallery. Go to the app where you want to import audio from. Then select the audio you want to import, select share and select this app as the app you want to share the audio with.")
+                    .padding()
+                    .navigationBarTitle(Text("Voices"))
+                    .navigationBarItems(trailing: NavigationLink(destination: ConversationView(voices: voiceStorage.voices)) {
+                        Text("Talk to Felix")
+                    })
             } else {
                 List {
                     ForEach(voiceStorage.voices) { voice in
