@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ConversationView: View {
     
-    let voices: [Voice]
+    let voices: [CloudVoice]!
     let audio: Audio = Audio()
     @State var isRecording = false
     @State var canSend = false
@@ -17,8 +17,9 @@ struct ConversationView: View {
     var body: some View {
         VStack {
             List(voices) { voice in
-                VoiceView(voice: voice)
+                CloudVoiceView(voice: voice)
             }
+            Divider()
             ZStack{
                 HStack {
                     RecordButton(scale: 0.6, isRecording: $isRecording, canSend: $canSend, startRecording: audio.startRecording, pauseRecording: audio.stopRecording).padding()
@@ -40,6 +41,6 @@ struct ConversationView_Previews: PreviewProvider {
     @StateObject static var voiceStorage : VoiceStorage = VoiceStorage(managedObjectContext: PersistenceController.preview.container.viewContext)
     
     static var previews: some View {
-        ConversationView(voices: voiceStorage.voices)
+        ConversationView(voices: [CloudVoice(transcript: "damn")])
     }
 }

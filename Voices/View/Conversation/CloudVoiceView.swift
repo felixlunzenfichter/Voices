@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct VoiceView: View {
+struct CloudVoiceView: View {
     
-    let voice: Voice
+    let voice: CloudVoice
     
     var body: some View {
         HStack {
@@ -27,6 +27,6 @@ struct VoiceView_Previews: PreviewProvider {
     @StateObject static var voiceStorage : VoiceStorage = VoiceStorage(managedObjectContext: PersistenceController.preview.container.viewContext)
     
     static var previews: some View {
-        VoiceView(voice: voiceStorage.voices.first!)
+        CloudVoiceView(voice: CloudVoice(transcript: "Ai que rrrico."))
     }
 }

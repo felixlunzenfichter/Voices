@@ -20,6 +20,7 @@
 		73352ED52537E20300959775 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352ED42537E20300959775 /* Language.swift */; };
 		73352FCE253F257800959775 /* MySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352FCD253F257800959775 /* MySlider.swift */; };
 		7349311C2562A0C70097D26C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7349311B2562A0C70097D26C /* GoogleService-Info.plist */; };
+		7349335B25665DA00097D26C /* CloudVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7349335A25665DA00097D26C /* CloudVoice.swift */; };
 		7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
 		7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
@@ -35,7 +36,7 @@
 		7363C59A2530BE4500137BF3 /* FlagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5992530BE4500137BF3 /* FlagImage.swift */; };
 		7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363C5B22530EDE400137BF3 /* VoiceRow.swift */; };
 		73AD2827255452F50025B201 /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD2826255452F50025B201 /* ConversationView.swift */; };
-		73AD282D2554586A0025B201 /* VoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD282C2554586A0025B201 /* VoiceView.swift */; };
+		73AD282D2554586A0025B201 /* CloudVoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD282C2554586A0025B201 /* CloudVoiceView.swift */; };
 		73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C71A1E2548577D0039CB8F /* StorageInterface.swift */; };
 		73C71A82254D8BA70039CB8F /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73C71A81254D8BA70039CB8F /* CloudKit.framework */; };
 		73C71AE5254EFB0F0039CB8F /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73C71A81254D8BA70039CB8F /* CloudKit.framework */; };
@@ -106,6 +107,7 @@
 		73352ED42537E20300959775 /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
 		73352FCD253F257800959775 /* MySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MySlider.swift; sourceTree = "<group>"; };
 		7349311B2562A0C70097D26C /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		7349335A25665DA00097D26C /* CloudVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoice.swift; sourceTree = "<group>"; };
 		7358D0DD2540AFE9006EB739 /* Voices.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Voices.entitlements; sourceTree = "<group>"; };
 		7358D0E22540AFFE006EB739 /* importAudioShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = importAudioShareExtension.entitlements; sourceTree = "<group>"; };
 		7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPersistentContainer.swift; sourceTree = "<group>"; };
@@ -119,7 +121,7 @@
 		7363C5992530BE4500137BF3 /* FlagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagImage.swift; sourceTree = "<group>"; };
 		7363C5B22530EDE400137BF3 /* VoiceRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRow.swift; sourceTree = "<group>"; };
 		73AD2826255452F50025B201 /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; tabWidth = 4; };
-		73AD282C2554586A0025B201 /* VoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceView.swift; sourceTree = "<group>"; };
+		73AD282C2554586A0025B201 /* CloudVoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoiceView.swift; sourceTree = "<group>"; };
 		73C71A1E2548577D0039CB8F /* StorageInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageInterface.swift; sourceTree = "<group>"; };
 		73C71A81254D8BA70039CB8F /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		73E210CC253F6DBF001B74A9 /* importAudioShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = importAudioShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -319,8 +321,9 @@
 			isa = PBXGroup;
 			children = (
 				73AD2826255452F50025B201 /* ConversationView.swift */,
-				73AD282C2554586A0025B201 /* VoiceView.swift */,
+				73AD282C2554586A0025B201 /* CloudVoiceView.swift */,
 				7363AD9125615886002BEF41 /* RecordButton.swift */,
+				7349335A25665DA00097D26C /* CloudVoice.swift */,
 			);
 			path = Conversation;
 			sourceTree = "<group>";
@@ -619,8 +622,9 @@
 				7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */,
 				7312624F252DD7900083F52C /* VoiceGallery.swift in Sources */,
 				7312624D252DD7900083F52C /* VoicesApp.swift in Sources */,
+				7349335B25665DA00097D26C /* CloudVoice.swift in Sources */,
 				7358D1082540E049006EB739 /* SpeechToText.swift in Sources */,
-				73AD282D2554586A0025B201 /* VoiceView.swift in Sources */,
+				73AD282D2554586A0025B201 /* CloudVoiceView.swift in Sources */,
 				73352ED52537E20300959775 /* Language.swift in Sources */,
 				7363C5B32530EDE400137BF3 /* VoiceRow.swift in Sources */,
 				73C71A1F2548577D0039CB8F /* StorageInterface.swift in Sources */,
