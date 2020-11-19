@@ -21,6 +21,7 @@
 		73352FCE253F257800959775 /* MySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73352FCD253F257800959775 /* MySlider.swift */; };
 		7349311C2562A0C70097D26C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7349311B2562A0C70097D26C /* GoogleService-Info.plist */; };
 		7349335B25665DA00097D26C /* CloudVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7349335A25665DA00097D26C /* CloudVoice.swift */; };
+		734933652566693A0097D26C /* voicesCloudStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734933642566693A0097D26C /* voicesCloudStorage.swift */; };
 		7358D0EF2540C275006EB739 /* Voices.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 73126257252DD7920083F52C /* Voices.xcdatamodeld */; };
 		7358D0FD2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
 		7358D0FE2540CAB1006EB739 /* CustomPersistentContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */; };
@@ -108,6 +109,7 @@
 		73352FCD253F257800959775 /* MySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MySlider.swift; sourceTree = "<group>"; };
 		7349311B2562A0C70097D26C /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		7349335A25665DA00097D26C /* CloudVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVoice.swift; sourceTree = "<group>"; };
+		734933642566693A0097D26C /* voicesCloudStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = voicesCloudStorage.swift; sourceTree = "<group>"; };
 		7358D0DD2540AFE9006EB739 /* Voices.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Voices.entitlements; sourceTree = "<group>"; };
 		7358D0E22540AFFE006EB739 /* importAudioShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = importAudioShareExtension.entitlements; sourceTree = "<group>"; };
 		7358D0FC2540CAB1006EB739 /* CustomPersistentContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPersistentContainer.swift; sourceTree = "<group>"; };
@@ -324,6 +326,7 @@
 				73AD282C2554586A0025B201 /* CloudVoiceView.swift */,
 				7363AD9125615886002BEF41 /* RecordButton.swift */,
 				7349335A25665DA00097D26C /* CloudVoice.swift */,
+				734933642566693A0097D26C /* voicesCloudStorage.swift */,
 			);
 			path = Conversation;
 			sourceTree = "<group>";
@@ -611,6 +614,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				734933652566693A0097D26C /* voicesCloudStorage.swift in Sources */,
 				73126259252DD7920083F52C /* Voices.xcdatamodeld in Sources */,
 				735ABCDC2533A17900FF7BE4 /* ListeningView.swift in Sources */,
 				7363AD9225615886002BEF41 /* RecordButton.swift in Sources */,
