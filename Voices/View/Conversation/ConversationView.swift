@@ -32,7 +32,7 @@ struct ConversationView: View {
                         })
                     }
                 }
-            }.animation(.easeInOut)
+            }
         }
     }
 }

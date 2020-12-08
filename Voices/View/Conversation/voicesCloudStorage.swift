@@ -59,7 +59,7 @@ class VoiceCloudStorage: ObservableObject {
         let todoFromFirestore = diff.document.data()
         print("removed \(todoFromFirestore["transcript"] ?? "default value")")
         #warning("Identify item to be removed by unique identifier.")
-        voices.removeAll(where: {todo in todo.transcript == todoFromFirestore["transcipt"] as! String})
+        voices.removeAll(where: {voice in voice.transcript == todoFromFirestore["transcript"] as! String })
     }
     
     func sendVoice(voice: CloudVoice) {
