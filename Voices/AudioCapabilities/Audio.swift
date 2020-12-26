@@ -12,9 +12,20 @@ class Audio: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var url = getVoiceURL()
     
-    override init() {
-        audioSession = AVAudioSession.sharedInstance()
 
+    
+    override init() {
+        super.init()
+        initializeAudioSession()
+    }
+    
+    fileprivate func initializeAudioSession() {
+        audioSession = AVAudioSession.sharedInstance()
+        configureAudioSession()
+        requestPermissionsForAudioSession()
+    }
+    
+    fileprivate func configureAudioSession() {
         do {
             try audioSession.setCategory(.playAndRecord)
             try audioSession.setMode(.spokenAudio)
@@ -22,7 +33,9 @@ class Audio: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
         } catch {
             print(error)
         }
-        
+    }
+    
+    fileprivate func requestPermissionsForAudioSession() {
         audioSession.requestRecordPermission({permissionsGranted in
             if (permissionsGranted) {
                 print("permissions Granted.")
@@ -30,11 +43,9 @@ class Audio: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
                 print("permissions denied to audio session.")
             }
         })
-        
     }
     
-    func startRecording() {
-        print("start")
+    fileprivate func initializeRecorder() {
         let settings = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
             AVSampleRateKey: 12000,
@@ -47,17 +58,18 @@ class Audio: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
         } catch {
             print(error)
         }
-        
+    }
+    
+    func startRecording() {
+        initializeRecorder()
         recorder.record()
     }
     
     func pausRecording() {
-        print("pause")
         recorder.pause()
     }
 
     func stopRecording() {
-        print("stop")
         recorder.stop()
     }
     
