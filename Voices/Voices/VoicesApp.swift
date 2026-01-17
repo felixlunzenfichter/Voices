@@ -45,15 +45,56 @@ struct ContentView: View {
     @State private var isRecording = false
 
     var body: some View {
+        RecordButton(isRecording: $isRecording)
+            .onChange(of: isRecording) { _, newValue in
+                if newValue {
+                    startRecording()
+                } else {
+                    stopRecording()
+                }
+            }
+    }
+
+    func startRecording() {
+        sendNotification(title: "Recording", body: "Started")
+    }
+
+    func stopRecording() {
+        sendNotification(title: "Recording", body: "Stopped")
+    }
+}
+
+struct RecordButton: View {
+    @Binding var isRecording: Bool
+
+    private static let circleSize: CGFloat = 100
+    private static let squareSize: CGFloat = circleSize / φ
+    private static let cornerRadius: CGFloat = squareSize / pow(φ, 4)
+
+    private static let animationDuration: CGFloat = 1 / φ
+    private static let animationBounce: CGFloat = 1 - 1 / φ
+
+    var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            withAnimation(.spring(duration: Self.animationDuration, bounce: Self.animationBounce)) {
                 isRecording.toggle()
             }
-            sendNotification(title: "Recording", body: isRecording ? "Started" : "Stopped")
         }) {
-            RoundedRectangle(cornerRadius: isRecording ? 8 : 35)
+            RoundedRectangle(cornerRadius: isRecording ? Self.cornerRadius : Self.circleSize / 2, style: .continuous)
                 .fill(Color.red)
-                .frame(width: isRecording ? 28 : 70, height: isRecording ? 28 : 70)
+                .frame(width: isRecording ? Self.squareSize : Self.circleSize, height: isRecording ? Self.squareSize : Self.circleSize)
+                .frame(width: Self.circleSize, height: Self.circleSize)
+                .overlay(
+                    Circle()
+                        .stroke(Color.red, lineWidth: 1)
+                        .frame(width: Self.circleSize, height: Self.circleSize)
+                )
+                .contentShape(Rectangle())
         }
     }
 }
+
+// MARK: - Constants
+
+let φ: CGFloat = (1 + sqrt(5)) / 2
+
