@@ -45,49 +45,99 @@ func sendNotification(title: String = "Voices", body: String = "") {
 }
 
 struct ContentView: View {
-    @State private var isRecording = false
-    @State private var isListening = false
+    @State private var db = Database()
+    @State private var chunkState = ChunkStateTracker()
+    @State private var audio: AudioEngine?
+
+    private var engine: AudioEngine {
+        audio!
+    }
 
     var body: some View {
-        HStack {
-            ListenButton(isListening: $isListening)
-            Spacer()
-            RecordButton(isRecording: $isRecording)
-        }
-        .padding(.horizontal, 40)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 60)
-        .onChange(of: isRecording) { _, newValue in
-            if newValue {
-                startRecording()
-            } else {
-                stopRecording()
+        ZStack(alignment: .bottom) {
+            if audio != nil {
+                // Message list
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .trailing, spacing: 12) {
+                            ForEach(db.recordings) { recording in
+                                messageRow(recording)
+                                    .id(recording.id)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 180)
+                    }
+                    .onChange(of: engine.currentlyPlayingChunkId) { _, newId in
+                        if let newId, let recording = db.recordings.first(where: { $0.chunks.contains { $0.id == newId } }) {
+                            withAnimation {
+                                proxy.scrollTo(recording.id, anchor: .center)
+                            }
+                        }
+                    }
+                }
+
+                // Controls
+                HStack {
+                    ListenButton(
+                        isListening: Binding(
+                            get: { engine.isPlaying },
+                            set: { newValue in
+                                if newValue {
+                                    engine.startPlaying()
+                                } else {
+                                    engine.stopPlaying()
+                                }
+                            }
+                        ),
+                        nothingToPlay: !engine.hasPlayable
+                    )
+                    Spacer()
+                    RecordButton(isRecording: Binding(
+                        get: { engine.isRecording },
+                        set: { newValue in
+                            if newValue {
+                                engine.startRecording()
+                            } else {
+                                engine.stopRecording()
+                                sendNotification(title: "Recording", body: "Stopped")
+                            }
+                        }
+                    ))
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 60)
             }
         }
-        .onChange(of: isListening) { _, newValue in
-            if newValue {
-                startListening()
-            } else {
-                stopListening()
+        .onAppear {
+            if audio == nil {
+                audio = AudioEngine(db: db, chunkState: chunkState)
             }
         }
     }
 
-    func startRecording() {
-        log("Recording started")
+    private func messageRow(_ recording: Recording) -> some View {
+        FlowLayout(spacing: 2) {
+            ForEach(recording.chunks) { chunk in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(chunkColor(chunkState.status(of: chunk.id)))
+                    .frame(width: 6, height: 30)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
     }
 
-    func stopRecording() {
-        log("Recording stopped")
-        sendNotification(title: "Recording", body: "Stopped")
-    }
-
-    func startListening() {
-        log("Listening started")
-    }
-
-    func stopListening() {
-        log("Listening stopped")
+    private func chunkColor(_ status: ChunkStatus) -> Color {
+        switch status {
+        case .recorded: return .gray
+        case .uploaded: return .purple
+        case .played:   return .blue
+        }
     }
 }
 
@@ -123,6 +173,7 @@ struct RecordButton: View {
 
 struct ListenButton: View {
     @Binding var isListening: Bool
+    var nothingToPlay: Bool = false
 
     private static let size: CGFloat = 100
 
@@ -132,9 +183,52 @@ struct ListenButton: View {
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
-                .foregroundColor(.blue)
+                .foregroundColor(nothingToPlay ? .purple : .blue)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
+        }
+    }
+}
+
+// MARK: - Flow Layout
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 2
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: maxWidth, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x: CGFloat = bounds.minX
+        var y: CGFloat = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX && x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: .unspecified)
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
         }
     }
 }
