@@ -43,16 +43,31 @@ func sendNotification(title: String = "Voices", body: String = "") {
 
 struct ContentView: View {
     @State private var isRecording = false
+    @State private var isListening = false
 
     var body: some View {
-        RecordButton(isRecording: $isRecording)
-            .onChange(of: isRecording) { _, newValue in
-                if newValue {
-                    startRecording()
-                } else {
-                    stopRecording()
-                }
+        HStack {
+            ListenButton(isListening: $isListening)
+            Spacer()
+            RecordButton(isRecording: $isRecording)
+        }
+        .padding(.horizontal, 40)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .padding(.bottom, 60)
+        .onChange(of: isRecording) { _, newValue in
+            if newValue {
+                startRecording()
+            } else {
+                stopRecording()
             }
+        }
+        .onChange(of: isListening) { _, newValue in
+            if newValue {
+                startListening()
+            } else {
+                stopListening()
+            }
+        }
     }
 
     func startRecording() {
@@ -61,6 +76,14 @@ struct ContentView: View {
 
     func stopRecording() {
         sendNotification(title: "Recording", body: "Stopped")
+    }
+
+    func startListening() {
+        sendNotification(title: "Listening", body: "Started")
+    }
+
+    func stopListening() {
+        sendNotification(title: "Listening", body: "Stopped")
     }
 }
 
@@ -90,6 +113,29 @@ struct RecordButton: View {
                         .frame(width: Self.circleSize, height: Self.circleSize)
                 )
                 .contentShape(Rectangle())
+        }
+    }
+}
+
+struct ListenButton: View {
+    @Binding var isListening: Bool
+
+    private static let circleSize: CGFloat = 100
+
+    private static let animationDuration: CGFloat = 1 / φ
+    private static let animationBounce: CGFloat = 1 - 1 / φ
+
+    var body: some View {
+        Button(action: {
+            withAnimation(.spring(duration: Self.animationDuration, bounce: Self.animationBounce)) {
+                isListening.toggle()
+            }
+        }) {
+            Image(systemName: isListening ? "pause.fill" : "play.fill")
+                .font(.system(size: Self.circleSize))
+                .foregroundColor(.blue)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: Self.circleSize, height: Self.circleSize)
         }
     }
 }
