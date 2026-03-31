@@ -26,6 +26,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UNUserNotificationCenter.current().delegate = notificationDelegate
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        Task { @MainActor in
+            log("App launched")
+        }
         return true
     }
 }
@@ -71,19 +74,20 @@ struct ContentView: View {
     }
 
     func startRecording() {
-        sendNotification(title: "Recording", body: "Started")
+        log("Recording started")
     }
 
     func stopRecording() {
+        log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
     }
 
     func startListening() {
-        sendNotification(title: "Listening", body: "Started")
+        log("Listening started")
     }
 
     func stopListening() {
-        sendNotification(title: "Listening", body: "Stopped")
+        log("Listening stopped")
     }
 }
 
