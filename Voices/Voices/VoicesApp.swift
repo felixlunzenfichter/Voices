@@ -120,22 +120,17 @@ struct RecordButton: View {
 struct ListenButton: View {
     @Binding var isListening: Bool
 
-    private static let circleSize: CGFloat = 100
-
-    private static let animationDuration: CGFloat = 1 / φ
-    private static let animationBounce: CGFloat = 1 - 1 / φ
+    private static let size: CGFloat = 100
 
     var body: some View {
         Button(action: {
-            withAnimation(.spring(duration: Self.animationDuration, bounce: Self.animationBounce)) {
-                isListening.toggle()
-            }
+            isListening.toggle()
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
-                .font(.system(size: Self.circleSize))
+                .font(.system(size: Self.size))
                 .foregroundColor(.blue)
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: Self.circleSize, height: Self.circleSize)
+                .frame(width: Self.size, height: Self.size)
         }
     }
 }
