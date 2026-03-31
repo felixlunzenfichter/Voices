@@ -47,4 +47,4 @@ grep '"device":"Felix'"'"'s iPhone"' ~/clawcontraw.log | tail -20
 grep '"isError":true' ~/clawcontraw.log | grep '"device":"Felix'"'"'s iPhone"' | tail -10
 ```
 
-A deploy is not verified until the logs confirm the app launched and no errors occurred.
+A deploy is not verified until the logs confirm the functionality we are trying to implement and no relevant errors occur.
