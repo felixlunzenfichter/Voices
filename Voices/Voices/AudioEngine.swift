@@ -6,16 +6,26 @@ import Observation
 final class AudioEngine {
     let db: Database
     var isRecording = false
+    var isPlaying = false
 
     private var engine = AVAudioEngine()
+    private var playerNode = AVAudioPlayerNode()
     private var activeRecordingId: UUID?
     private var chunkSeq = 0
+    private var playedChunkIds: Set<UUID> = []
+    private var playbackQueue: [(recording: Recording, chunk: Chunk)] = []
+    private var playbackFormat: AVAudioFormat?
 
     init(db: Database) {
         self.db = db
     }
 
+    func isPlayed(_ chunkId: UUID) -> Bool {
+        playedChunkIds.contains(chunkId)
+    }
+
     func startRecording() {
+        if isPlaying { stopPlaying() }
         let session = AVAudioSession.sharedInstance()
         do {
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -70,8 +80,93 @@ final class AudioEngine {
         db.insertChunk(recordingId: recordingId, id: UUID(), seq: seq, data: data)
     }
 
+    // MARK: - Playback
+
+    func startPlaying() {
+        if isRecording { stopRecording() }
+
+        playbackQueue = []
+        for recording in db.recordings {
+            for chunk in recording.chunks where !playedChunkIds.contains(chunk.id) {
+                playbackQueue.append((recording, chunk))
+            }
+        }
+        guard let first = playbackQueue.first else { return }
+
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setActive(true)
+        } catch {
+            logError("Audio session error: \(error)")
+            return
+        }
+
+        let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: Double(first.recording.sampleRate),
+            channels: AVAudioChannelCount(first.recording.channels),
+            interleaved: false
+        )!
+        playbackFormat = format
+
+        engine = AVAudioEngine()
+        playerNode = AVAudioPlayerNode()
+        engine.attach(playerNode)
+        engine.connect(playerNode, to: engine.mainMixerNode, format: format)
+
+        do {
+            try engine.start()
+            playerNode.play()
+            isPlaying = true
+            log("Playback started (\(playbackQueue.count) chunks)")
+            scheduleChunk(at: 0)
+            scheduleChunk(at: 1)
+        } catch {
+            logError("Playback engine error: \(error)")
+        }
+    }
+
+    func stopPlaying() {
+        playerNode.stop()
+        engine.stop()
+        isPlaying = false
+        log("Playback stopped")
+    }
+
+    private func scheduleChunk(at index: Int) {
+        guard index < playbackQueue.count,
+              let format = playbackFormat,
+              let buffer = dataToBuffer(playbackQueue[index].chunk.data, format: format) else { return }
+
+        let chunk = playbackQueue[index].chunk
+        playerNode.scheduleBuffer(buffer) { [weak self] in
+            Task { @MainActor in
+                guard let self, self.isPlaying else { return }
+                self.playedChunkIds.insert(chunk.id)
+                self.scheduleChunk(at: index + 2)
+                if index == self.playbackQueue.count - 1 {
+                    self.isPlaying = false
+                    log("Playback finished")
+                }
+            }
+        }
+    }
+
+    // MARK: - PCM Conversion
+
     private nonisolated func bufferToData(_ buffer: AVAudioPCMBuffer) -> Data {
         let floats = buffer.floatChannelData![0]
         return Data(bytes: floats, count: Int(buffer.frameLength) * MemoryLayout<Float>.size)
+    }
+
+    private nonisolated func dataToBuffer(_ data: Data, format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        let frames = UInt32(data.count / MemoryLayout<Float>.size)
+        guard let buf = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
+        buf.frameLength = frames
+        data.withUnsafeBytes { raw in
+            buf.floatChannelData![0].update(from: raw.bindMemory(to: Float.self).baseAddress!, count: Int(frames))
+        }
+        return buf
     }
 }

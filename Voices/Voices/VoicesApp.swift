@@ -44,51 +44,62 @@ func sendNotification(title: String = "Voices", body: String = "") {
     UNUserNotificationCenter.current().add(request)
 }
 
+// MARK: - View Model
+
+@Observable
+@MainActor
+final class ContentViewModel {
+    let db = Database()
+    private(set) var audio: AudioEngine!
+
+    init() {
+        audio = AudioEngine(db: db)
+    }
+
+    var recordings: [Recording] { db.recordings }
+    var isRecording: Bool { audio.isRecording }
+    var isPlaying: Bool { audio.isPlaying }
+
+    func startRecording() { audio.startRecording() }
+    func stopRecording() {
+        audio.stopRecording()
+        sendNotification(title: "Recording", body: "Stopped")
+    }
+    func startPlaying() { audio.startPlaying() }
+    func stopPlaying() { audio.stopPlaying() }
+    func isPlayed(_ chunkId: UUID) -> Bool { audio.isPlayed(chunkId) }
+}
+
 // MARK: - Content View
 
 struct ContentView: View {
-    @State private var db = Database()
-    @State private var audio: AudioEngine?
-    @State private var isListening = false
-
-    private var engine: AudioEngine { audio! }
+    @State private var vm = ContentViewModel()
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            if audio != nil {
-                ScrollView {
-                    LazyVStack(alignment: .trailing, spacing: 12) {
-                        ForEach(db.recordings) { recording in
-                            messageRow(recording)
-                        }
+            ScrollView {
+                LazyVStack(alignment: .trailing, spacing: 12) {
+                    ForEach(vm.recordings) { recording in
+                        messageRow(recording)
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 180)
                 }
+                .padding(.horizontal)
+                .padding(.bottom, 180)
+            }
 
-                HStack {
-                    ListenButton(isListening: $isListening)
-                    Spacer()
-                    RecordButton(isRecording: Binding(
-                        get: { engine.isRecording },
-                        set: { newValue in
-                            if newValue {
-                                engine.startRecording()
-                            } else {
-                                engine.stopRecording()
-                                sendNotification(title: "Recording", body: "Stopped")
-                            }
-                        }
-                    ))
-                }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 60)
+            HStack {
+                ListenButton(isListening: Binding(
+                    get: { vm.isPlaying },
+                    set: { $0 ? vm.startPlaying() : vm.stopPlaying() }
+                ))
+                Spacer()
+                RecordButton(isRecording: Binding(
+                    get: { vm.isRecording },
+                    set: { $0 ? vm.startRecording() : vm.stopRecording() }
+                ))
             }
-        }
-        .onAppear {
-            if audio == nil {
-                audio = AudioEngine(db: db)
-            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 60)
         }
     }
 
@@ -96,7 +107,7 @@ struct ContentView: View {
         FlowLayout(spacing: 2) {
             ForEach(recording.chunks) { chunk in
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.blue)
+                    .fill(vm.isPlayed(chunk.id) ? Color.blue : Color.purple)
                     .frame(width: 6, height: 30)
             }
         }
