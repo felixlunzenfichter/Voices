@@ -49,8 +49,6 @@ func sendNotification(title: String = "Voices", body: String = "") {
 struct ContentView: View {
     @State private var db = Database()
     @State private var audio: AudioEngine?
-    @State private var isListening = false
-
     private var engine: AudioEngine { audio! }
 
     var body: some View {
@@ -67,7 +65,10 @@ struct ContentView: View {
                 }
 
                 HStack {
-                    ListenButton(isListening: $isListening)
+                    ListenButton(isListening: Binding(
+                        get: { engine.isPlaying },
+                        set: { $0 ? engine.startPlaying() : engine.stopPlaying() }
+                    ))
                     Spacer()
                     RecordButton(isRecording: Binding(
                         get: { engine.isRecording },
