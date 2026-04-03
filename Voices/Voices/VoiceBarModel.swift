@@ -41,9 +41,9 @@ final class ChunkStore {
     private(set) var isListening = false
     private var listenTask: Task<Void, Never>?
 
-    /// Chunks of the in-progress (or most recent) recording — drives the strip.
-    var currentChunks: [ChunkEntry] {
-        recordings.last?.chunks ?? []
+    /// All chunks flattened — drives the strip.
+    var allChunks: [ChunkEntry] {
+        recordings.flatMap(\.chunks)
     }
 
     /// Any purple chunks waiting to be heard?
@@ -63,7 +63,7 @@ final class ChunkStore {
         guard !recordings.isEmpty else { return UUID() }
         let id = UUID()
         recordings[recordings.count - 1].chunks.append(ChunkEntry(id: id, status: .recorded))
-        activeIndex = recordings[recordings.count - 1].chunks.count - 1
+        activeIndex = allChunks.count - 1
         scheduleUpload(id)
         return id
     }
@@ -79,11 +79,17 @@ final class ChunkStore {
         listenTask = Task {
             while !Task.isCancelled {
                 guard let (ri, ci) = oldestUploaded() else { break }
+                activeIndex = globalIndex(ri, ci)
                 recordings[ri].chunks[ci].status = .listened
                 try? await Task.sleep(for: .milliseconds(100))
             }
+            activeIndex = nil
             isListening = false
         }
+    }
+
+    private func globalIndex(_ ri: Int, _ ci: Int) -> Int {
+        recordings[..<ri].reduce(0) { $0 + $1.chunks.count } + ci
     }
 
     func stopListening() {

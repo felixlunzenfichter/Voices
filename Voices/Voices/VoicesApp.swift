@@ -54,7 +54,7 @@ struct ContentView: View {
             MessageList(recordings: store.recordings)
 
             if isRecording || store.hasListenable {
-                ChunkStrip(chunks: store.currentChunks, activeIndex: store.activeIndex)
+                ChunkStrip(chunks: store.allChunks, activeIndex: store.activeIndex)
                     .padding(.bottom, 16)
                     .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
