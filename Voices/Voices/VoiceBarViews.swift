@@ -64,7 +64,7 @@ struct ChunkStrip: View {
 
     private func advance(toward goal: CGFloat) {
         if !seeded { displayOffset = goal; seeded = true; return }
-        if isScrubbing { displayOffset = goal; return }
+        if isScrubbing || activeIndex != nil { displayOffset = goal; return }
         let delta = goal - displayOffset
         if abs(delta) < 0.5 { displayOffset = goal }
         else { displayOffset += delta * Self.smoothing }
