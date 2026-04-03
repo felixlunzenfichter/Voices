@@ -54,7 +54,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            ChunkStrip(chunks: store.chunks)
+            ChunkStrip(chunks: store.chunks, activeId: store.activeId)
                 .padding(.bottom, 16)
 
             HStack {
@@ -94,6 +94,7 @@ struct ContentView: View {
     func stopRecording() {
         chunkTimer?.cancel()
         chunkTimer = nil
+        store.clearActive()
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
     }

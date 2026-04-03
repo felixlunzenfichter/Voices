@@ -24,6 +24,7 @@ extension ChunkStatus {
 @Observable
 final class ChunkStore {
     private(set) var chunks: [ChunkEntry] = []
+    private(set) var activeId: UUID?
 
     struct ChunkEntry: Identifiable {
         let id: UUID
@@ -35,9 +36,12 @@ final class ChunkStore {
     func appendRecorded() -> UUID {
         let id = UUID()
         chunks.append(ChunkEntry(id: id, status: .recorded))
+        activeId = id
         scheduleUpload(id)
         return id
     }
+
+    func clearActive() { activeId = nil }
 
     func setStatus(_ id: UUID, _ status: ChunkStatus) {
         guard let i = chunks.firstIndex(where: { $0.id == id }) else { return }
