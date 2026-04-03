@@ -22,8 +22,8 @@ if [ "$DEVICE_TYPE" = "ipad" ]; then
     DEVICE_NAME="iPad"
     DEVICE_FAMILY=2
 elif [ "$DEVICE_TYPE" = "iphone" ]; then
-    DEVICECTL_ID=$(xcrun devicectl list devices | grep "iPhone 17" | awk '{print $3}')
-    DEVICE_NAME="iPhone 17 Pro Max"
+    DEVICECTL_ID=$(xcrun devicectl list devices | grep "iPhone 12" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+    DEVICE_NAME="iPhone 12 Pro Max"
     DEVICE_FAMILY=1
 else
     echo "❌ Invalid device type: $DEVICE_TYPE"

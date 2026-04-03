@@ -47,16 +47,24 @@ func sendNotification(title: String = "Voices", body: String = "") {
 struct ContentView: View {
     @State private var isRecording = false
     @State private var isListening = false
+    @State private var store = ChunkStore()
+    @State private var chunkTimer: Task<Void, Never>?
 
     var body: some View {
-        HStack {
-            ListenButton(isListening: $isListening)
+        VStack(spacing: 0) {
             Spacer()
-            RecordButton(isRecording: $isRecording)
+
+            ChunkStrip(chunks: store.chunks)
+                .padding(.bottom, 16)
+
+            HStack {
+                ListenButton(isListening: $isListening)
+                Spacer()
+                RecordButton(isRecording: $isRecording)
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 60)
         }
-        .padding(.horizontal, 40)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 60)
         .onChange(of: isRecording) { _, newValue in
             if newValue {
                 startRecording()
@@ -75,9 +83,17 @@ struct ContentView: View {
 
     func startRecording() {
         log("Recording started")
+        chunkTimer = Task {
+            while !Task.isCancelled {
+                store.appendRecorded()
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
     }
 
     func stopRecording() {
+        chunkTimer?.cancel()
+        chunkTimer = nil
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
     }
