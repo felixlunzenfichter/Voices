@@ -58,6 +58,7 @@ struct ContentView: View {
                     chunks: store.allChunks,
                     activeIndex: store.activeIndex,
                     onScrubStart: { stopAllForScrub() },
+                    onScrubMove: { index in store.previewScrub(index) },
                     onScrubEnd: { index in store.scrubTo(index) }
                 )
                     .padding(.bottom, 16)

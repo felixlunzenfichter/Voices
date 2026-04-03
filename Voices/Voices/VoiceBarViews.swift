@@ -11,6 +11,7 @@ struct ChunkStrip: View {
     let chunks: [ChunkEntry]
     var activeIndex: Int?
     var onScrubStart: (() -> Void)?
+    var onScrubMove: ((Int) -> Void)?
     var onScrubEnd: ((Int) -> Void)?
 
     @State private var dragOffset: CGFloat = 0
@@ -52,6 +53,7 @@ struct ChunkStrip: View {
                             onScrubStart?()
                         }
                         dragOffset = value.translation.width
+                        onScrubMove?(scrubIndex(base: base, center: center, offset: dragOffset))
                     }
                     .onEnded { value in
                         let vel = (value.predictedEndTranslation.width - value.translation.width) / 0.25
@@ -75,17 +77,22 @@ struct ChunkStrip: View {
                 try? await Task.sleep(for: .milliseconds(16))
                 dragOffset += vel * 0.016
                 vel *= Self.decel
+                onScrubMove?(scrubIndex(base: base, center: center, offset: dragOffset))
             }
             if !Task.isCancelled { settle(base: base, center: center, offset: dragOffset) }
         }
     }
 
     private func settle(base: CGFloat, center: CGFloat, offset: CGFloat) {
-        let idx = Int(round((center - base - offset) / step))
-        let clamped = max(0, min(chunks.count - 1, idx))
+        let clamped = scrubIndex(base: base, center: center, offset: offset)
         dragOffset = 0
         isScrubbing = false
         onScrubEnd?(clamped)
+    }
+
+    private func scrubIndex(base: CGFloat, center: CGFloat, offset: CGFloat) -> Int {
+        let idx = Int(round((center - base - offset) / step))
+        return max(0, min(chunks.count - 1, idx))
     }
 }
 
