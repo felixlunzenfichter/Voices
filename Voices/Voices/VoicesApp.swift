@@ -56,6 +56,7 @@ struct ContentView: View {
             if isRecording || store.hasListenable {
                 ChunkStrip(chunks: store.currentChunks, activeIndex: store.activeIndex)
                     .padding(.bottom, 16)
+                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
 
             HStack {
@@ -70,6 +71,7 @@ struct ContentView: View {
             .padding(.horizontal, 40)
             .padding(.bottom, 60)
         }
+        .animation(.easeInOut(duration: 0.3), value: store.hasListenable)
         .onChange(of: isRecording) { _, newValue in
             if newValue {
                 if store.isListening { store.stopListening() }
