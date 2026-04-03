@@ -1,27 +1,21 @@
 import SwiftUI
 
-// MARK: - Horizontal chunk strip
+// MARK: - Horizontal chunk strip (non-interactive, centered on active bar)
 
 private let barW: CGFloat = 6
 private let barH: CGFloat = 30
 private let gap: CGFloat = 2
-private let step: CGFloat = barW + gap  // 8pt per chunk
+private let step: CGFloat = barW + gap
 
 struct ChunkStrip: View {
-    let chunks: [ChunkStore.ChunkEntry]
+    let chunks: [ChunkEntry]
     var activeIndex: Int?
 
     var body: some View {
         GeometryReader { geo in
             let center = geo.size.width / 2
-            let offset: CGFloat = {
-                guard let i = activeIndex else {
-                    // No active bar — pin last chunk to center (or 0 if empty)
-                    let last = max(chunks.count - 1, 0)
-                    return center - CGFloat(last) * step
-                }
-                return center - CGFloat(i) * step
-            }()
+            let target = activeIndex ?? max(chunks.count - 1, 0)
+            let offset = center - CGFloat(target) * step
 
             HStack(spacing: gap) {
                 ForEach(chunks) { chunk in
@@ -36,5 +30,100 @@ struct ChunkStrip: View {
         }
         .frame(height: barH)
         .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Message list (scrollable, shows all recordings as flow-layout bubbles)
+
+struct MessageList: View {
+    let recordings: [Recording]
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(recordings) { recording in
+                        MessageBubble(recording: recording)
+                            .id(recording.id)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            .onChange(of: recordings.last?.chunks.count) {
+                if let id = recordings.last?.id {
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        proxy.scrollTo(id, anchor: .bottom)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct MessageBubble: View {
+    let recording: Recording
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(recording.createdAt, style: .time)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            FlowLayout(spacing: 2) {
+                ForEach(recording.chunks) { chunk in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(chunk.status.color)
+                        .frame(width: 6, height: 30)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.systemGray6))
+            )
+        }
+    }
+}
+
+// MARK: - FlowLayout (wrapping horizontal layout)
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 2
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: maxWidth, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x: CGFloat = bounds.minX
+        var y: CGFloat = bounds.minY
+        var rowHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX && x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: .unspecified)
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }

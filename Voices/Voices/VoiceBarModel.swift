@@ -18,43 +18,70 @@ extension ChunkStatus {
     }
 }
 
+// MARK: - Data
+
+struct ChunkEntry: Identifiable {
+    let id: UUID
+    var status: ChunkStatus
+}
+
+struct Recording: Identifiable {
+    let id: UUID
+    let createdAt: Date
+    var chunks: [ChunkEntry]
+}
+
 // MARK: - Store (single source of truth)
 
 @MainActor
 @Observable
 final class ChunkStore {
-    private(set) var chunks: [ChunkEntry] = []
-    private(set) var activeIndex: Int?
+    private(set) var recordings: [Recording] = []
+    private(set) var activeIndex: Int?  // index within current recording
 
-    struct ChunkEntry: Identifiable {
-        let id: UUID
-        var status: ChunkStatus
+    /// Chunks of the in-progress (or most recent) recording — drives the strip.
+    var currentChunks: [ChunkEntry] {
+        recordings.last?.chunks ?? []
     }
 
-    /// Append a freshly recorded chunk (grey). Returns its ID.
+    func startRecording() {
+        recordings.append(Recording(id: UUID(), createdAt: .now, chunks: []))
+        activeIndex = nil
+    }
+
     @discardableResult
-    func appendRecorded() -> UUID {
+    func appendChunk() -> UUID {
+        guard !recordings.isEmpty else { return UUID() }
         let id = UUID()
-        chunks.append(ChunkEntry(id: id, status: .recorded))
-        activeIndex = chunks.count - 1
+        recordings[recordings.count - 1].chunks.append(ChunkEntry(id: id, status: .recorded))
+        activeIndex = recordings[recordings.count - 1].chunks.count - 1
         scheduleUpload(id)
         return id
     }
 
-    func clearActive() { activeIndex = nil }
-
-    func setStatus(_ id: UUID, _ status: ChunkStatus) {
-        guard let i = chunks.firstIndex(where: { $0.id == id }) else { return }
-        chunks[i].status = status
+    func stopRecording() {
+        activeIndex = nil
     }
 
-    /// Mock upload: grey → purple after a short delay.
+    func setStatus(_ id: UUID, _ status: ChunkStatus) {
+        for ri in recordings.indices {
+            if let ci = recordings[ri].chunks.firstIndex(where: { $0.id == id }) {
+                recordings[ri].chunks[ci].status = status
+                return
+            }
+        }
+    }
+
     private func scheduleUpload(_ id: UUID) {
         Task {
             try? await Task.sleep(for: .seconds(3))
-            guard let i = chunks.firstIndex(where: { $0.id == id }),
-                  chunks[i].status == .recorded else { return }
-            chunks[i].status = .uploaded
+            for ri in recordings.indices {
+                if let ci = recordings[ri].chunks.firstIndex(where: { $0.id == id }),
+                   recordings[ri].chunks[ci].status == .recorded {
+                    recordings[ri].chunks[ci].status = .uploaded
+                    return
+                }
+            }
         }
     }
 }

@@ -52,9 +52,9 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
+            MessageList(recordings: store.recordings)
 
-            ChunkStrip(chunks: store.chunks, activeIndex: store.activeIndex)
+            ChunkStrip(chunks: store.currentChunks, activeIndex: store.activeIndex)
                 .padding(.bottom, 16)
 
             HStack {
@@ -83,9 +83,10 @@ struct ContentView: View {
 
     func startRecording() {
         log("Recording started")
+        store.startRecording()
         chunkTimer = Task {
             while !Task.isCancelled {
-                store.appendRecorded()
+                store.appendChunk()
                 try? await Task.sleep(for: .milliseconds(100))
             }
         }
@@ -94,7 +95,7 @@ struct ContentView: View {
     func stopRecording() {
         chunkTimer?.cancel()
         chunkTimer = nil
-        store.clearActive()
+        store.stopRecording()
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
     }
