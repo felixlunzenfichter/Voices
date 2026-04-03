@@ -52,7 +52,7 @@ struct ChunkStrip: View {
                             isScrubbing = true
                             onScrubStart?()
                         }
-                        dragOffset = value.translation.width
+                        dragOffset = clampDrag(value.translation.width, base: base, center: center)
                         onScrubMove?(scrubIndex(base: base, center: center, offset: dragOffset))
                     }
                     .onEnded { value in
@@ -82,7 +82,7 @@ struct ChunkStrip: View {
             var vel = startVel
             while !Task.isCancelled && abs(vel) > Self.minSpeed {
                 try? await Task.sleep(for: .milliseconds(16))
-                dragOffset += vel * 0.016
+                dragOffset = clampDrag(dragOffset + vel * 0.016, base: base, center: center)
                 vel *= Self.decel
                 onScrubMove?(scrubIndex(base: base, center: center, offset: dragOffset))
             }
@@ -95,6 +95,12 @@ struct ChunkStrip: View {
         dragOffset = 0
         isScrubbing = false
         onScrubEnd?(clamped)
+    }
+
+    private func clampDrag(_ raw: CGFloat, base: CGFloat, center: CGFloat) -> CGFloat {
+        let maxDrag = center - base                                                    // chunk 0 at center
+        let minDrag = center - CGFloat(max(chunks.count - 1, 0)) * step - base        // last chunk at center
+        return min(maxDrag, max(minDrag, raw))
     }
 
     private func scrubIndex(base: CGFloat, center: CGFloat, offset: CGFloat) -> Int {
