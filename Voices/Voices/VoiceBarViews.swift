@@ -15,8 +15,11 @@ struct ChunkStrip: View {
 
     @State private var dragOffset: CGFloat = 0
     @State private var isScrubbing = false
+    @State private var coastTask: Task<Void, Never>?
 
     private static let overscan = 20
+    private static let decel: CGFloat = 0.97      // per 16ms tick
+    private static let minSpeed: CGFloat = 30      // px/sec settle threshold
 
     var body: some View {
         GeometryReader { geo in
@@ -43,6 +46,7 @@ struct ChunkStrip: View {
             .gesture(chunks.isEmpty ? nil :
                 DragGesture()
                     .onChanged { value in
+                        coastTask?.cancel()
                         if !isScrubbing {
                             isScrubbing = true
                             onScrubStart?()
@@ -50,17 +54,38 @@ struct ChunkStrip: View {
                         dragOffset = value.translation.width
                     }
                     .onEnded { value in
-                        let final_ = base + value.translation.width
-                        let idx = Int(round((center - final_) / step))
-                        let clamped = max(0, min(chunks.count - 1, idx))
-                        dragOffset = 0
-                        isScrubbing = false
-                        onScrubEnd?(clamped)
+                        let vel = (value.predictedEndTranslation.width - value.translation.width) / 0.25
+                        if abs(vel) > Self.minSpeed * 3 {
+                            coast(velocity: vel, base: base, center: center)
+                        } else {
+                            settle(base: base, center: center, offset: value.translation.width)
+                        }
                     }
             )
         }
         .frame(height: barH)
         .padding(.vertical, 10)
+    }
+
+    private func coast(velocity startVel: CGFloat, base: CGFloat, center: CGFloat) {
+        coastTask?.cancel()
+        coastTask = Task { @MainActor in
+            var vel = startVel
+            while !Task.isCancelled && abs(vel) > Self.minSpeed {
+                try? await Task.sleep(for: .milliseconds(16))
+                dragOffset += vel * 0.016
+                vel *= Self.decel
+            }
+            if !Task.isCancelled { settle(base: base, center: center, offset: dragOffset) }
+        }
+    }
+
+    private func settle(base: CGFloat, center: CGFloat, offset: CGFloat) {
+        let idx = Int(round((center - base - offset) / step))
+        let clamped = max(0, min(chunks.count - 1, idx))
+        dragOffset = 0
+        isScrubbing = false
+        onScrubEnd?(clamped)
     }
 }
 
