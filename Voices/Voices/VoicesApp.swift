@@ -82,7 +82,11 @@ struct ContentView: View {
         if store.isListening {
             store.stopListening()
         } else {
-            if isRecording { isRecording = false }
+            if isRecording {
+                withAnimation(.spring(duration: 1/φ, bounce: 1 - 1/φ)) {
+                    isRecording = false
+                }
+            }
             store.startListening()
         }
     }
