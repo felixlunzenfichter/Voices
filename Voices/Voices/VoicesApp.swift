@@ -145,11 +145,7 @@ struct ListenButton: View {
     private static let size: CGFloat = 100
 
     private var icon: String { isListening ? "pause.fill" : "play.fill" }
-    private var tint: Color {
-        if isListening { return .purple }
-        if hasListenable { return .blue }
-        return .purple
-    }
+    private var tint: Color { hasListenable ? .blue : .purple }
 
     var body: some View {
         Button(action: onTap) {
