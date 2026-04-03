@@ -148,7 +148,7 @@ struct ListenButton: View {
     private var tint: Color {
         if isListening { return .purple }
         if hasListenable { return .blue }
-        return .gray
+        return .purple
     }
 
     var body: some View {
