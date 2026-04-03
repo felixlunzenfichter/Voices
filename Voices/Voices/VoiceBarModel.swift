@@ -38,11 +38,20 @@ struct Recording: Identifiable {
 final class ChunkStore {
     private(set) var recordings: [Recording] = []
     private(set) var activeIndex: Int?  // index within current recording
+    private(set) var isListening = false
+    private var listenTask: Task<Void, Never>?
 
     /// Chunks of the in-progress (or most recent) recording — drives the strip.
     var currentChunks: [ChunkEntry] {
         recordings.last?.chunks ?? []
     }
+
+    /// Any purple chunks waiting to be heard?
+    var hasListenable: Bool {
+        recordings.contains { $0.chunks.contains { $0.status == .uploaded } }
+    }
+
+    // MARK: Recording
 
     func startRecording() {
         recordings.append(Recording(id: UUID(), createdAt: .now, chunks: []))
@@ -63,14 +72,36 @@ final class ChunkStore {
         activeIndex = nil
     }
 
-    func setStatus(_ id: UUID, _ status: ChunkStatus) {
-        for ri in recordings.indices {
-            if let ci = recordings[ri].chunks.firstIndex(where: { $0.id == id }) {
-                recordings[ri].chunks[ci].status = status
-                return
+    // MARK: Listening (mock — walks purple chunks oldest-first)
+
+    func startListening() {
+        isListening = true
+        listenTask = Task {
+            while !Task.isCancelled {
+                guard let (ri, ci) = oldestUploaded() else { break }
+                recordings[ri].chunks[ci].status = .listened
+                try? await Task.sleep(for: .milliseconds(100))
             }
+            isListening = false
         }
     }
+
+    func stopListening() {
+        listenTask?.cancel()
+        listenTask = nil
+        isListening = false
+    }
+
+    private func oldestUploaded() -> (Int, Int)? {
+        for ri in recordings.indices {
+            if let ci = recordings[ri].chunks.firstIndex(where: { $0.status == .uploaded }) {
+                return (ri, ci)
+            }
+        }
+        return nil
+    }
+
+    // MARK: Private
 
     private func scheduleUpload(_ id: UUID) {
         Task {

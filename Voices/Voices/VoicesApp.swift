@@ -46,7 +46,6 @@ func sendNotification(title: String = "Voices", body: String = "") {
 
 struct ContentView: View {
     @State private var isRecording = false
-    @State private var isListening = false
     @State private var store = ChunkStore()
     @State private var chunkTimer: Task<Void, Never>?
 
@@ -58,7 +57,11 @@ struct ContentView: View {
                 .padding(.bottom, 16)
 
             HStack {
-                ListenButton(isListening: $isListening)
+                ListenButton(
+                    isListening: store.isListening,
+                    hasListenable: store.hasListenable,
+                    onTap: { toggleListening() }
+                )
                 Spacer()
                 RecordButton(isRecording: $isRecording)
             }
@@ -67,17 +70,20 @@ struct ContentView: View {
         }
         .onChange(of: isRecording) { _, newValue in
             if newValue {
+                if store.isListening { store.stopListening() }
                 startRecording()
             } else {
                 stopRecording()
             }
         }
-        .onChange(of: isListening) { _, newValue in
-            if newValue {
-                startListening()
-            } else {
-                stopListening()
-            }
+    }
+
+    func toggleListening() {
+        if store.isListening {
+            store.stopListening()
+        } else {
+            if isRecording { isRecording = false }
+            store.startListening()
         }
     }
 
@@ -98,14 +104,6 @@ struct ContentView: View {
         store.stopRecording()
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
-    }
-
-    func startListening() {
-        log("Listening started")
-    }
-
-    func stopListening() {
-        log("Listening stopped")
     }
 }
 
@@ -140,20 +138,28 @@ struct RecordButton: View {
 }
 
 struct ListenButton: View {
-    @Binding var isListening: Bool
+    let isListening: Bool
+    let hasListenable: Bool
+    let onTap: () -> Void
 
     private static let size: CGFloat = 100
 
+    private var icon: String { isListening ? "pause.fill" : "play.fill" }
+    private var tint: Color {
+        if isListening { return .purple }
+        if hasListenable { return .blue }
+        return .gray
+    }
+
     var body: some View {
-        Button(action: {
-            isListening.toggle()
-        }) {
-            Image(systemName: isListening ? "pause.fill" : "play.fill")
+        Button(action: onTap) {
+            Image(systemName: icon)
                 .font(.system(size: Self.size))
-                .foregroundColor(.blue)
+                .foregroundColor(tint)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
+        .disabled(!isListening && !hasListenable)
     }
 }
 
