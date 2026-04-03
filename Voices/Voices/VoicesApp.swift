@@ -54,7 +54,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            ChunkStrip(chunks: store.chunks, activeId: store.activeId)
+            ChunkStrip(chunks: store.chunks, activeIndex: store.activeIndex)
                 .padding(.bottom, 16)
 
             HStack {
