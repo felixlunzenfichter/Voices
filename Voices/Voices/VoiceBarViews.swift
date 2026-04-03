@@ -10,12 +10,18 @@ private let step: CGFloat = barW + gap
 struct ChunkStrip: View {
     let chunks: [ChunkEntry]
     var activeIndex: Int?
+    var onScrubStart: (() -> Void)?
+    var onScrubEnd: ((Int) -> Void)?
+
+    @State private var dragOffset: CGFloat = 0
+    @State private var isScrubbing = false
 
     var body: some View {
         GeometryReader { geo in
             let center = geo.size.width / 2
             let target = activeIndex ?? max(chunks.count - 1, 0)
-            let offset = center - CGFloat(target) * step
+            let base = center - CGFloat(target) * step
+            let offset = isScrubbing ? base + dragOffset : base
 
             HStack(spacing: gap) {
                 ForEach(chunks) { chunk in
@@ -25,12 +31,29 @@ struct ChunkStrip: View {
                 }
             }
             .offset(x: offset)
-            .animation(.easeOut(duration: 0.12), value: activeIndex)
-            .animation(.easeOut(duration: 0.12), value: chunks.count)
+            .animation(isScrubbing ? nil : .easeOut(duration: 0.12), value: activeIndex)
+            .animation(isScrubbing ? nil : .easeOut(duration: 0.12), value: chunks.count)
+            .gesture(chunks.isEmpty ? nil :
+                DragGesture()
+                    .onChanged { value in
+                        if !isScrubbing {
+                            isScrubbing = true
+                            onScrubStart?()
+                        }
+                        dragOffset = value.translation.width
+                    }
+                    .onEnded { value in
+                        let final_ = base + value.translation.width
+                        let idx = Int(round((center - final_) / step))
+                        let clamped = max(0, min(chunks.count - 1, idx))
+                        dragOffset = 0
+                        isScrubbing = false
+                        onScrubEnd?(clamped)
+                    }
+            )
         }
         .frame(height: barH)
         .padding(.vertical, 10)
-        .allowsHitTesting(false)
     }
 }
 

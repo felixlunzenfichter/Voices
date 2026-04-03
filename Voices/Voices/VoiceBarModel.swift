@@ -98,6 +98,21 @@ final class ChunkStore {
         isListening = false
     }
 
+    // MARK: Scrubbing
+
+    func scrubTo(_ globalIndex: Int) {
+        activeIndex = globalIndex
+        var gi = 0
+        for ri in recordings.indices {
+            for ci in recordings[ri].chunks.indices {
+                if recordings[ri].chunks[ci].status != .recorded {
+                    recordings[ri].chunks[ci].status = gi <= globalIndex ? .listened : .uploaded
+                }
+                gi += 1
+            }
+        }
+    }
+
     private func oldestUploaded() -> (Int, Int)? {
         for ri in recordings.indices {
             if let ci = recordings[ri].chunks.firstIndex(where: { $0.status == .uploaded }) {

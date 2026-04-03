@@ -54,7 +54,12 @@ struct ContentView: View {
             MessageList(recordings: store.recordings)
 
             if isRecording || store.hasListenable {
-                ChunkStrip(chunks: store.allChunks, activeIndex: store.activeIndex)
+                ChunkStrip(
+                    chunks: store.allChunks,
+                    activeIndex: store.activeIndex,
+                    onScrubStart: { stopAllForScrub() },
+                    onScrubEnd: { index in store.scrubTo(index) }
+                )
                     .padding(.bottom, 16)
                     .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
@@ -112,6 +117,15 @@ struct ContentView: View {
         store.stopRecording()
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
+    }
+
+    func stopAllForScrub() {
+        if isRecording {
+            withAnimation(.spring(duration: 1/φ, bounce: 1 - 1/φ)) {
+                isRecording = false
+            }
+        }
+        store.stopListening()
     }
 }
 
