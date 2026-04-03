@@ -67,6 +67,13 @@ struct ChunkStrip: View {
         }
         .frame(height: barH)
         .padding(.vertical, 10)
+        .onChange(of: activeIndex) {
+            if activeIndex != nil && isScrubbing {
+                coastTask?.cancel()
+                dragOffset = 0
+                isScrubbing = false
+            }
+        }
     }
 
     private func coast(velocity startVel: CGFloat, base: CGFloat, center: CGFloat) {
