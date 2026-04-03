@@ -29,6 +29,7 @@ struct ChunkStrip: View {
             .animation(.easeOut(duration: 0.12), value: chunks.count)
         }
         .frame(height: barH)
+        .padding(.vertical, 10)
         .allowsHitTesting(false)
     }
 }
