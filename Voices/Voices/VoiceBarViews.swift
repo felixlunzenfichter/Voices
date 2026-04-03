@@ -16,21 +16,29 @@ struct ChunkStrip: View {
     @State private var dragOffset: CGFloat = 0
     @State private var isScrubbing = false
 
+    private static let overscan = 20
+
     var body: some View {
         GeometryReader { geo in
             let center = geo.size.width / 2
             let target = activeIndex ?? max(chunks.count - 1, 0)
             let base = center - CGFloat(target) * step
+            let effectiveOffset = isScrubbing ? base + dragOffset : base
+
+            let lo = max(0, Int(floor(-effectiveOffset / step)) - Self.overscan)
+            let hi = min(chunks.count, Int(ceil((geo.size.width - effectiveOffset) / step)) + Self.overscan)
 
             TimelineView(.animation) { _ in
                 HStack(spacing: gap) {
-                    ForEach(chunks) { chunk in
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(chunk.status.color)
-                            .frame(width: barW, height: barH)
+                    if hi > lo {
+                        ForEach(chunks[lo..<hi]) { chunk in
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(chunk.status.color)
+                                .frame(width: barW, height: barH)
+                        }
                     }
                 }
-                .offset(x: isScrubbing ? base + dragOffset : base)
+                .offset(x: effectiveOffset + CGFloat(lo) * step)
             }
             .gesture(chunks.isEmpty ? nil :
                 DragGesture()
