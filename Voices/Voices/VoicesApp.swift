@@ -53,8 +53,10 @@ struct ContentView: View {
         VStack(spacing: 0) {
             MessageList(recordings: store.recordings)
 
-            ChunkStrip(chunks: store.currentChunks, activeIndex: store.activeIndex)
-                .padding(.bottom, 16)
+            if isRecording || store.hasListenable {
+                ChunkStrip(chunks: store.currentChunks, activeIndex: store.activeIndex)
+                    .padding(.bottom, 16)
+            }
 
             HStack {
                 ListenButton(
