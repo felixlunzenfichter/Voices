@@ -15,24 +15,30 @@ struct ChunkStrip: View {
 
     @State private var dragOffset: CGFloat = 0
     @State private var isScrubbing = false
+    @State private var displayOffset: CGFloat = 0
+    @State private var seeded = false
+
+    private static let smoothing: CGFloat = 0.25
 
     var body: some View {
         GeometryReader { geo in
             let center = geo.size.width / 2
             let target = activeIndex ?? max(chunks.count - 1, 0)
             let base = center - CGFloat(target) * step
-            let offset = isScrubbing ? base + dragOffset : base
+            let goal = isScrubbing ? base + dragOffset : base
 
-            HStack(spacing: gap) {
-                ForEach(chunks) { chunk in
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(chunk.status.color)
-                        .frame(width: barW, height: barH)
+            TimelineView(.animation) { _ in
+                let _ = advance(toward: goal)
+
+                HStack(spacing: gap) {
+                    ForEach(chunks) { chunk in
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(chunk.status.color)
+                            .frame(width: barW, height: barH)
+                    }
                 }
+                .offset(x: displayOffset)
             }
-            .offset(x: offset)
-            .animation(isScrubbing ? nil : .easeOut(duration: 0.12), value: activeIndex)
-            .animation(isScrubbing ? nil : .easeOut(duration: 0.12), value: chunks.count)
             .gesture(chunks.isEmpty ? nil :
                 DragGesture()
                     .onChanged { value in
@@ -54,6 +60,14 @@ struct ChunkStrip: View {
         }
         .frame(height: barH)
         .padding(.vertical, 10)
+    }
+
+    private func advance(toward goal: CGFloat) {
+        if !seeded { displayOffset = goal; seeded = true; return }
+        if isScrubbing { displayOffset = goal; return }
+        let delta = goal - displayOffset
+        if abs(delta) < 0.5 { displayOffset = goal }
+        else { displayOffset += delta * Self.smoothing }
     }
 }
 
