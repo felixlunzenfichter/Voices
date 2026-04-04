@@ -6,100 +6,68 @@ Practical test-driven development adapted to this repo's logging-first infrastru
 
 ## 1. The Voices TDD Loop
 
-Traditional iOS TDD uses XCTest/Swift Testing infrastructure. We use that secondarily. Our primary loop uses the WebSocket log server as the proof system.
+Primary loop uses the WebSocket log server as the proof system. Conventional test infrastructure is secondary.
 
-### Red — Failing log with trace
+### Step 1 — Error log with trace
 
-Add a `log()` or `logError()` call that proves the behavior doesn't exist yet. Run the app on device, filter by device name, observe the error/absence in `~/clawcontraw.log`.
+Add a `log()` or `logError()` that exposes the behavior gap. Run on device, watch `~/clawcontraw.log`.
 
 ```swift
 func startRecording() {
-    log("RED: startRecording called — expect chunk count to increase")
+    logError("TRACE: startRecording — chunk count = \(store.allChunks.count), expected >0")
     store.startRecording()
-    // ... existing code ...
-    log("RED: chunk count after start = \(store.allChunks.count)")  // expect 0 → should become >0
 }
 ```
 
 ```bash
-# Watch from Mac
 tail -f ~/clawcontraw.log | grep --line-buffered '"device":"Felix'"'"'s iPhone"'
 ```
 
-The log is the failing test. You see the wrong value (or an error) in the terminal.
+The log shows the wrong value or an error. That's your failing test.
 
-### Green — Successful log with trace
+### Step 2 — Success log with trace
 
-Write the minimum code to make the log show the correct value. Run again. The log now shows the right state.
+Write the minimum code to fix it. Run again. The log now shows the correct state.
 
 ```swift
 func appendChunk() -> UUID {
     // ... implementation ...
-    log("GREEN: appendChunk — total chunks now \(allChunks.count)")
+    log("TRACE: appendChunk — total chunks now \(allChunks.count)")
     return id
 }
 ```
 
-### Refactor — Remove traces, clean the diff
+### Step 3 — Cleanup: remove temporary traces for a clean PR
 
-Once behavior is confirmed, remove the temporary `log()` traces. The final PR diff contains no debugging logs — only the feature code and any permanent `log()`/`logError()` calls that belong in production.
+Delete all `TRACE:` logs. The final diff contains only the feature code and any permanent `log()`/`logError()` calls that belong in production.
 
 ```
-RED:      log("RED: ...")   → observe failure
-GREEN:    log("GREEN: ...") → observe success  
-REFACTOR: delete RED/GREEN traces → clean commit
+1. logError("TRACE: ...")  → observe failure on device
+2. log("TRACE: ...")       → observe success on device
+3. delete TRACE logs       → clean commit
 ```
-
-### Why this works for Voices
-
-| Property | Log-first TDD | XCTest TDD |
-|----------|---------------|------------|
-| Runs on real device | Yes — the only way we deploy | Simulator or device |
-| Proves real audio/network path | Yes — same binary, same hardware | Mocks required |
-| Visible from Mac | Yes — `tail -f ~/clawcontraw.log` | Xcode test navigator |
-| Branch isolation | Filter by device name | Separate test target |
-| Speed | Build + run (~seconds) | Build + test (~seconds) |
-| Permanent artifact | Production logs stay; traces removed | Test files stay forever |
-
-The log server at `ws://felixs-macbook-pro.tailcfdca5.ts.net:9998` is shared across all devices and branches. Filter by `"device"` field to isolate one phone's logs from another.
 
 ---
 
-## 2. Red-Green-Refactor in Detail
-
-From *iOS TDD by Tutorials* (Greene & Katz, Kodeco), adapted:
-
-**RED** — Write the assertion first. In our case, add a `log()` that shows current state before the feature exists. Compilation failures also count as red. The point: you see proof of the gap before writing any implementation.
-
-**GREEN** — Write the *bare minimum* code to close the gap. Not the elegant version. Not the general version. The minimum that makes the log show the right value. If you write more, your proof falls behind your code.
-
-**REFACTOR** — Now improve. Extract duplicates, rename for clarity, move logic to the right layer. All logs still show correct values after refactoring. Then remove the temporary traces so the commit is clean.
-
-Rules from the book, applied here:
+## 2. Rules (from *iOS TDD by Tutorials*, adapted)
 
 | Rule | Application |
 |------|-------------|
-| Test before code | `log()` the expected state before implementing |
+| Prove the gap before coding | `logError()` the expected state before implementing |
 | Bare minimum to pass | Smallest change that makes the log correct |
 | All previous proofs hold | Re-run after each change, watch full log output |
-| Compilation errors = red | A type error is already a failing test |
-| Refactor both sides | Clean production code *and* remove temporary traces |
+| Compilation errors count as failures | A type error is already a failing test |
+| Clean up both sides | Production code *and* temporary traces |
 
-Source: Greene & Katz, *iOS Test-Driven Development by Tutorials*, Chapters 1-2.
+Source: Greene & Katz, Chapters 1-2.
 
 ---
 
 ## 3. Observable Architecture: Dumb Views, Smart View Models
 
-Voices already uses `@Observable` (`ChunkStore`). The migration direction: move all behavior out of views into `@Observable` view models. Views become pure rendering functions.
+`ChunkStore` is already `@MainActor @Observable` — good. `ContentView` still holds behavior (timer management, listening toggle, scrub coordination) that belongs in a view model.
 
-### Current state
-
-`ChunkStore` (in `VoiceBarModel.swift`) is the smart model — `@MainActor @Observable`, owns all state mutations. Good.
-
-`ContentView` (in `VoicesApp.swift`) currently holds behavior that belongs in a view model: recording timer management, listening toggle logic, scrub coordination. This logic can't be tested without launching the full UI.
-
-### Target architecture
+### Target
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -125,42 +93,19 @@ Voices already uses `@Observable` (`ChunkStore`). The migration direction: move 
 └──────────────────────────────────────────────────┘
 ```
 
-### How @Observable changes seams vs Combine/ObservableObject
+### @Observable vs Combine/ObservableObject
 
-With `@Observable`, plain `var` properties are automatically tracked. No `@Published`, no `$publisher` sink chains, no `AnyCancellable` storage. This makes view models simpler to write and test.
+Plain `var` properties are automatically tracked. No `@Published`, no sink chains, no `AnyCancellable`. Synchronous mutations are directly testable — mutate, then assert.
 
-**What you gain:**
-- Synchronous state mutations are directly testable — mutate, then assert. No observation machinery needed for simple cases.
-- Only properties *actually read* in a view's `body` trigger re-renders. Passing the whole view model to child views is fine.
-- No Combine import, no cancellable lifecycle management.
-
-**What to watch out for:**
-- `@Observable` is a macro on a class, not a protocol. You can't enforce it through a protocol at compile time. If a class conforms to your protocol without `@Observable`, observation silently fails. ([Swift Forums](https://forums.swift.org/t/enforce-observable-through-a-protocol/72984))
-- `withObservationTracking` is one-shot — fires once and stops. For continuous observation outside SwiftUI, use Swift 6.2's `Observations` type (an `AsyncSequence`). ([Use Your Loaf](https://useyourloaf.com/blog/swift-observations-asyncsequence-for-state-changes/))
-- `@Observable` doesn't enforce main-thread updates. But SwiftUI expects them. Always pair with `@MainActor` on view models that drive UI. Off-main mutations compile without warnings but can crash at runtime. ([Fatbobman](https://fatbobman.com/en/posts/mastering-observation/))
-- `@State` with `@Observable` calls the initializer every view hierarchy rebuild (unlike `@StateObject` which deferred). SwiftUI preserves the original instance, but intermediate instances can leak. ([Jesse Squires](https://www.jessesquires.com/blog/2024/09/09/swift-observable-macro/))
-
-Sources: [Jacob Bartlett - Unit Test the Observation Framework](https://blog.jacobstechtavern.com/p/unit-test-the-observation-framework); [Fatbobman - Deep Dive Into Observation](https://fatbobman.com/en/posts/mastering-observation/); [Jared Sinclair - We Need to Talk About Observation (Sept 2025)](https://jaredsinclair.com/2025/09/10/observation.html).
+**Gotchas:**
+- `@Observable` is a macro on a class, not a protocol. Can't be enforced through protocols — observation silently fails if missing. ([Swift Forums](https://forums.swift.org/t/enforce-observable-through-a-protocol/72984))
+- `withObservationTracking` is one-shot. For continuous observation outside SwiftUI, use Swift 6.2's `Observations` AsyncSequence. ([Use Your Loaf](https://useyourloaf.com/blog/swift-observations-asyncsequence-for-state-changes/))
+- Always pair with `@MainActor` on UI-driving view models. Off-main mutations crash at runtime without compiler warnings. ([Fatbobman](https://fatbobman.com/en/posts/mastering-observation/))
+- `@State` with `@Observable` calls the initializer every view rebuild. SwiftUI preserves the original instance but intermediate ones can leak. ([Jesse Squires](https://www.jessesquires.com/blog/2024/09/09/swift-observable-macro/))
 
 ### Dumb view pattern
 
-A dumb view takes data and callbacks. No `@State` for business logic. No `Task` creation.
-
-```swift
-// DUMB: data in, callbacks out
-struct ChunkStrip: View {
-    let chunks: [ChunkEntry]
-    var activeIndex: Int?
-    var onScrubStart: (() -> Void)?
-    var onScrubMove: ((Int) -> Void)?
-    var onScrubEnd: ((Int) -> Void)?
-    // body renders from data, routes gestures to callbacks
-}
-```
-
-`ChunkStrip`, `MessageList`, `RecordButton`, and `ListenButton` already follow this pattern.
-
-The work is moving the logic currently in `ContentView` (timer management, recording/listening coordination) into a view model.
+Data in, callbacks out. No `@State` for business logic, no `Task` creation. `ChunkStrip`, `MessageList`, `RecordButton`, `ListenButton` already follow this pattern.
 
 ### Smart view model pattern
 
@@ -202,60 +147,24 @@ final class VoicesViewModel {
 }
 ```
 
-### Testing @Observable view models
+### Testing @Observable view models (optional, secondary)
 
-**Simple state tests — synchronous, no observation tracking needed:**
+Synchronous state tests need no observation tracking:
 ```swift
 @Test func toggleRecordingStartsRecording() {
     let vm = VoicesViewModel(store: ChunkStore())
     vm.toggleRecording()
     #expect(vm.isRecording == true)
-    #expect(vm.store.recordings.count == 1)
 }
 ```
 
-**Side-effect verification — inject a mock, check it was called:**
-```swift
-@Test func stopRecordingLogsMessage() async {
-    let vm = VoicesViewModel(store: ChunkStore())
-    vm.toggleRecording()   // start
-    vm.toggleRecording()   // stop
-    #expect(vm.isRecording == false)
-}
-```
-
-**Async operations — use `await` directly:**
-```swift
-@Test func appendChunkIncreasesCount() async throws {
-    let store = ChunkStore()
-    store.startRecording()
-    store.appendChunk()
-    #expect(store.allChunks.count == 1)
-}
-```
-
-**`@MainActor` caveat:** Since our view models are `@MainActor`, Swift Testing runs these tests serially on the main actor. This prevents in-process parallelization but matches the real execution model. For this codebase, correctness matters more than test speed. ([Swift Forums](https://forums.swift.org/t/improving-swift-testing-performance-for-mainactor-observable-view-models/84733))
-
-Source: [Jacob Bartlett - Unit Test the Observation Framework](https://blog.jacobstechtavern.com/p/unit-test-the-observation-framework); [ObservationTestUtils](https://github.com/jacobsapps/ObservationTestUtils).
+`@MainActor` view models force serial test execution in Swift Testing — no in-process parallelization. Acceptable for this codebase. ([Swift Forums](https://forums.swift.org/t/improving-swift-testing-performance-for-mainactor-observable-view-models/84733))
 
 ---
 
-## 4. Dependency Injection for Testability
+## 4. Dependency Injection
 
-The view model's dependencies are injected via `init`, with real defaults for production:
-
-```swift
-@Observable @MainActor
-final class VoicesViewModel {
-    let store: ChunkStore
-
-    init(store: ChunkStore = ChunkStore()) {
-        self.store = store
-    }
-}
-```
-
-For services behind protocols (network, audio):
+Inject *dependencies* behind protocols via `init`. The view model itself stays concrete (sidesteps the `@Observable`-can't-be-enforced-through-protocols problem).
 
 ```swift
 protocol AudioRecorder {
@@ -275,18 +184,7 @@ final class VoicesViewModel {
 }
 ```
 
-In tests, inject a mock:
-```swift
-struct MockRecorder: AudioRecorder {
-    var startCallCount = 0
-    func start() async throws { startCallCount += 1 }
-    func stop() -> Data { Data() }
-}
-```
-
-**Don't put the view model behind a protocol.** Inject its *dependencies* behind protocols. The view model itself is concrete. This sidesteps the problem that `@Observable` can't be enforced through protocols.
-
-For macro-generated mocks, [@Spyable](https://github.com/Matejkob/swift-spyable) generates spy classes from protocols automatically. Useful when the number of protocols grows.
+For macro-generated mocks, [@Spyable](https://github.com/Matejkob/swift-spyable) generates spy classes from protocols automatically.
 
 Source: [Michal Cichon - DI Patterns in Swift (Nov 2025)](https://michalcichon.github.io/software-development/2025/11/25/dependency-injection-patterns-in-swift.html); Greene & Katz Ch. 6.
 
@@ -294,63 +192,41 @@ Source: [Michal Cichon - DI Patterns in Swift (Nov 2025)](https://michalcichon.g
 
 ## 5. Characterization Tests for Existing Code
 
-Before refactoring any existing code, lock in its current behavior:
+Before refactoring, lock in current behavior:
 
-1. Pick the function you need to change.
-2. Add a `log()` that captures the actual output.
-3. Run. Observe what the code *actually does* (not what you think it does).
-4. Now you have a baseline. Any refactoring that changes the log output is a regression.
-
-Example — characterizing `previewScrub` before refactoring:
+1. Add `log()` calls that capture actual output of the function you'll change.
+2. Run. Observe what the code *actually does*.
+3. That log output is your baseline — any refactoring that changes it is a regression.
+4. Remove traces when done.
 
 ```swift
 func previewScrub(_ globalIndex: Int) {
-    log("previewScrub(\(globalIndex)) — before: \(allChunks.map { $0.status })")
+    log("TRACE: previewScrub(\(globalIndex)) before: \(allChunks.map { $0.status })")
     // ... existing logic ...
-    log("previewScrub(\(globalIndex)) — after: \(allChunks.map { $0.status })")
+    log("TRACE: previewScrub(\(globalIndex)) after: \(allChunks.map { $0.status })")
 }
 ```
 
-Run the app, scrub around, capture the log output. Now you know exactly what `previewScrub` does for various inputs. Refactor safely. Remove traces when done.
-
-For conventional test infrastructure (optional, secondary):
-```swift
-@Test("previewScrub marks chunks up to index as listened")
-func previewScrubBehavior() {
-    let store = ChunkStore()
-    store.startRecording()
-    store.appendChunk()
-    store.appendChunk()
-    // Simulate upload
-    // store.previewScrub(0)
-    // #expect(store.allChunks[0].status == .listened)
-}
-```
-
-Source: Michael Feathers, *Working Effectively with Legacy Code*; Greene & Katz Section IV.
+Source: Feathers, *Working Effectively with Legacy Code*; Greene & Katz Section IV.
 
 ---
 
-## 6. Incremental Migration Strategy
+## 6. Incremental Migration
 
-### Do not rewrite. Test at the point of change.
+Do not rewrite. Add tests only where you're already making changes.
 
-1. **Bug fixes first.** Add a `log()` that reproduces the bug. Fix it. Log shows correct value. Remove trace. This is the lowest-friction TDD entry point. ([SwiftLee](https://www.avanderlee.com/workflow/test-driven-development-tdd-for-bug-fixes-in-swift/))
+1. **Bug fixes** — add a `logError()` trace that reproduces the bug, fix it, log shows correct value, remove trace. Lowest friction entry. ([SwiftLee](https://www.avanderlee.com/workflow/test-driven-development-tdd-for-bug-fixes-in-swift/))
+2. **New features** — TDD from scratch.
+3. **Extract and test** — pull logic out of `ContentView` into a view model. Testable via traces and optionally Swift Testing.
+4. **Sprout Method** — new tested function, called from legacy code at a single insertion point.
+5. **Wrap Method** — rename original (`startRecording` → `_startRecordingCore`), new method calls core + new logic.
 
-2. **New features get TDD from scratch.** Green-field code within the existing project.
-
-3. **Extract and test.** Pull logic out of `ContentView` into `VoicesViewModel`. The view becomes a thin rendering shell. The view model is testable via `log()` traces and optionally via Swift Testing.
-
-4. **Sprout Method.** Write new logic in a separate, fully-tested function. Call it from legacy code with a single insertion point. Minimal change to untested code.
-
-5. **Wrap Method.** Rename the original (e.g., `startRecording` → `_startRecordingCore`). New method with original name calls core + new tested logic.
-
-Source: Feathers, *Working Effectively with Legacy Code*; [Understanding Legacy Code](https://understandlegacycode.com/blog/key-points-of-working-effectively-with-legacy-code/).
+Source: Feathers, *Working Effectively with Legacy Code*.
 
 ### Seams in Swift
 
-| Seam type | Swift equivalent | When to use |
-|-----------|-----------------|-------------|
+| Seam type | Swift equivalent | Use case |
+|-----------|-----------------|----------|
 | Object seam | Protocol conformance | Primary. Extract protocol from `WSConnection`, inject mock. |
 | Link seam | Module/target boundary | Test target links mock implementation. |
 | Preprocessing seam | `#if DEBUG` / `#if TESTING` | Escape hatch for hard-to-inject deps. |
@@ -359,15 +235,7 @@ Source: Feathers, *Working Effectively with Legacy Code*; [Understanding Legacy 
 
 ## 7. Conventional Test Infrastructure (Secondary)
 
-XCTest and Swift Testing are available for unit/integration tests when needed. They are not the primary workflow but complement logging-based proof.
-
-### When to use formal tests
-
-- Pure logic functions with many edge cases (chunk index math, scrub clamping).
-- Regression tests for bugs that were hard to reproduce.
-- Anything that needs to run in CI without a device.
-
-### Swift Testing basics
+Use when logging-based proof isn't enough: pure logic with many edge cases, CI without a device, hard-to-reproduce regressions.
 
 ```swift
 import Testing
@@ -388,15 +256,9 @@ func appendChunks(count: Int) {
 }
 ```
 
-Two macros replace 40+ `XCTAssert` functions:
-- `#expect(condition)` — soft assertion, continues on failure.
-- `try #require(value)` — hard assertion, stops the test. Also unwraps optionals.
+`#expect(condition)` — continues on failure. `try #require(value)` — stops the test, also unwraps optionals. Both XCTest and Swift Testing coexist in one target.
 
-### Coexistence
-
-Both XCTest and Swift Testing work in the same target. New tests use Swift Testing. UI tests stay on XCTest (`XCUIApplication`). Don't mix assertion styles in a single test.
-
-Sources: [Use Your Loaf - Migrating XCTest to Swift Testing](https://useyourloaf.com/blog/migrating-xctest-to-swift-testing/); WWDC24 [Meet Swift Testing](https://developer.apple.com/videos/play/wwdc2024/10179/); [Fatbobman - Mastering Swift Testing](https://fatbobman.com/en/posts/mastering-the-swift-testing-framework/).
+Sources: [Use Your Loaf](https://useyourloaf.com/blog/migrating-xctest-to-swift-testing/); WWDC24 [Meet Swift Testing](https://developer.apple.com/videos/play/wwdc2024/10179/).
 
 ---
 
@@ -423,30 +285,15 @@ Source: [Quality Coding - Unit Test Naming](https://qualitycoding.org/unit-test-
 
 ---
 
-## 9. Log-Based Branch Proof During Development
+## 9. Branch Proof Workflow
 
-During development on a feature branch, temporary `log()` traces act as proof that the feature works on real hardware:
-
-```swift
-// Development — temporary trace
-func startListening() {
-    log("PROOF: startListening — hasListenable=\(hasListenable), isListening=\(isListening)")
-    isListening = true
-    // ...
-}
-```
+During development, filter traces by device to isolate one branch's logs:
 
 ```bash
-# From Mac, watch the branch being tested on iPhone
-tail -f ~/clawcontraw.log | grep --line-buffered 'PROOF:'
+tail -f ~/clawcontraw.log | grep --line-buffered 'TRACE:'
 ```
 
-Before the PR is merged:
-1. All `PROOF:` / `RED:` / `GREEN:` traces are removed.
-2. Only permanent `log()` calls (app lifecycle, errors) remain.
-3. The commit diff is clean.
-
-This gives us the benefit of TDD's prove-then-implement discipline without coupling to a test runner that can't see real device behavior.
+Before merging: delete all `TRACE:` logs. Only permanent `log()`/`logError()` calls remain. The commit diff is clean.
 
 ---
 
