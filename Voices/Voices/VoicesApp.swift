@@ -45,54 +45,23 @@ func sendNotification(title: String = "Voices", body: String = "") {
 }
 
 struct ContentView: View {
-    @State private var isRecording = false
-    @State private var isListening = false
+    @State private var vm = VoicesViewModel()
 
     var body: some View {
         HStack {
-            ListenButton(isListening: $isListening)
+            ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
             Spacer()
-            RecordButton(isRecording: $isRecording)
+            RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
         }
         .padding(.horizontal, 40)
         .frame(maxHeight: .infinity, alignment: .bottom)
         .padding(.bottom, 60)
-        .onChange(of: isRecording) { _, newValue in
-            if newValue {
-                startRecording()
-            } else {
-                stopRecording()
-            }
-        }
-        .onChange(of: isListening) { _, newValue in
-            if newValue {
-                startListening()
-            } else {
-                stopListening()
-            }
-        }
-    }
-
-    func startRecording() {
-        log("Recording started")
-    }
-
-    func stopRecording() {
-        log("Recording stopped")
-        sendNotification(title: "Recording", body: "Stopped")
-    }
-
-    func startListening() {
-        log("Listening started")
-    }
-
-    func stopListening() {
-        log("Listening stopped")
     }
 }
 
 struct RecordButton: View {
-    @Binding var isRecording: Bool
+    let isRecording: Bool
+    let onTap: () -> Void
 
     private static let circleSize: CGFloat = 100
     private static let squareSize: CGFloat = circleSize / φ
@@ -104,7 +73,7 @@ struct RecordButton: View {
     var body: some View {
         Button(action: {
             withAnimation(.spring(duration: Self.animationDuration, bounce: Self.animationBounce)) {
-                isRecording.toggle()
+                onTap()
             }
         }) {
             RoundedRectangle(cornerRadius: isRecording ? Self.cornerRadius : Self.circleSize / 2, style: .continuous)
@@ -122,13 +91,14 @@ struct RecordButton: View {
 }
 
 struct ListenButton: View {
-    @Binding var isListening: Bool
+    let isListening: Bool
+    let onTap: () -> Void
 
     private static let size: CGFloat = 100
 
     var body: some View {
         Button(action: {
-            isListening.toggle()
+            onTap()
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
