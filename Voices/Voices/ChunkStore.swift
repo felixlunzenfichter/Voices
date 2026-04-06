@@ -60,38 +60,6 @@ final class ChunkStore {
         }
     }
 
-    // MARK: - Self-test (runs on device, proves behavior via logs)
 
-    #if DEBUG
-    static func selfTest() async {
-        let store = ChunkStore()
 
-        // TEST 1: startRecording creates one recording
-        store.startRecording()
-        if store.recordings.count == 1 {
-            log("TEST PASS: startRecording creates one recording (count=\(store.recordings.count))")
-        } else {
-            logError("TEST FAIL: startRecording should create one recording, got count=\(store.recordings.count)")
-        }
-
-        // TEST 2: appendChunk adds a chunk that can render as a bar
-        store.appendChunk()
-        if store.allChunks.count == 1 {
-            log("TEST PASS: appendChunk adds one chunk for bar rendering (count=\(store.allChunks.count))")
-        } else {
-            logError("TEST FAIL: appendChunk should add one chunk for bar rendering, got count=\(store.allChunks.count)")
-        }
-
-        // TEST 3: simulate 1 second of recording, then check upload
-        for _ in 0..<9 { store.appendChunk() }  // 10 chunks total
-        log("TEST: recorded 10 chunks, waiting 2s for upload...")
-        try? await Task.sleep(for: .seconds(2))
-        let uploaded = store.allChunks.filter { $0.status == .uploaded }.count
-        if uploaded > 0 {
-            log("TEST PASS: \(uploaded)/\(store.allChunks.count) chunks uploaded (bars should turn purple)")
-        } else {
-            logError("TEST FAIL: 0/\(store.allChunks.count) chunks uploaded — no color change, upload not implemented")
-        }
-    }
-    #endif
 }

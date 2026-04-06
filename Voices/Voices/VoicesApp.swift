@@ -28,9 +28,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         Task { @MainActor in
             log("App launched")
-            #if DEBUG
-            await ChunkStore.selfTest()
-            #endif
         }
         return true
     }
@@ -54,6 +51,11 @@ struct ContentView: View {
         VStack(spacing: 0) {
             ChunkBarStrip(chunks: vm.store.allChunks)
                 .frame(maxHeight: .infinity, alignment: .bottom)
+                .task {
+                    #if DEBUG
+                    await vm.selfTest()
+                    #endif
+                }
 
             HStack {
                 ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })

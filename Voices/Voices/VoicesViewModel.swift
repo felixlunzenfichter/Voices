@@ -67,4 +67,34 @@ final class VoicesViewModel {
         isListening = false
         log("Listening stopped")
     }
+
+    // MARK: - Self-test (drives real VM, visible in UI)
+
+    #if DEBUG
+    func selfTest() async {
+        log("TEST: pressing record...")
+        toggleRecording()
+
+        // Record for 1 second — bars appear on screen
+        try? await Task.sleep(for: .seconds(1))
+        let chunks = store.allChunks.count
+        if chunks > 0 {
+            log("TEST PASS: recording produced \(chunks) chunks (visible as gray bars)")
+        } else {
+            logError("TEST FAIL: recording produced 0 chunks")
+        }
+
+        log("TEST: pressing record again to stop...")
+        toggleRecording()
+
+        // Wait for uploads — bars should turn purple
+        try? await Task.sleep(for: .seconds(2))
+        let uploaded = store.allChunks.filter { $0.status == .uploaded }.count
+        if uploaded > 0 {
+            log("TEST PASS: \(uploaded)/\(chunks) chunks uploaded (bars turned purple)")
+        } else {
+            logError("TEST FAIL: 0/\(chunks) chunks uploaded — bars stayed gray")
+        }
+    }
+    #endif
 }
