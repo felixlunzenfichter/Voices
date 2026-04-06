@@ -181,9 +181,28 @@ final class VoicesViewModel {
             logError("TEST FAIL: scrub split wrong — listened 0-10: \(listenedAfterScrub)/11, uploaded 11+: \(uploadedAfterScrub)/\(expectedUploaded)")
         }
 
-        // Press listen — should replay from scrub point
-        log("TEST: pressing listen after scrub...")
+        // Press listen after scrub — should replay from chunk 11, centered there
+        log("TEST: pressing listen after scrub to 10...")
         toggleListening()
+        try? await Task.sleep(for: .milliseconds(500))
+
+        // activeIndex should be near 11 (first .uploaded), not 0 or 10
+        let replayIdx = store.activeIndex
+        if let idx = replayIdx, idx >= 11 && idx <= 15 {
+            log("TEST PASS: replay starts at activeIndex=\(idx) (near scrub point 11) — strip centered correctly")
+        } else {
+            logError("TEST FAIL: replay activeIndex=\(String(describing: replayIdx)) should be near 11 after scrub to 10 — strip not centered on replay start")
+        }
+
+        // Only chunks 11+ should be replaying — chunks 0-10 should still be .listened
+        let firstElevenStatus = store.allChunks.prefix(11).allSatisfy { $0.status == .listened }
+        if firstElevenStatus {
+            log("TEST PASS: chunks 0-10 stayed .listened during replay (not re-replayed)")
+        } else {
+            logError("TEST FAIL: chunks 0-10 were modified during replay — should stay .listened")
+        }
+
+        // Wait for full replay
         try? await Task.sleep(for: .seconds(6))
         let relistened = store.allChunks.filter { $0.status == .listened }.count
         if relistened == chunks {
