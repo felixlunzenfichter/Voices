@@ -170,12 +170,20 @@ final class VoicesViewModel {
             logError("TEST FAIL: button shows \(icon) but should show pause.fill — nothing left to play")
         }
 
-        // Button color should be purple (not blue) when nothing left to play
-        let tint: String = store.hasListenable ? "blue" : "purple"
-        if tint == "purple" {
-            log("TEST PASS: button is purple when nothing left to play")
+        // Button color should be blue when allHeard (everything heard once), even if nothing currently to play
+        let tint: String = (store.hasListenable || store.allHeard) ? "blue" : "purple"
+        let currentTint: String = store.hasListenable ? "blue" : "purple"
+        if currentTint == tint {
+            log("TEST PASS: button is \(currentTint) — matches expected")
         } else {
-            logError("TEST FAIL: button is \(tint) but should be purple — nothing left to play")
+            logError("TEST FAIL: button is \(currentTint) but should be \(tint) — allHeard=\(store.allHeard) means button should stay blue")
+        }
+
+        // allHeard should be true — we just listened to everything
+        if store.allHeard {
+            log("TEST PASS: allHeard=true before scrub — everything heard once")
+        } else {
+            logError("TEST FAIL: allHeard=false before scrub — should be true")
         }
 
         // Scrub to chunk 10 — should move activeIndex and reset chunks after 10 to .uploaded
@@ -185,6 +193,13 @@ final class VoicesViewModel {
             log("TEST PASS: activeIndex moved to 10 after scrub")
         } else {
             logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be 10 after scrub")
+        }
+
+        // allHeard should STILL be true after scrub — we heard everything once, scrub is just visual
+        if store.allHeard {
+            log("TEST PASS: allHeard=true after scrub — persistent database remembers")
+        } else {
+            logError("TEST FAIL: allHeard=false after scrub — scrub destroyed persistent listened state, need database")
         }
 
         // After scrub to 10: chunks 0-10 = .listened (blue), chunks 11+ = .uploaded (purple)
