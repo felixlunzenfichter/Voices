@@ -29,7 +29,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             log("App launched")
             #if DEBUG
-            ChunkStore.selfTest()
+            await ChunkStore.selfTest()
             #endif
         }
         return true
