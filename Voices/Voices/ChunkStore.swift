@@ -64,11 +64,17 @@ final class ChunkStore {
         listenTask = Task {
             while !Task.isCancelled {
                 guard let (ri, ci) = oldestUploaded() else { break }
+                activeIndex = globalIndex(ri, ci)
                 recordings[ri].chunks[ci].status = .listened
                 try? await Task.sleep(for: .milliseconds(100))
             }
+            activeIndex = nil
             isListening = false
         }
+    }
+
+    private func globalIndex(_ ri: Int, _ ci: Int) -> Int {
+        recordings[..<ri].reduce(0) { $0 + $1.chunks.count } + ci
     }
 
     func stopListening() {
