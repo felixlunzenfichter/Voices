@@ -95,6 +95,17 @@ final class VoicesViewModel {
         } else {
             logError("TEST FAIL: 0/\(chunks) chunks uploaded — bars stayed gray")
         }
+
+        // Press listen — bars should turn blue (.listened)
+        log("TEST: pressing listen...")
+        toggleListening()
+        try? await Task.sleep(for: .seconds(2))
+        let listened = store.allChunks.filter { $0.status == .listened }.count
+        if listened > 0 {
+            log("TEST PASS: \(listened)/\(chunks) chunks listened (bars turned blue)")
+        } else {
+            logError("TEST FAIL: 0/\(chunks) chunks listened — bars stayed purple, listening not implemented")
+        }
     }
     #endif
 }
