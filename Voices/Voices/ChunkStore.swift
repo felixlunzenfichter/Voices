@@ -22,7 +22,7 @@ final class ChunkStore {
     private(set) var recordings: [Recording] = []
 
     func startRecording() {
-        // Not implemented yet
+        recordings.append(Recording(id: UUID(), createdAt: .now, chunks: []))
     }
 
     // MARK: - Self-test (runs on device, proves behavior via logs)
