@@ -58,7 +58,7 @@ struct ContentView: View {
                 }
 
             HStack {
-                ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
+                ListenButton(isListening: vm.isListening, hasListenable: vm.store.hasListenable, onTap: { vm.toggleListening() })
                 Spacer()
                 RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
             }
@@ -101,9 +101,11 @@ struct RecordButton: View {
 
 struct ListenButton: View {
     let isListening: Bool
+    let hasListenable: Bool
     let onTap: () -> Void
 
     private static let size: CGFloat = 100
+    private var tint: Color { hasListenable ? .blue : .purple }
 
     var body: some View {
         Button(action: {
@@ -111,7 +113,7 @@ struct ListenButton: View {
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
-                .foregroundColor(.blue)
+                .foregroundColor(tint)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }

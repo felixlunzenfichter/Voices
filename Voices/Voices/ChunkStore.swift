@@ -31,7 +31,7 @@ final class ChunkStore {
 
     /// Any uploaded chunks waiting to be heard?
     var hasListenable: Bool {
-        true // Not implemented yet
+        recordings.contains { $0.chunks.contains { $0.status == .uploaded } }
     }
 
     /// All chunks flattened — drives the bar strip.
