@@ -60,10 +60,12 @@ final class VoicesViewModel {
             }
         }
         isListening = true
+        store.startListening()
         log("Listening started")
     }
 
     private func stopListening() {
+        store.stopListening()
         isListening = false
         log("Listening stopped")
     }

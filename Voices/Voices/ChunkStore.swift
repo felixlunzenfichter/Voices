@@ -47,6 +47,38 @@ final class ChunkStore {
         scheduleUpload(id)
     }
 
+    // MARK: Listening (walks uploaded chunks oldest-first)
+
+    private(set) var isListening = false
+    private var listenTask: Task<Void, Never>?
+
+    func startListening() {
+        isListening = true
+        listenTask = Task {
+            while !Task.isCancelled {
+                guard let (ri, ci) = oldestUploaded() else { break }
+                recordings[ri].chunks[ci].status = .listened
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            isListening = false
+        }
+    }
+
+    func stopListening() {
+        listenTask?.cancel()
+        listenTask = nil
+        isListening = false
+    }
+
+    private func oldestUploaded() -> (Int, Int)? {
+        for ri in recordings.indices {
+            if let ci = recordings[ri].chunks.firstIndex(where: { $0.status == .uploaded }) {
+                return (ri, ci)
+            }
+        }
+        return nil
+    }
+
     private func scheduleUpload(_ id: UUID) {
         Task {
             try? await Task.sleep(for: .seconds(1))
