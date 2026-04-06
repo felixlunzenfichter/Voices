@@ -79,7 +79,7 @@ final class ChunkStore {
                 db.markHeard(recordings[ri].chunks[ci].id)
                 try? await Task.sleep(for: .milliseconds(100))
             }
-            activeIndex = nil
+            activeIndex = self.lastListenedIndex()
             isListening = false
         }
     }
@@ -110,7 +110,13 @@ final class ChunkStore {
     func stopListening() {
         listenTask?.cancel()
         listenTask = nil
+        activeIndex = lastListenedIndex()
         isListening = false
+    }
+
+    private func lastListenedIndex() -> Int? {
+        let all = allChunks
+        return all.lastIndex { $0.status == .listened }
     }
 
     private func oldestUploaded() -> (Int, Int)? {
