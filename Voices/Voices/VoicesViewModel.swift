@@ -318,6 +318,32 @@ final class VoicesViewModel {
         } else {
             logError("TEST FAIL: allHeard=false after listening to both recordings")
         }
+
+        // Scrub freely when idle — scroll to beginning of first recording
+        log("TEST: scrubbing across both recordings...")
+        scrubTo(0)
+        if store.activeIndex == 0 {
+            log("TEST PASS: scrubbed to chunk 0 — strip scrolled to beginning")
+        } else {
+            logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be 0 after scrub")
+        }
+
+        // Scrub to middle of second recording
+        let midSecond = chunks + rec2Chunks / 2
+        scrubTo(midSecond)
+        if store.activeIndex == midSecond {
+            log("TEST PASS: scrubbed to chunk \(midSecond) — into second recording")
+        } else {
+            logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be \(midSecond)")
+        }
+
+        // Scrub to end
+        scrubTo(totalChunks - 1)
+        if store.activeIndex == totalChunks - 1 {
+            log("TEST PASS: scrubbed to last chunk \(totalChunks - 1) — strip at end")
+        } else {
+            logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be \(totalChunks - 1)")
+        }
     }
     #endif
 }

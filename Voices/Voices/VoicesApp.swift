@@ -56,7 +56,11 @@ struct ContentView: View {
                     #endif
                 }
 
-            ChunkBarStrip(chunks: vm.store.allChunks, activeIndex: vm.store.activeIndex)
+            ChunkBarStrip(
+                chunks: vm.store.allChunks,
+                activeIndex: vm.store.activeIndex,
+                onScrub: { index in vm.scrubTo(index) }
+            )
                 .padding(.bottom, 16)
 
             HStack {
@@ -125,17 +129,22 @@ struct ListenButton: View {
 struct ChunkBarStrip: View {
     let chunks: [ChunkEntry]
     var activeIndex: Int?
+    var onScrub: ((Int) -> Void)?
 
     static let barWidth: CGFloat = 6
     static let barHeight: CGFloat = 30
     static let gap: CGFloat = 2
     static let step: CGFloat = barWidth + gap
 
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
+
     var body: some View {
         GeometryReader { geo in
             let center = geo.size.width / 2
             let target = activeIndex ?? max(chunks.count - 1, 0)
-            let offset = center - CGFloat(target) * Self.step
+            let baseOffset = center - CGFloat(target) * Self.step
+            let effectiveOffset = isDragging ? baseOffset + dragOffset : baseOffset
 
             HStack(spacing: Self.gap) {
                 ForEach(chunks) { chunk in
@@ -144,11 +153,25 @@ struct ChunkBarStrip: View {
                         .frame(width: Self.barWidth, height: Self.barHeight)
                 }
             }
-            .offset(x: offset)
+            .offset(x: effectiveOffset)
+            .gesture(chunks.isEmpty || onScrub == nil ? nil :
+                DragGesture()
+                    .onChanged { value in
+                        isDragging = true
+                        dragOffset = value.translation.width
+                    }
+                    .onEnded { value in
+                        let idx = Int(round((center - baseOffset - value.translation.width) / Self.step))
+                        let clamped = max(0, min(chunks.count - 1, idx))
+                        dragOffset = 0
+                        isDragging = false
+                        onScrub?(clamped)
+                    }
+            )
             #if DEBUG
             .onChange(of: chunks.count) {
                 if let idx = activeIndex {
-                    let barPosition = offset + CGFloat(idx) * Self.step
+                    let barPosition = baseOffset + CGFloat(idx) * Self.step
                     let diff = abs(barPosition - center)
                     if diff > 1 {
                         logError("TEST FAIL: bar strip not centered — active bar at \(Int(barPosition))px, center at \(Int(center))px, diff \(Int(diff))px")
@@ -157,7 +180,7 @@ struct ChunkBarStrip: View {
             }
             .onChange(of: activeIndex) {
                 if let idx = activeIndex {
-                    let barPosition = offset + CGFloat(idx) * Self.step
+                    let barPosition = baseOffset + CGFloat(idx) * Self.step
                     let diff = abs(barPosition - center)
                     if diff > 1 {
                         logError("TEST FAIL: bar strip not centered — active bar at \(Int(barPosition))px, center at \(Int(center))px, diff \(Int(diff))px")
