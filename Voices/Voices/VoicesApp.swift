@@ -59,8 +59,8 @@ struct ContentView: View {
             ChunkBarStrip(
                 chunks: vm.store.allChunks,
                 activeIndex: vm.store.activeIndex,
-                onScrubPreview: { index in vm.store.previewScrub(index) },
-                onScrub: { index in vm.scrubTo(index) }
+                onScrubPreview: vm.canScrub ? { index in vm.store.previewScrub(index) } : nil,
+                onScrub: vm.canScrub ? { index in vm.scrubTo(index) } : nil
             )
                 .padding(.bottom, 16)
 

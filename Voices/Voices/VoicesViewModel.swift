@@ -80,8 +80,10 @@ final class VoicesViewModel {
         log("Listening stopped")
     }
 
+    var canScrub: Bool { !isRecording && !isListening }
+
     func scrubTo(_ index: Int) {
-        guard !isRecording && !isListening else { return }
+        guard canScrub else { return }
         store.scrubTo(index)
     }
 
@@ -110,6 +112,13 @@ final class VoicesViewModel {
             logError("TEST FAIL: recording produced 0 chunks")
         }
 
+        // Scroll gesture should be disabled during recording
+        if !canScrub {
+            log("TEST PASS: canScrub=false during recording — scroll gesture disabled")
+        } else {
+            logError("TEST FAIL: canScrub=true during recording — scroll gesture should be disabled")
+        }
+
         // Try to scrub during recording — should be rejected
         let preRecordIdx = store.activeIndex
         scrubTo(0)
@@ -135,6 +144,13 @@ final class VoicesViewModel {
         log("TEST: pressing listen...")
         toggleListening()
         try? await Task.sleep(for: .milliseconds(500))
+
+        // Scroll gesture should be disabled during listening
+        if !canScrub {
+            log("TEST PASS: canScrub=false during listening — scroll gesture disabled")
+        } else {
+            logError("TEST FAIL: canScrub=true during listening — scroll gesture should be disabled")
+        }
 
         // Try to scrub during listening — should be rejected
         let preListenIdx = store.activeIndex
