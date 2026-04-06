@@ -29,7 +29,11 @@ struct Recording: Identifiable {
 final class ChunkStore {
     private(set) var recordings: [Recording] = []
     private(set) var activeIndex: Int?  // chunk the view should center on
-    private var heardChunkIDs: Set<UUID> = []  // persistent: chunks heard at least once
+    private let db: ListenedDatabase
+
+    init(db: ListenedDatabase = InMemoryListenedDatabase()) {
+        self.db = db
+    }
 
     /// Any uploaded chunks waiting to be heard?
     var hasListenable: Bool {
@@ -38,8 +42,7 @@ final class ChunkStore {
 
     /// Has every chunk been listened to at least once? (persistent — survives scrub)
     var allHeard: Bool {
-        let allIDs = Set(allChunks.map(\.id))
-        return !allIDs.isEmpty && allIDs.isSubset(of: heardChunkIDs)
+        db.allHeard(allChunks.map(\.id))
     }
 
     /// All chunks flattened — drives the bar strip.
@@ -73,7 +76,7 @@ final class ChunkStore {
                 guard let (ri, ci) = oldestUploaded() else { break }
                 activeIndex = globalIndex(ri, ci)
                 recordings[ri].chunks[ci].status = .listened
-                heardChunkIDs.insert(recordings[ri].chunks[ci].id)
+                db.markHeard(recordings[ri].chunks[ci].id)
                 try? await Task.sleep(for: .milliseconds(100))
             }
             activeIndex = nil
