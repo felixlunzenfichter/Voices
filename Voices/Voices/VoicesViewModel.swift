@@ -213,6 +213,15 @@ final class VoicesViewModel {
             logError("TEST FAIL: scrub split wrong — listened 0-10: \(listenedAfterScrub)/11, uploaded 11+: \(uploadedAfterScrub)/\(expectedUploaded)")
         }
 
+        // After scrub: hasListenable=true (chunks 11+ are .uploaded) but allHeard=true (database).
+        // Button should be purple because this is a re-listen, not fresh content.
+        let scrubTint: String = store.hasListenable ? "blue" : "purple"
+        if scrubTint == "purple" {
+            log("TEST PASS: button is purple after scrub — allHeard, re-listen only")
+        } else {
+            logError("TEST FAIL: button is \(scrubTint) after scrub — should be purple because allHeard=\(store.allHeard), this is a re-listen")
+        }
+
         // Press listen after scrub — should replay from chunk 11, centered there
         log("TEST: pressing listen after scrub to 10...")
         toggleListening()
