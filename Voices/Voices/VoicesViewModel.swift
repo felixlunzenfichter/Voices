@@ -162,20 +162,19 @@ final class VoicesViewModel {
             logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
         }
 
-        // Button icon should be pause when nothing to play
-        let icon = (isListening || !store.hasListenable) ? "pause.fill" : "play.fill"
+        // Button icon should be pause when allHeard (nothing fresh)
+        let hasFresh = !store.allHeard
+        let icon = (isListening || !hasFresh) ? "pause.fill" : "play.fill"
         if icon == "pause.fill" {
-            log("TEST PASS: button shows pause.fill when nothing left to play")
+            log("TEST PASS: button shows pause.fill — allHeard=true, nothing fresh")
         } else {
-            logError("TEST FAIL: button shows \(icon) but should show pause.fill — nothing left to play")
+            logError("TEST FAIL: button shows \(icon) but should show pause.fill — allHeard=\(store.allHeard)")
         }
 
-        // Button color: blue = something to listen to, purple = nothing new (allHeard or empty)
-        let tint: String = store.hasListenable ? "blue" : "purple"
-        if tint == "purple" && store.allHeard {
-            log("TEST PASS: button is purple — allHeard=true, nothing new to listen to")
-        } else if tint == "purple" && !store.allHeard {
-            log("TEST PASS: button is purple — nothing listenable yet")
+        // Button color: blue = fresh unheard content, purple = allHeard or empty
+        let tint: String = hasFresh ? "blue" : "purple"
+        if tint == "purple" {
+            log("TEST PASS: button is purple — allHeard=\(store.allHeard)")
         } else {
             logError("TEST FAIL: button is \(tint) but expected purple after all listened")
         }
@@ -213,9 +212,8 @@ final class VoicesViewModel {
             logError("TEST FAIL: scrub split wrong — listened 0-10: \(listenedAfterScrub)/11, uploaded 11+: \(uploadedAfterScrub)/\(expectedUploaded)")
         }
 
-        // After scrub: hasListenable=true (chunks 11+ are .uploaded) but allHeard=true (database).
-        // Button should be purple because this is a re-listen, not fresh content.
-        let scrubTint: String = store.hasListenable ? "blue" : "purple"
+        // After scrub: allHeard still true (database), so button should be purple (re-listen, not fresh)
+        let scrubTint: String = store.allHeard ? "purple" : "blue"
         if scrubTint == "purple" {
             log("TEST PASS: button is purple after scrub — allHeard, re-listen only")
         } else {
