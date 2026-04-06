@@ -94,16 +94,11 @@ final class VoicesViewModel {
 
         // During early recording (no uploads yet), button should be purple — nothing to listen to
         try? await Task.sleep(for: .milliseconds(200))
-        let earlyHasListenable = store.hasListenable
-        let earlyFresh = !store.allHeard  // current formula
-        let earlyCorrect = store.hasListenable && !store.allHeard  // correct formula
-        if !earlyCorrect {
-            // Button should be purple (nothing uploaded to listen to)
-            if !earlyFresh {
-                log("TEST PASS: button is purple during early recording — no uploads yet")
-            } else {
-                logError("TEST FAIL: button is blue during early recording — hasListenable=\(earlyHasListenable), nothing uploaded yet, should be purple")
-            }
+        let earlyFresh = store.hasListenable && !store.allHeard
+        if !earlyFresh {
+            log("TEST PASS: button is purple during early recording — no uploads yet")
+        } else {
+            logError("TEST FAIL: button is blue during early recording — hasListenable=\(store.hasListenable), nothing uploaded yet, should be purple")
         }
 
         // Record for 5 seconds (~50 chunks) — bars extend past screen center
@@ -176,8 +171,8 @@ final class VoicesViewModel {
             logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
         }
 
-        // Button icon should be pause when allHeard (nothing fresh)
-        let hasFresh = !store.allHeard
+        // Button icon should be pause when no fresh content
+        let hasFresh = store.hasListenable && !store.allHeard
         let icon = (isListening || !hasFresh) ? "pause.fill" : "play.fill"
         if icon == "pause.fill" {
             log("TEST PASS: button shows pause.fill — allHeard=true, nothing fresh")

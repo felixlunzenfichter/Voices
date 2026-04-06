@@ -60,7 +60,7 @@ struct ContentView: View {
                 .padding(.bottom, 16)
 
             HStack {
-                ListenButton(isListening: vm.isListening, hasFreshContent: !vm.store.allHeard, onTap: { vm.toggleListening() })
+                ListenButton(isListening: vm.isListening, hasFreshContent: vm.store.hasListenable && !vm.store.allHeard, onTap: { vm.toggleListening() })
                 Spacer()
                 RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
             }
