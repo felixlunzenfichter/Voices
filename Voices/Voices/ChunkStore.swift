@@ -77,8 +77,15 @@ final class ChunkStore {
 
     func scrubTo(_ globalIndex: Int) {
         activeIndex = globalIndex
-        // Reset chunks after scrub point to .uploaded so they can be re-listened
-        // Not implemented yet
+        var gi = 0
+        for ri in recordings.indices {
+            for ci in recordings[ri].chunks.indices {
+                if recordings[ri].chunks[ci].status != .recorded {
+                    recordings[ri].chunks[ci].status = gi <= globalIndex ? .listened : .uploaded
+                }
+                gi += 1
+            }
+        }
     }
 
     private func globalIndex(_ ri: Int, _ ci: Int) -> Int {

@@ -62,6 +62,16 @@ final class VoicesViewModel {
         isListening = true
         store.startListening()
         log("Listening started")
+        // Sync VM state when store's listen loop finishes naturally
+        Task {
+            while store.isListening {
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+            if isListening {
+                isListening = false
+                log("Listening finished")
+            }
+        }
     }
 
     private func stopListening() {
@@ -161,12 +171,14 @@ final class VoicesViewModel {
             logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be 10 after scrub")
         }
 
-        let uploadedAfterScrub = store.allChunks.filter { $0.status == .uploaded }.count
-        let listenedAfterScrub = store.allChunks.filter { $0.status == .listened }.count
-        if uploadedAfterScrub > 0 && listenedAfterScrub <= 10 {
-            log("TEST PASS: scrub reset \(uploadedAfterScrub) chunks to .uploaded, \(listenedAfterScrub) stayed .listened")
+        // After scrub to 10: chunks 0-10 = .listened (blue), chunks 11+ = .uploaded (purple)
+        let listenedAfterScrub = store.allChunks.prefix(11).filter { $0.status == .listened }.count
+        let uploadedAfterScrub = store.allChunks.dropFirst(11).filter { $0.status == .uploaded }.count
+        let expectedUploaded = chunks - 11
+        if listenedAfterScrub == 11 && uploadedAfterScrub == expectedUploaded {
+            log("TEST PASS: scrub split — \(listenedAfterScrub) listened (blue), \(uploadedAfterScrub) uploaded (purple)")
         } else {
-            logError("TEST FAIL: scrub should reset chunks after 10 to .uploaded — got \(uploadedAfterScrub) uploaded, \(listenedAfterScrub) listened")
+            logError("TEST FAIL: scrub split wrong — listened 0-10: \(listenedAfterScrub)/11, uploaded 11+: \(uploadedAfterScrub)/\(expectedUploaded)")
         }
 
         // Press listen — should replay from scrub point
