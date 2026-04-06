@@ -59,6 +59,7 @@ struct ContentView: View {
             ChunkBarStrip(
                 chunks: vm.store.allChunks,
                 activeIndex: vm.store.activeIndex,
+                onScrubPreview: { index in vm.store.previewScrub(index) },
                 onScrub: { index in vm.scrubTo(index) }
             )
                 .padding(.bottom, 16)
@@ -129,6 +130,7 @@ struct ListenButton: View {
 struct ChunkBarStrip: View {
     let chunks: [ChunkEntry]
     var activeIndex: Int?
+    var onScrubPreview: ((Int) -> Void)?
     var onScrub: ((Int) -> Void)?
 
     static let barWidth: CGFloat = 6
@@ -136,8 +138,12 @@ struct ChunkBarStrip: View {
     static let gap: CGFloat = 2
     static let step: CGFloat = barWidth + gap
 
+    private static let decel: CGFloat = 0.97
+    private static let minSpeed: CGFloat = 30
+
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging = false
+    @State private var coastTask: Task<Void, Never>?
 
     var body: some View {
         GeometryReader { geo in
@@ -157,15 +163,18 @@ struct ChunkBarStrip: View {
             .gesture(chunks.isEmpty || onScrub == nil ? nil :
                 DragGesture()
                     .onChanged { value in
-                        isDragging = true
-                        dragOffset = value.translation.width
+                        coastTask?.cancel()
+                        if !isDragging { isDragging = true }
+                        dragOffset = clampDrag(value.translation.width, base: baseOffset, center: center)
+                        onScrubPreview?(scrubIndex(base: baseOffset, center: center, offset: dragOffset))
                     }
                     .onEnded { value in
-                        let idx = Int(round((center - baseOffset - value.translation.width) / Self.step))
-                        let clamped = max(0, min(chunks.count - 1, idx))
-                        dragOffset = 0
-                        isDragging = false
-                        onScrub?(clamped)
+                        let vel = (value.predictedEndTranslation.width - value.translation.width) / 0.25
+                        if abs(vel) > Self.minSpeed * 3 {
+                            coast(velocity: vel, base: baseOffset, center: center)
+                        } else {
+                            settle(base: baseOffset, center: center, offset: value.translation.width)
+                        }
                     }
             )
             #if DEBUG
@@ -190,6 +199,38 @@ struct ChunkBarStrip: View {
             #endif
         }
         .frame(height: Self.barHeight)
+    }
+
+    private func coast(velocity startVel: CGFloat, base: CGFloat, center: CGFloat) {
+        coastTask?.cancel()
+        coastTask = Task { @MainActor in
+            var vel = startVel
+            while !Task.isCancelled && abs(vel) > Self.minSpeed {
+                try? await Task.sleep(for: .milliseconds(16))
+                dragOffset = clampDrag(dragOffset + vel * 0.016, base: base, center: center)
+                vel *= Self.decel
+                onScrubPreview?(scrubIndex(base: base, center: center, offset: dragOffset))
+            }
+            if !Task.isCancelled { settle(base: base, center: center, offset: dragOffset) }
+        }
+    }
+
+    private func settle(base: CGFloat, center: CGFloat, offset: CGFloat) {
+        let clamped = scrubIndex(base: base, center: center, offset: offset)
+        dragOffset = 0
+        isDragging = false
+        onScrub?(clamped)
+    }
+
+    private func clampDrag(_ raw: CGFloat, base: CGFloat, center: CGFloat) -> CGFloat {
+        let maxDrag = center - base
+        let minDrag = center - CGFloat(max(chunks.count - 1, 0)) * Self.step - base
+        return min(maxDrag, max(minDrag, raw))
+    }
+
+    private func scrubIndex(base: CGFloat, center: CGFloat, offset: CGFloat) -> Int {
+        let idx = Int(round((center - base - offset) / Self.step))
+        return max(0, min(chunks.count - 1, idx))
     }
 }
 

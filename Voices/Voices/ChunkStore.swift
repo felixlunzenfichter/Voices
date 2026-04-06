@@ -86,8 +86,7 @@ final class ChunkStore {
 
     // MARK: Scrubbing
 
-    func scrubTo(_ globalIndex: Int) {
-        activeIndex = globalIndex
+    func previewScrub(_ globalIndex: Int) {
         var gi = 0
         for ri in recordings.indices {
             for ci in recordings[ri].chunks.indices {
@@ -97,6 +96,11 @@ final class ChunkStore {
                 gi += 1
             }
         }
+    }
+
+    func scrubTo(_ globalIndex: Int) {
+        activeIndex = globalIndex
+        previewScrub(globalIndex)
     }
 
     private func globalIndex(_ ri: Int, _ ci: Int) -> Int {
