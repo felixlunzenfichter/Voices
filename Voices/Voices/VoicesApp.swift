@@ -111,7 +111,7 @@ struct ListenButton: View {
         Button(action: {
             onTap()
         }) {
-            Image(systemName: isListening ? "pause.fill" : "play.fill")
+            Image(systemName: (isListening || !hasListenable) ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
                 .foregroundColor(tint)
                 .contentTransition(.symbolEffect(.replace))

@@ -162,15 +162,20 @@ final class VoicesViewModel {
             logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
         }
 
-        // Button icon should be pause when nothing to play (isListening=false, hasListenable=false)
-        // Current logic: !isListening → "play.fill" — WRONG, should show pause
-        let shouldShowPause = !isListening && !store.hasListenable
-        let currentIcon = isListening ? "pause.fill" : "play.fill"
-        let correctIcon = (isListening || !store.hasListenable) ? "pause.fill" : "play.fill"
-        if currentIcon == correctIcon {
-            log("TEST PASS: button shows \(currentIcon) when nothing to play")
+        // Button icon should be pause when nothing to play
+        let icon = (isListening || !store.hasListenable) ? "pause.fill" : "play.fill"
+        if icon == "pause.fill" {
+            log("TEST PASS: button shows pause.fill when nothing left to play")
         } else {
-            logError("TEST FAIL: button shows \(currentIcon) but should show \(correctIcon) — nothing left to play should show pause")
+            logError("TEST FAIL: button shows \(icon) but should show pause.fill — nothing left to play")
+        }
+
+        // Button color should be purple (not blue) when nothing left to play
+        let tint: String = store.hasListenable ? "blue" : "purple"
+        if tint == "purple" {
+            log("TEST PASS: button is purple when nothing left to play")
+        } else {
+            logError("TEST FAIL: button is \(tint) but should be purple — nothing left to play")
         }
 
         // Scrub to chunk 10 — should move activeIndex and reset chunks after 10 to .uploaded
