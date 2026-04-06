@@ -162,6 +162,17 @@ final class VoicesViewModel {
             logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
         }
 
+        // Button icon should be pause when nothing to play (isListening=false, hasListenable=false)
+        // Current logic: !isListening → "play.fill" — WRONG, should show pause
+        let shouldShowPause = !isListening && !store.hasListenable
+        let currentIcon = isListening ? "pause.fill" : "play.fill"
+        let correctIcon = (isListening || !store.hasListenable) ? "pause.fill" : "play.fill"
+        if currentIcon == correctIcon {
+            log("TEST PASS: button shows \(currentIcon) when nothing to play")
+        } else {
+            logError("TEST FAIL: button shows \(currentIcon) but should show \(correctIcon) — nothing left to play should show pause")
+        }
+
         // Scrub to chunk 10 — should move activeIndex and reset chunks after 10 to .uploaded
         log("TEST: scrubbing to chunk 10...")
         scrubTo(10)
