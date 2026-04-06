@@ -258,6 +258,66 @@ final class VoicesViewModel {
         } else {
             logError("TEST FAIL: only \(relistened)/\(chunks) chunks listened after scrub+replay")
         }
+
+        // === SECOND RECORDING ===
+        log("TEST: starting second recording...")
+        toggleRecording()
+        try? await Task.sleep(for: .seconds(3))
+        toggleRecording()
+        let totalChunks = store.allChunks.count
+        let rec2Chunks = totalChunks - chunks
+        log("TEST: second recording produced \(rec2Chunks) chunks, total \(totalChunks)")
+
+        // Two recordings should exist
+        if store.recordings.count == 2 {
+            log("TEST PASS: 2 recordings exist")
+        } else {
+            logError("TEST FAIL: expected 2 recordings, got \(store.recordings.count)")
+        }
+
+        // allHeard should be false — second recording has unheard chunks
+        if !store.allHeard {
+            log("TEST PASS: allHeard=false after second recording — new unheard content")
+        } else {
+            logError("TEST FAIL: allHeard=true but second recording has unheard chunks")
+        }
+
+        // Wait for uploads of second recording
+        try? await Task.sleep(for: .seconds(2))
+        let freshUploaded = store.allChunks.filter { $0.status == .uploaded }.count
+
+        // Button should be blue — fresh unheard uploads exist
+        let freshContent = store.hasListenable && !store.allHeard
+        if freshContent {
+            log("TEST PASS: button is blue — \(freshUploaded) fresh unheard uploads from second recording")
+        } else {
+            logError("TEST FAIL: button not blue — hasListenable=\(store.hasListenable) allHeard=\(store.allHeard), should be blue with fresh uploads")
+        }
+
+        // Strip should show all chunks from both recordings, activeIndex at end of second
+        if let idx = store.activeIndex, idx >= chunks {
+            log("TEST PASS: activeIndex=\(idx) is in second recording range (>\(chunks - 1)) — strip spans both")
+        } else {
+            logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be in second recording range (>\(chunks - 1))")
+        }
+
+        // Listen to second recording — should only play the new chunks
+        log("TEST: pressing listen for second recording...")
+        toggleListening()
+        try? await Task.sleep(for: .seconds(5))
+        let allListened = store.allChunks.filter { $0.status == .listened }.count
+        if allListened == totalChunks {
+            log("TEST PASS: all \(allListened) chunks listened across both recordings")
+        } else {
+            logError("TEST FAIL: only \(allListened)/\(totalChunks) chunks listened after second listen")
+        }
+
+        // allHeard should be true again
+        if store.allHeard {
+            log("TEST PASS: allHeard=true — both recordings fully heard")
+        } else {
+            logError("TEST FAIL: allHeard=false after listening to both recordings")
+        }
     }
     #endif
 }
