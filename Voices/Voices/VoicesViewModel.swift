@@ -69,6 +69,7 @@ final class VoicesViewModel {
             }
             if isListening {
                 isListening = false
+                checkListenCentering()
                 log("Listening finished")
             }
         }
@@ -77,7 +78,15 @@ final class VoicesViewModel {
     private func stopListening() {
         store.stopListening()
         isListening = false
+        checkListenCentering()
         log("Listening stopped")
+    }
+
+    private func checkListenCentering() {
+        let lastListened = store.allChunks.lastIndex { $0.status == .listened }
+        if let expected = lastListened, store.activeIndex != expected {
+            logError("TEST FAIL: after stop listening, activeIndex=\(String(describing: store.activeIndex)) but last listened chunk is \(expected) — not centered")
+        }
     }
 
     var canScrub: Bool { !isRecording && !isListening }
