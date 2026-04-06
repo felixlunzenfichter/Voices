@@ -70,6 +70,11 @@ final class VoicesViewModel {
         log("Listening stopped")
     }
 
+    func scrubTo(_ index: Int) {
+        guard !isRecording && !isListening else { return }
+        store.scrubTo(index)
+    }
+
     // MARK: - Self-test (drives real VM, visible in UI)
 
     #if DEBUG
@@ -88,7 +93,7 @@ final class VoicesViewModel {
 
         // Try to scrub during recording — should be rejected
         let preRecordIdx = store.activeIndex
-        store.scrubTo(0)
+        scrubTo(0)
         if store.activeIndex == preRecordIdx {
             log("TEST PASS: scrub rejected during recording — activeIndex stayed at \(String(describing: store.activeIndex))")
         } else {
@@ -114,7 +119,7 @@ final class VoicesViewModel {
 
         // Try to scrub during listening — should be rejected
         let preListenIdx = store.activeIndex
-        store.scrubTo(0)
+        scrubTo(0)
         if store.activeIndex == preListenIdx {
             log("TEST PASS: scrub rejected during listening — activeIndex stayed at \(String(describing: store.activeIndex))")
         } else {
