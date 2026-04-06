@@ -151,6 +151,34 @@ final class VoicesViewModel {
         } else {
             logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
         }
+
+        // Scrub to chunk 10 — should move activeIndex and reset chunks after 10 to .uploaded
+        log("TEST: scrubbing to chunk 10...")
+        scrubTo(10)
+        if store.activeIndex == 10 {
+            log("TEST PASS: activeIndex moved to 10 after scrub")
+        } else {
+            logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be 10 after scrub")
+        }
+
+        let uploadedAfterScrub = store.allChunks.filter { $0.status == .uploaded }.count
+        let listenedAfterScrub = store.allChunks.filter { $0.status == .listened }.count
+        if uploadedAfterScrub > 0 && listenedAfterScrub <= 10 {
+            log("TEST PASS: scrub reset \(uploadedAfterScrub) chunks to .uploaded, \(listenedAfterScrub) stayed .listened")
+        } else {
+            logError("TEST FAIL: scrub should reset chunks after 10 to .uploaded — got \(uploadedAfterScrub) uploaded, \(listenedAfterScrub) listened")
+        }
+
+        // Press listen — should replay from scrub point
+        log("TEST: pressing listen after scrub...")
+        toggleListening()
+        try? await Task.sleep(for: .seconds(6))
+        let relistened = store.allChunks.filter { $0.status == .listened }.count
+        if relistened == chunks {
+            log("TEST PASS: all \(relistened) chunks listened after scrub+replay")
+        } else {
+            logError("TEST FAIL: only \(relistened)/\(chunks) chunks listened after scrub+replay")
+        }
     }
     #endif
 }
