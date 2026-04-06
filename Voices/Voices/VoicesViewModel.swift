@@ -108,6 +108,13 @@ final class VoicesViewModel {
         } else {
             logError("TEST FAIL: 0/\(chunks) chunks listened — bars stayed purple, listening not implemented")
         }
+
+        // After all listened, listen button should turn purple (nothing left)
+        if !store.hasListenable {
+            log("TEST PASS: hasListenable is false — listen button should be purple")
+        } else {
+            logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
+        }
     }
     #endif
 }

@@ -29,6 +29,11 @@ struct Recording: Identifiable {
 final class ChunkStore {
     private(set) var recordings: [Recording] = []
 
+    /// Any uploaded chunks waiting to be heard?
+    var hasListenable: Bool {
+        true // Not implemented yet
+    }
+
     /// All chunks flattened — drives the bar strip.
     var allChunks: [ChunkEntry] {
         recordings.flatMap(\.chunks)
