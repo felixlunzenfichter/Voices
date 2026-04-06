@@ -143,6 +143,17 @@ struct ChunkBarStrip: View {
                 }
             }
             .offset(x: offset)
+            #if DEBUG
+            .onChange(of: chunks.count) {
+                if let idx = activeIndex {
+                    let barPosition = offset + CGFloat(idx) * Self.step
+                    let diff = abs(barPosition - center)
+                    if diff > 1 {
+                        logError("TEST FAIL: bar strip not centered — active bar at \(Int(barPosition))px, center at \(Int(center))px, diff \(Int(diff))px")
+                    }
+                }
+            }
+            #endif
         }
         .frame(height: Self.barHeight)
     }
