@@ -40,9 +40,24 @@ final class ChunkStore {
 
     func appendChunk() {
         guard !recordings.isEmpty else { return }
+        let id = UUID()
         recordings[recordings.count - 1].chunks.append(
-            ChunkEntry(id: UUID(), status: .recorded)
+            ChunkEntry(id: id, status: .recorded)
         )
+        scheduleUpload(id)
+    }
+
+    private func scheduleUpload(_ id: UUID) {
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            for ri in recordings.indices {
+                if let ci = recordings[ri].chunks.firstIndex(where: { $0.id == id }),
+                   recordings[ri].chunks[ci].status == .recorded {
+                    recordings[ri].chunks[ci].status = .uploaded
+                    return
+                }
+            }
+        }
     }
 
     // MARK: - Self-test (runs on device, proves behavior via logs)
