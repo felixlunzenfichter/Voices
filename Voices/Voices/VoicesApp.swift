@@ -49,7 +49,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ChunkBarStrip(chunks: vm.store.allChunks)
+            ChunkBarStrip(chunks: vm.store.allChunks, activeIndex: vm.store.activeIndex)
                 .frame(maxHeight: .infinity, alignment: .bottom)
                 .task {
                     #if DEBUG
@@ -122,20 +122,35 @@ struct ListenButton: View {
 
 struct ChunkBarStrip: View {
     let chunks: [ChunkEntry]
+    var activeIndex: Int?
 
-    private static let barWidth: CGFloat = 6
-    private static let barHeight: CGFloat = 30
-    private static let gap: CGFloat = 2
+    static let barWidth: CGFloat = 6
+    static let barHeight: CGFloat = 30
+    static let gap: CGFloat = 2
+    static let step: CGFloat = barWidth + gap
 
     var body: some View {
-        HStack(spacing: Self.gap) {
-            ForEach(chunks) { chunk in
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(chunk.status.color)
-                    .frame(width: Self.barWidth, height: Self.barHeight)
+        GeometryReader { geo in
+            let center = geo.size.width / 2
+            let target = activeIndex ?? max(chunks.count - 1, 0)
+            let expectedOffset = center - CGFloat(target) * Self.step
+            let actualOffset: CGFloat = 0  // NOT centering yet
+
+            HStack(spacing: Self.gap) {
+                ForEach(chunks) { chunk in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(chunk.status.color)
+                        .frame(width: Self.barWidth, height: Self.barHeight)
+                }
+            }
+            .offset(x: actualOffset)
+            .onChange(of: chunks.count) {
+                if activeIndex != nil && abs(expectedOffset - actualOffset) > 1 {
+                    logError("TEST FAIL: bar strip not centered — expected offset \(Int(expectedOffset)), actual \(Int(actualOffset)), diff \(Int(abs(expectedOffset - actualOffset)))px")
+                }
             }
         }
-        .padding(.horizontal, 16)
+        .frame(height: Self.barHeight)
     }
 }
 

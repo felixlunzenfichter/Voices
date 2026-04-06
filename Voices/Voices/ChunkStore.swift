@@ -28,6 +28,7 @@ struct Recording: Identifiable {
 @Observable @MainActor
 final class ChunkStore {
     private(set) var recordings: [Recording] = []
+    private(set) var activeIndex: Int?  // chunk the view should center on
 
     /// Any uploaded chunks waiting to be heard?
     var hasListenable: Bool {
@@ -49,6 +50,7 @@ final class ChunkStore {
         recordings[recordings.count - 1].chunks.append(
             ChunkEntry(id: id, status: .recorded)
         )
+        activeIndex = allChunks.count - 1
         scheduleUpload(id)
     }
 
