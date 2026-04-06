@@ -77,8 +77,8 @@ final class VoicesViewModel {
         log("TEST: pressing record...")
         toggleRecording()
 
-        // Record for 1 second — bars appear on screen
-        try? await Task.sleep(for: .seconds(1))
+        // Record for 5 seconds (~50 chunks) — bars extend past screen center
+        try? await Task.sleep(for: .seconds(5))
         let chunks = store.allChunks.count
         if chunks > 0 {
             log("TEST PASS: recording produced \(chunks) chunks (visible as gray bars)")
@@ -98,10 +98,23 @@ final class VoicesViewModel {
             logError("TEST FAIL: 0/\(chunks) chunks uploaded — bars stayed gray")
         }
 
-        // Press listen — bars should turn blue (.listened)
+        // Press listen — bars should turn blue (.listened) and center should track
         log("TEST: pressing listen...")
         toggleListening()
-        try? await Task.sleep(for: .seconds(2))
+        try? await Task.sleep(for: .milliseconds(500))
+
+        // During listening, activeIndex should track the currently-listened chunk
+        // Listening walks from chunk 0 forward at 100ms each. After 500ms, ~5 listened.
+        // activeIndex should be near that position, NOT stuck at last recording index.
+        let listenedSoFar = store.allChunks.filter { $0.status == .listened }.count
+        let expectedIdx = max(0, listenedSoFar - 1)  // 0-indexed last listened chunk
+        if let idx = store.activeIndex, abs(idx - expectedIdx) <= 1 {
+            log("TEST PASS: activeIndex=\(idx) tracks listen position (expected ~\(expectedIdx)) — strip centered")
+        } else {
+            logError("TEST FAIL: activeIndex=\(String(describing: store.activeIndex)) should be ~\(expectedIdx) (listened \(listenedSoFar) chunks) — strip not centered during listening")
+        }
+
+        try? await Task.sleep(for: .seconds(8))
         let listened = store.allChunks.filter { $0.status == .listened }.count
         if listened > 0 {
             log("TEST PASS: \(listened)/\(chunks) chunks listened (bars turned blue)")
