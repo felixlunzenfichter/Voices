@@ -73,6 +73,12 @@ final class ChunkStore {
         }
     }
 
+    // MARK: Scrubbing
+
+    func scrubTo(_ globalIndex: Int) {
+        activeIndex = globalIndex
+    }
+
     private func globalIndex(_ ri: Int, _ ci: Int) -> Int {
         recordings[..<ri].reduce(0) { $0 + $1.chunks.count } + ci
     }

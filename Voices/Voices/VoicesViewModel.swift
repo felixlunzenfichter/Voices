@@ -86,6 +86,15 @@ final class VoicesViewModel {
             logError("TEST FAIL: recording produced 0 chunks")
         }
 
+        // Try to scrub during recording — should be rejected
+        let preRecordIdx = store.activeIndex
+        store.scrubTo(0)
+        if store.activeIndex == preRecordIdx {
+            log("TEST PASS: scrub rejected during recording — activeIndex stayed at \(String(describing: store.activeIndex))")
+        } else {
+            logError("TEST FAIL: scrub moved activeIndex from \(String(describing: preRecordIdx)) to \(String(describing: store.activeIndex)) during recording — should be locked")
+        }
+
         log("TEST: pressing record again to stop...")
         toggleRecording()
 
@@ -102,6 +111,15 @@ final class VoicesViewModel {
         log("TEST: pressing listen...")
         toggleListening()
         try? await Task.sleep(for: .milliseconds(500))
+
+        // Try to scrub during listening — should be rejected
+        let preListenIdx = store.activeIndex
+        store.scrubTo(0)
+        if store.activeIndex == preListenIdx {
+            log("TEST PASS: scrub rejected during listening — activeIndex stayed at \(String(describing: store.activeIndex))")
+        } else {
+            logError("TEST FAIL: scrub moved activeIndex from \(String(describing: preListenIdx)) to \(String(describing: store.activeIndex)) during listening — should be locked")
+        }
 
         // During listening, activeIndex should track the currently-listened chunk
         // Listening walks from chunk 0 forward at 100ms each. After 500ms, ~5 listened.
