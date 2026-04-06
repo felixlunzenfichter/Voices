@@ -133,8 +133,7 @@ struct ChunkBarStrip: View {
         GeometryReader { geo in
             let center = geo.size.width / 2
             let target = activeIndex ?? max(chunks.count - 1, 0)
-            let expectedOffset = center - CGFloat(target) * Self.step
-            let actualOffset: CGFloat = 0  // NOT centering yet
+            let offset = center - CGFloat(target) * Self.step
 
             HStack(spacing: Self.gap) {
                 ForEach(chunks) { chunk in
@@ -143,12 +142,7 @@ struct ChunkBarStrip: View {
                         .frame(width: Self.barWidth, height: Self.barHeight)
                 }
             }
-            .offset(x: actualOffset)
-            .onChange(of: chunks.count) {
-                if activeIndex != nil && abs(expectedOffset - actualOffset) > 1 {
-                    logError("TEST FAIL: bar strip not centered — expected offset \(Int(expectedOffset)), actual \(Int(actualOffset)), diff \(Int(abs(expectedOffset - actualOffset)))px")
-                }
-            }
+            .offset(x: offset)
         }
         .frame(height: Self.barHeight)
     }
