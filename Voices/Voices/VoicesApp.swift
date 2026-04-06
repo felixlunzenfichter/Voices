@@ -28,6 +28,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         Task { @MainActor in
             log("App launched")
+            #if DEBUG
+            ChunkStore.selfTest()
+            #endif
         }
         return true
     }
