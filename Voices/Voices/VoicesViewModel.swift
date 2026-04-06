@@ -2,6 +2,9 @@ import SwiftUI
 
 @Observable @MainActor
 final class VoicesViewModel {
+    let store = ChunkStore()
+    private var chunkTimer: Task<Void, Never>?
+
     private(set) var isRecording = false {
         didSet {
             if isRecording && isListening {
@@ -32,10 +35,19 @@ final class VoicesViewModel {
             }
         }
         isRecording = true
+        store.startRecording()
+        chunkTimer = Task {
+            while !Task.isCancelled {
+                store.appendChunk()
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
         log("Recording started")
     }
 
     private func stopRecording() {
+        chunkTimer?.cancel()
+        chunkTimer = nil
         isRecording = false
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")

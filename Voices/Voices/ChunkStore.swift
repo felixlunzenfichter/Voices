@@ -4,6 +4,14 @@ enum ChunkStatus {
     case recorded
     case uploaded
     case listened
+
+    var color: Color {
+        switch self {
+        case .recorded: .gray
+        case .uploaded: .purple
+        case .listened: .blue
+        }
+    }
 }
 
 struct ChunkEntry: Identifiable {
@@ -31,7 +39,10 @@ final class ChunkStore {
     }
 
     func appendChunk() {
-        // Not implemented yet
+        guard !recordings.isEmpty else { return }
+        recordings[recordings.count - 1].chunks.append(
+            ChunkEntry(id: UUID(), status: .recorded)
+        )
     }
 
     // MARK: - Self-test (runs on device, proves behavior via logs)

@@ -51,14 +51,18 @@ struct ContentView: View {
     @State private var vm = VoicesViewModel()
 
     var body: some View {
-        HStack {
-            ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
-            Spacer()
-            RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
+        VStack(spacing: 0) {
+            ChunkBarStrip(chunks: vm.store.allChunks)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+
+            HStack {
+                ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
+                Spacer()
+                RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 60)
         }
-        .padding(.horizontal, 40)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 60)
     }
 }
 
@@ -109,6 +113,25 @@ struct ListenButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
+    }
+}
+
+struct ChunkBarStrip: View {
+    let chunks: [ChunkEntry]
+
+    private static let barWidth: CGFloat = 6
+    private static let barHeight: CGFloat = 30
+    private static let gap: CGFloat = 2
+
+    var body: some View {
+        HStack(spacing: Self.gap) {
+            ForEach(chunks) { chunk in
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(chunk.status.color)
+                    .frame(width: Self.barWidth, height: Self.barHeight)
+            }
+        }
+        .padding(.horizontal, 16)
     }
 }
 
