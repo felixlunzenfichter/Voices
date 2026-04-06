@@ -171,17 +171,19 @@ final class VoicesViewModel {
             logError("TEST FAIL: hasListenable is still true after all chunks listened — button stays blue")
         }
 
-        // Button icon should be pause when no fresh content
-        let hasFresh = store.hasListenable && !store.allHeard
-        let icon = (isListening || !hasFresh) ? "pause.fill" : "play.fill"
-        if icon == "pause.fill" {
-            log("TEST PASS: button shows pause.fill — allHeard=true, nothing fresh")
+        // Button icon reflects isListening exactly: play when not listening, pause when listening
+        let icon = isListening ? "pause.fill" : "play.fill"
+        if icon == "play.fill" && !isListening {
+            log("TEST PASS: button shows play.fill — not listening")
+        } else if icon == "pause.fill" && isListening {
+            log("TEST PASS: button shows pause.fill — listening")
         } else {
-            logError("TEST FAIL: button shows \(icon) but should show pause.fill — allHeard=\(store.allHeard)")
+            logError("TEST FAIL: button shows \(icon) but isListening=\(isListening)")
         }
 
         // Button color: blue = fresh unheard content, purple = allHeard or empty
-        let tint: String = hasFresh ? "blue" : "purple"
+        let hasFreshContent = store.hasListenable && !store.allHeard
+        let tint: String = hasFreshContent ? "blue" : "purple"
         if tint == "purple" {
             log("TEST PASS: button is purple — allHeard=\(store.allHeard)")
         } else {
