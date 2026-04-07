@@ -45,17 +45,30 @@ func sendNotification(title: String = "Voices", body: String = "") {
 }
 
 struct ContentView: View {
-    @State private var vm = VoicesViewModel()
+    @State private var vm = VoicesViewModel(chunkProducer: DemoChunkProducer())
 
     var body: some View {
-        HStack {
-            ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
-            Spacer()
-            RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
+        ZStack(alignment: .bottom) {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 24))], spacing: 6) {
+                    ForEach(vm.chunks, id: \.index) { _ in
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.green)
+                            .frame(height: 24)
+                    }
+                }
+                .padding()
+                .animation(.default, value: vm.chunks.count)
+            }
+
+            HStack {
+                ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
+                Spacer()
+                RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 60)
         }
-        .padding(.horizontal, 40)
-        .frame(maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 60)
     }
 }
 
