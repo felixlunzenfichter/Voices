@@ -3,18 +3,10 @@ import SwiftUI
 @Observable @MainActor
 final class VoicesViewModel {
     private(set) var isRecording = false {
-        didSet {
-            if isRecording && isListening {
-                logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
-            }
-        }
+        didSet { checkMutualExclusion() }
     }
     private(set) var isListening = false {
-        didSet {
-            if isRecording && isListening {
-                logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
-            }
-        }
+        didSet { checkMutualExclusion() }
     }
     private(set) var chunks: [Chunk] = []
 
@@ -71,5 +63,11 @@ final class VoicesViewModel {
     private func stopListening() {
         isListening = false
         log("Listening stopped")
+    }
+
+    private func checkMutualExclusion() {
+        if isRecording && isListening {
+            logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
+        }
     }
 }
