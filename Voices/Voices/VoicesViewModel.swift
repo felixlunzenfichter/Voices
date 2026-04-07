@@ -1,4 +1,4 @@
-import SwiftUI
+import Observation
 
 @Observable @MainActor
 final class VoicesViewModel {
@@ -26,11 +26,7 @@ final class VoicesViewModel {
     }
 
     private func startRecording() {
-        if isListening {
-            withAnimation(.spring(duration: 1/φ, bounce: 1 - 1/φ)) {
-                stopListening()
-            }
-        }
+        if isListening { stopListening() }
         isRecording = true
         chunks = []
         recordingTask = Task {
@@ -51,11 +47,7 @@ final class VoicesViewModel {
     }
 
     private func startListening() {
-        if isRecording {
-            withAnimation(.spring(duration: 1/φ, bounce: 1 - 1/φ)) {
-                stopRecording()
-            }
-        }
+        if isRecording { stopRecording() }
         isListening = true
         log("Listening started")
     }
