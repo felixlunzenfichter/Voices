@@ -1,72 +1,82 @@
-# Lodi, *Test-Driven Development in Swift* (Apress, 2021)
+# TDD in Swift — Practical Guide
 
-Summary adapted to Voices' log-driven TDD infrastructure. Each chapter's key insight is translated to our system: logs as proof, `@Observable` architecture, protocol-backed DI, device-first workflow.
+Distilled from Gio Lodi's *Test-Driven Development in Swift* (Apress, 2021), adapted to this repo's `@Observable` architecture and Swift Testing.
+
+**Position:** Tests live in the Xcode test target using Swift Testing (`@Test`, `#expect`). Runtime logging (`log()`, `logError()`) is for observability and debugging on device — not a substitute for tests.
 
 ---
 
-## Part I: Foundations (Ch 1-5)
+## The Loop: Red, Green, Refactor
 
-### Ch 1 — Why TDD
+Write a failing `@Test`. Make it pass with the minimum code. Refactor. (Ch 1)
 
-Core loop: **Red, Green, Refactor**. Write a failing proof first, make it pass with minimum code, clean up.
-
-**Our translation:** `logError("TRACE: ...")` = red. Fix code until `log("TRACE: ...")` shows correct state = green. Delete TRACE logs = refactor/cleanup. Same loop, logs instead of XCTAssertEqual.
-
-### Ch 2 — XCTest Mechanics
-
-Key patterns: `XCTUnwrap` (fail instead of crash on nil), `XCTestExpectation` (async), Arrange-Act-Assert structure.
-
-**Our translation:** Arrange-Act-Assert maps directly to selfTest():
 ```swift
-// Arrange — set up state
-toggleRecording()
-try? await Task.sleep(for: .seconds(5))
+import Testing
 
-// Act — do the thing
-toggleRecording()  // stop
-
-// Assert — log the proof
-if store.allChunks.count > 0 {
-    log("TEST PASS: recording produced \(store.allChunks.count) chunks")
-} else {
-    logError("TEST FAIL: recording produced 0 chunks")
+@Test("Toggle recording starts recording when stopped")
+func toggleStartsRecording() {
+    let vm = VoicesViewModel()
+    vm.toggleRecording()
+    #expect(vm.isRecording == true)
 }
 ```
 
-Avoid force-unwrapping in tests. A crash kills all subsequent log output. Use `guard let` + `logError` instead.
+### Fake It Till You Make It
 
-### Ch 3 — Getting Started with TDD
+Hardcode the return value to go green, then generalize. Each step is a known-good state. (Ch 3)
 
-**Test List**: Before coding, write the list of behaviors to prove. Work through them one at a time. This is the Partition Problem and Solve Sequentially technique.
+### Wishful Coding
+
+Write the call site first (the test), even if the function doesn't exist. Let the compiler error guide implementation. A type error is already a failing test. (Ch 3)
+
+---
+
+## Test List
+
+Before coding, enumerate behaviors. Work through them one by one. This IS the spec. (Ch 3)
 
 ```
-// Test list for "listen after scrub"
 // 1. scrub to chunk 10 moves activeIndex
 // 2. chunks 0-10 stay .listened, 11+ become .uploaded
 // 3. pressing listen after scrub replays from 11
-// 4. replay doesn't re-replay chunks 0-10
-// 5. all chunks listened after replay
+// 4. all chunks listened after replay
 ```
 
-**Fake It Till You Make It**: Hardcode the return value to make the test pass, then generalize. In our system: make the log line appear with the right value, even if the implementation is incomplete. Then iterate.
+---
 
-**Wishful Coding**: Write the call site first (the test / the log assertion), even if the function doesn't exist yet. Let the compiler error guide implementation.
+## Arrange-Act-Assert
 
-**Compiler as test**: A type error is a failing test. When you change a protocol or struct, the compiler tells you everywhere that needs updating — same feedback loop as a failing log.
-
-### Ch 4 — TDD in the Real World
-
-**Use the strictest assertion possible.** `XCTAssertEqual(count, 3)` tells you the actual value on failure. `XCTAssertTrue(count == 3)` just says "false". In our logs:
+Every test has this shape. (Ch 2)
 
 ```swift
-// Bad — tells you nothing on failure
-if chunks > 0 { log("TEST PASS") } else { logError("TEST FAIL") }
-
-// Good — shows actual value
-logError("TEST FAIL: expected >0 chunks, got \(chunks)")
+@Test("Scrub updates active index")
+func scrubUpdatesIndex() {
+    // Arrange
+    let store = ChunkStore(chunks: .fixtures(count: 20))
+    // Act
+    store.scrub(to: 10)
+    // Assert
+    #expect(store.activeIndex == 10)
+}
 ```
 
-**Don't let tests crash.** Lodi introduces a safe Collection subscript that returns nil instead of crashing on out-of-range indices. Critical for us: if selfTest() crashes mid-run, every subsequent TEST PASS/FAIL line is lost.
+---
+
+## Assertions & Safety
+
+**Use the strictest assertion.** `#expect(count == 3)` shows the actual value on failure. (Ch 4)
+
+**Use `try #require` to unwrap and halt** — stops the test on nil, prevents cascading failures. (Ch 4)
+
+```swift
+@Test func chunkAtIndex() throws {
+    let store = ChunkStore(chunks: .fixtures(count: 5))
+    let chunk = try #require(store.chunk(at: 3))
+    #expect(chunk.status == .uploaded)
+}
+```
+
+**Don't let tests crash.** Use safe subscripts in assertions. A crash at line 50 loses every assertion after it. (Ch 4)
 
 ```swift
 extension Collection {
@@ -76,19 +86,22 @@ extension Collection {
 }
 ```
 
-Use `guard let chunk = allChunks[safe: 10]` instead of `allChunks[10]` in test assertions.
+### Test Naming
 
-**Test Naming Convention** (Roy Osherove): `[UnitOfWork]_[Scenario]_[ExpectedBehavior]`. In our logs, this becomes the TEST label:
+Swift Testing: `@Test("description")` with a short function name.
+
 ```swift
-log("TEST PASS: scrubTo10 — activeIndex moved to 10")
-//            ^unit        ^expected behavior
+@Test("Toggling recording when not recording starts recording")
+func toggleStartsRecording() { }
 ```
 
-**Pure Functions are easiest to test.** No state, no side effects — input in, output out, assert. Push as much logic as possible into pure functions, keep the impure shell thin. Our `ChunkStore` computed properties (`hasListenable`, `allHeard`, `allChunks`) are effectively pure — test them directly.
+XCTest (legacy): `test_<what>_<conditions>_<expected>()` (Roy Osherove convention, Ch 4).
 
-### Ch 5 — Fixture Extensions
+---
 
-When a type's init signature changes, every test that creates it breaks. Fixture extensions centralize construction with sensible defaults:
+## Fixture Extensions
+
+Centralize construction with defaults. When the init grows, only the fixture updates. (Ch 5)
 
 ```swift
 extension ChunkEntry {
@@ -99,145 +112,160 @@ extension ChunkEntry {
         ChunkEntry(id: id, status: status)
     }
 }
+```
 
-extension Recording {
-    static func fixture(
-        id: UUID = UUID(),
-        createdAt: Date = .now,
-        chunks: [ChunkEntry] = [.fixture()]
-    ) -> Recording {
-        Recording(id: id, createdAt: createdAt, chunks: chunks)
+**Rule of three**: two tests inline is fine. Before the third, extract a fixture. Fixtures compose — `Recording.fixture()` uses `ChunkEntry.fixture()` as its default.
+
+---
+
+## Test Doubles
+
+Four types, one question each. (Ch 8, 10, 12, 15)
+
+| Double | Purpose | Example |
+|--------|---------|---------|
+| **Stub** | Fixed return value | `ListenedDatabase` returning `true` for `allHeard` |
+| **Spy** | Record calls for assertion | Captures all `send()` calls |
+| **Fake** | In-memory stateful replacement | `InMemoryListenedDatabase` with `Set<UUID>` |
+| **Dummy** | Satisfies init, never used | Empty database when testing recording logic |
+
+---
+
+## Dependency Injection
+
+Inject dependencies behind protocols via init. The ViewModel itself stays concrete — `@Observable` is a macro on a class, can't be enforced through protocol conformance. (Ch 7, 11)
+
+```swift
+protocol AudioRecorder {
+    func start() async throws
+    func stop() -> Data
+}
+
+@Observable @MainActor
+final class VoicesViewModel {
+    private let recorder: AudioRecorder
+
+    init(recorder: AudioRecorder = RealAudioRecorder()) {
+        self.recorder = recorder
     }
 }
 ```
 
-**Rule of three**: If you call an init in two tests, define a fixture before the third. Fixtures are composable — `Recording.fixture()` uses `ChunkEntry.fixture()` as its default.
-
-**Why this matters for us:** As `ChunkEntry` grows (audio data, duration, metadata), only the fixture needs updating. Every selfTest assertion and future Swift Testing test stays untouched.
+For macro-generated spies: [@Spyable](https://github.com/Matejkob/swift-spyable).
 
 ---
 
-## Part II: Testing SwiftUI (Ch 6-7)
+## Pure Functions First
 
-### Ch 6 — Humble View, Smart ViewModel
+No state, no side effects — easiest to test. Push logic toward pure functions, keep the impure shell thin. (Ch 4)
 
-SwiftUI views can't be unit tested directly. The solution: make the view *humble* (layout only) and move all logic into a testable ViewModel.
-
-**We already do this.** Our architecture: dumb `ContentView` reads `VoicesViewModel`, which owns `ChunkStore`. The view calls `toggleRecording()`, the ViewModel handles state. Test the ViewModel, trust SwiftUI to render.
-
-Lodi uses nested ViewModels (`MenuRow.ViewModel`). We use a flat structure (`VoicesViewModel` + `ChunkStore`). Same principle: views ask ViewModels what to show, never compute it themselves.
-
-### Ch 7 — Testing Dynamic Views (Dependency Inversion Principle)
-
-When a ViewModel depends on an async data source, define a protocol and inject it. This lets you:
-1. Test the ViewModel with a stub (instant, deterministic)
-2. Build the real implementation later
-3. Swap implementations without changing the ViewModel
-
-**Our equivalent:** `ChunkStore` injects `ListenedDatabase` via protocol. `InMemoryListenedDatabase` in production (and tests). When we add persistent storage, we swap the implementation — ChunkStore doesn't change.
-
-**Key insight**: The Dependency Inversion Principle is not about testing — it's about building one layer at a time. Test the ViewModel with a stub while the real networking isn't built yet. We do this naturally: `WSConnection` is a real WebSocket client, but if we needed to test log delivery, we'd inject a protocol.
+```swift
+// Pure computed properties — trivially testable
+var hasListenable: Bool { allChunks.contains { $0.status == .uploaded } }
+var allHeard: Bool { allChunks.allSatisfy { $0.status == .listened } }
+```
 
 ---
 
-## Part III: Test Doubles (Ch 8, 10, 12, 15)
+## Bug Fix = Missing Test
 
-Four types. Each serves a different purpose:
+A bug is a test that hasn't been written yet. (Ch 14)
 
-| Double | Controls | Purpose | Voices example |
-|--------|----------|---------|----------------|
-| **Stub** | Indirect *input* | Return a predetermined value to the SUT | A `ListenedDatabase` that always returns `true` for `allHeard` |
-| **Spy** | Indirect *output* | Record what the SUT did for later assertion | A log spy that captures all `log()` calls for assertion |
-| **Fake** | *State* | Simpler in-memory version of a stateful dependency | `InMemoryListenedDatabase` (we already have this) |
-| **Dummy** | *Nothing* | Satisfies a required parameter that doesn't affect the test | An empty `ListenedDatabase` passed when testing recording (listening not under test) |
-
-**When to use which:**
-- Testing what the ViewModel *does* given an input? **Stub** the dependency.
-- Testing that the ViewModel *called* a dependency correctly? **Spy** on it.
-- Dependency is stateful (UserDefaults, database, disk)? **Fake** it in-memory.
-- Dependency is required by init but irrelevant to this test? **Dummy** it.
-
-**In our log-driven system**, the device log itself is a spy — every `log()` and `logError()` call is captured in `~/clawcontraw.log`. We assert by grepping the log output. The whole system is one big Spy Test Double.
+1. Write a failing `@Test` that reproduces the bug
+2. See it fail — confirms the bug exists
+3. Fix the code
+4. See the test pass
+5. Commit
 
 ---
 
-## Part IV: Real-World Patterns (Ch 9, 11, 13-14)
+## @Observable in 2026
 
-### Ch 9 — Testing JSON/Decoding
+### Architecture
 
-Only test decoding when there's custom logic (nested objects, computed properties, enum mapping). If `Decodable` auto-synthesis handles it, a test is redundant — Swift does the work.
+```
+View (dumb) ──reads/calls──▶ ViewModel (@Observable @MainActor) ──delegates──▶ Store/Service (protocol-backed)
+```
 
-**For us:** If we add a server API, test the decoding only if the JSON shape differs from our model shape.
+Views read properties and call methods. No `@State` for business logic, no `Task` creation in views. Data in, callbacks out. (Ch 6)
 
-### Ch 11 — Dependency Injection with @EnvironmentObject
+### What You Get
 
-Shared state (like an order controller) should be injected, not accessed as a singleton. Singletons couple tests — one test's mutation affects the next.
+Plain `var` properties are automatically tracked. No `@Published`, no `sink`, no `AnyCancellable`. Synchronous mutations are directly testable — mutate, then assert.
 
-**Our equivalent:** We inject `ListenedDatabase` via init, keeping `ChunkStore` testable in isolation. Each test (or selfTest run) gets a fresh `InMemoryListenedDatabase`.
+### Gotchas
 
-### Ch 13 — Conditional View Presentation
+| Issue | Detail |
+|-------|--------|
+| Not a protocol | `@Observable` is a macro on a class. Observation silently fails if missing from a conforming type |
+| One-shot tracking | `withObservationTracking` fires once. For continuous observation outside SwiftUI, use `Observations` AsyncSequence (Swift 6.2) |
+| `@MainActor` required | Off-main mutations crash at runtime. Always pair with `@MainActor` on UI-driving VMs |
+| `@State` re-init | `@State` with `@Observable` calls the initializer every rebuild. SwiftUI preserves the original but intermediates can leak |
+| Serial tests | `@MainActor` VMs force serial execution in Swift Testing. Acceptable for small codebases |
 
-Extract conditional logic (show alert? which message?) into the ViewModel. Test the logic, wire the view to consume it.
+### Testing @Observable VMs
 
-**Our equivalent:** Button color (blue vs purple) is computed from `store.hasListenable && !store.allHeard`. The ViewModel exposes the data, the view just reads it. We prove the logic via log assertions in selfTest.
+Synchronous state needs no observation tracking:
 
-### Ch 14 — Fixing Bugs with TDD
-
-> "A bug is just a test that hasn't been written yet."
-
-**Bug-fix workflow:**
-1. Write a `logError("TEST FAIL: ...")` that reproduces the bug on device.
-2. See it fail in the logs.
-3. Fix the code.
-4. See the log switch to `log("TEST PASS: ...")`.
-5. Delete the TRACE, commit the fix.
-
-For changing existing behavior: update the expected value in the log assertion *first*, see it fail, then change the implementation to match.
-
-### Ch 15 — Fakes and Dummies
-
-**Fake**: Replace a slow/stateful dependency with a fast in-memory equivalent. Our `InMemoryListenedDatabase` is textbook — it stores heard IDs in a `Set<UUID>` instead of hitting disk/database.
-
-**Dummy**: Fill a required parameter with a do-nothing implementation when the behavior under test doesn't use it. Example: when testing recording logic, pass a dummy `ListenedDatabase` that does nothing — recording doesn't touch it.
+```swift
+@Test func initialState() {
+    let vm = VoicesViewModel()
+    #expect(vm.isRecording == false)
+    #expect(vm.isListening == false)
+}
+```
 
 ---
 
-## Part V: Process & Mindset (Ch 16, Appendix A)
+## Logs ≠ Tests
 
-### Ch 16 — Conclusion
+| | Tests (Xcode target) | Logs (WebSocket) |
+|-|----------------------|-------------------|
+| **Purpose** | Prove correctness | Observe behavior on device |
+| **When** | Before merge | At runtime |
+| **Speed** | Fast, no device needed | Requires deploy + device |
+| **Regression** | Automatic — CI catches it | Manual — someone reads the log |
+| **Failure** | Blocks merge | Goes unnoticed unless watched |
 
-- TDD nudges good design. If a test is hard to write, the code is hard to use.
-- Small steps compound. Each passing test is a known-good state you can return to.
-- "Speed of iteration will trump quality of iteration" (Daniel Ek). TDD enables fast iteration with confidence.
-
-### Appendix A — Where to Go from Here
-
-- **CI**: Run tests on every push. For us: a GitHub Action that builds the project (compilation = test).
-- **Snapshot Testing**: Point-Free's library captures UI as images. Low priority for us — our UI is bar strips, not complex layouts.
-- **Modularization**: Split app into modules to speed up builds and enable parallel testing. Relevant when the codebase grows beyond the current ~5 files.
+Use `log()` / `logError()` for runtime observability. Use `@Test` / `#expect` for correctness proofs.
 
 ---
 
-## Key Takeaways for Voices
+## Incremental Migration
 
-1. **Our log system IS Lodi's test suite.** `logError("TEST FAIL: ...")` = `XCTAssertEqual` failure. `log("TEST PASS: ...")` = assertion passed. The device log is a Spy that records everything.
+Don't rewrite. Add tests where you're already changing code. (Ch 16, Appendix A, Feathers)
 
-2. **Arrange-Act-Assert in every selfTest block.** Set up state, perform action, log the proof. Keep the three phases visually distinct.
+1. **Bug fixes** — write failing test, fix, pass. Lowest friction entry point.
+2. **New features** — TDD from scratch.
+3. **Extract and test** — pull logic from views into VMs. Now testable.
+4. **Sprout method** — new tested function, called from legacy code at a single point.
+5. **Wrap method** — rename original, new function calls original + new logic.
 
-3. **Write a Test List before coding.** Enumerate behaviors as comments before implementing. Work through them sequentially. This prevents scope creep — the list IS the spec.
+### Seams
 
-4. **Don't let tests crash.** Use safe subscripts and guard-let in test assertions. A crash at line 50 loses proof from lines 51-200.
-
-5. **Fixture extensions for model types.** As `ChunkEntry`/`Recording` grow, centralize construction. Update one fixture, all tests stay green.
-
-6. **Four Test Doubles, one question each.** Stub = what input? Spy = what output? Fake = what state? Dummy = not relevant. We already use Fakes (`InMemoryListenedDatabase`). Name them correctly.
-
-7. **Bug = missing test.** Reproduce via `logError`, fix, flip to `log`, delete trace, commit.
-
-8. **Pure functions first.** `hasListenable`, `allHeard`, `allChunks` are pure computed properties — easiest to test. Push logic toward pure functions, keep the impure shell (Tasks, async, UI) as thin as possible.
+| Type | Swift equivalent | Use case |
+|------|-----------------|----------|
+| Object seam | Protocol conformance | Primary. Extract protocol, inject stub/spy |
+| Link seam | Module/target boundary | Test target links mock implementation |
+| Preprocessing seam | `#if DEBUG` / `#if TESTING` | Escape hatch for hard-to-inject deps |
 
 ---
 
 ## Reference
 
-Gio Lodi, *Test-Driven Development in Swift: Compile Better Code with XCTest and TDD* (Apress, 2021). ISBN 978-1-4842-7002-8.
+### Books
+- Gio Lodi, *TDD in Swift* (Apress, 2021)
+- Greene & Katz, *iOS TDD by Tutorials* (Kodeco, 2019)
+- Feathers, *Working Effectively with Legacy Code* (2004)
+
+### Apple
+- [Swift Testing docs](https://developer.apple.com/documentation/testing)
+- [Meet Swift Testing (WWDC24)](https://developer.apple.com/videos/play/wwdc2024/10179/)
+- [Go Further with Swift Testing (WWDC24)](https://developer.apple.com/videos/play/wwdc2024/10195/)
+
+### @Observable & Testing
+- [Jacob Bartlett — Unit Test the Observation Framework](https://blog.jacobstechtavern.com/p/unit-test-the-observation-framework)
+- [Fatbobman — Deep Dive Into Observation](https://fatbobman.com/en/posts/mastering-observation/)
+- [Use Your Loaf — Swift Observations AsyncSequence](https://useyourloaf.com/blog/swift-observations-asyncsequence-for-state-changes/)
+- [Swift Forums — Enforce @Observable through a protocol](https://forums.swift.org/t/enforce-observable-through-a-protocol/72984)
+- [Swift Forums — @MainActor @Observable test performance](https://forums.swift.org/t/improving-swift-testing-performance-for-mainactor-observable-view-models/84733)
