@@ -10,11 +10,11 @@ final class VoicesViewModel {
     }
     private(set) var chunks: [Chunk] = []
 
-    private let chunkProducer: any ChunkProducer
+    private let recordingService: any RecordingService
     private var recordingTask: Task<Void, Never>?
 
-    init(chunkProducer: any ChunkProducer = SilentChunkProducer()) {
-        self.chunkProducer = chunkProducer
+    init(recordingService: any RecordingService = SilentRecordingService()) {
+        self.recordingService = recordingService
     }
 
     func toggleRecording() {
@@ -30,7 +30,7 @@ final class VoicesViewModel {
         isRecording = true
         chunks = []
         recordingTask = Task {
-            for await chunk in chunkProducer.chunks() {
+            for await chunk in recordingService.chunks() {
                 guard !Task.isCancelled else { break }
                 chunks.append(chunk)
             }

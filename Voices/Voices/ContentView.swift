@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var vm = VoicesViewModel(chunkProducer: DemoChunkProducer())
+    @State private var vm = VoicesViewModel(recordingService: DemoRecordingService())
 
     var body: some View {
         ZStack(alignment: .bottom) {

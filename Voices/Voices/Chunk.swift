@@ -2,17 +2,17 @@ struct Chunk: Equatable {
     let index: Int
 }
 
-protocol ChunkProducer {
+protocol RecordingService {
     func chunks() -> AsyncStream<Chunk>
 }
 
-struct SilentChunkProducer: ChunkProducer {
+struct SilentRecordingService: RecordingService {
     func chunks() -> AsyncStream<Chunk> {
         AsyncStream { $0.finish() }
     }
 }
 
-struct DemoChunkProducer: ChunkProducer {
+struct DemoRecordingService: RecordingService {
     func chunks() -> AsyncStream<Chunk> {
         AsyncStream { continuation in
             let task = Task {

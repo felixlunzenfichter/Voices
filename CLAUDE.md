@@ -125,7 +125,7 @@ Two patterns depending on what you're testing:
 ```swift
 @Test("Fake produces exactly N chunks in order", .timeLimit(.minutes(1)))
 func producesCorrectChunks() async {
-    let producer = FakeChunkProducer(count: 5)
+    let producer = FakeRecordingService(count: 5)
     var collected: [Int] = []
     for await chunk in producer.chunks() {
         collected.append(chunk.index)
@@ -139,8 +139,8 @@ func producesCorrectChunks() async {
 ```swift
 @Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))
 func stopCancelsProduction() async {
-    let producer = FakeChunkProducer(count: 1000)
-    let vm = VoicesViewModel(chunkProducer: producer)
+    let producer = FakeRecordingService(count: 1000)
+    let vm = VoicesViewModel(recordingService: producer)
 
     vm.toggleRecording()
 

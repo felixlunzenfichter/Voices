@@ -1,7 +1,7 @@
 import Testing
 @testable import Voices
 
-struct FakeChunkProducer: ChunkProducer {
+struct FakeRecordingService: RecordingService {
     let count: Int
 
     func chunks() -> AsyncStream<Chunk> {
@@ -20,10 +20,10 @@ struct FakeChunkProducer: ChunkProducer {
 
 // MARK: - Pocket test: verify the fake itself
 
-struct FakeChunkProducerTests {
+struct FakeRecordingServiceTests {
     @Test("Fake produces exactly N chunks in order", .timeLimit(.minutes(1)))
     func producesCorrectChunks() async {
-        let producer = FakeChunkProducer(count: 5)
+        let producer = FakeRecordingService(count: 5)
         var collected: [Int] = []
         for await chunk in producer.chunks() {
             collected.append(chunk.index)
@@ -33,7 +33,7 @@ struct FakeChunkProducerTests {
 
     @Test("Fake with zero count produces empty stream", .timeLimit(.minutes(1)))
     func zeroCountIsEmpty() async {
-        let producer = FakeChunkProducer(count: 0)
+        let producer = FakeRecordingService(count: 0)
         var collected: [Chunk] = []
         for await chunk in producer.chunks() {
             collected.append(chunk)

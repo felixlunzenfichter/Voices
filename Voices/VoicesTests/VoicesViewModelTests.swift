@@ -32,8 +32,8 @@ struct VoicesViewModelTests {
 
     @Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))
     func stopCancelsProduction() async {
-        let producer = FakeChunkProducer(count: 1000)
-        let vm = VoicesViewModel(chunkProducer: producer)
+        let producer = FakeRecordingService(count: 1000)
+        let vm = VoicesViewModel(recordingService: producer)
 
         vm.toggleRecording()
 
