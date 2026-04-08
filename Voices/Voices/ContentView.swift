@@ -37,14 +37,9 @@ struct RecordButton: View {
     private static let squareSize: CGFloat = circleSize / φ
     private static let cornerRadius: CGFloat = squareSize / pow(φ, 4)
 
-    private static let animationDuration: CGFloat = 1 / φ
-    private static let animationBounce: CGFloat = 1 - 1 / φ
-
     var body: some View {
         Button(action: {
-            withAnimation(.spring(duration: Self.animationDuration, bounce: Self.animationBounce)) {
-                onTap()
-            }
+            onTap()
         }) {
             RoundedRectangle(cornerRadius: isRecording ? Self.cornerRadius : Self.circleSize / 2, style: .continuous)
                 .fill(Color.red)
