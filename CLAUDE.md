@@ -118,23 +118,7 @@ extension Collection {
 
 ### Async Tests
 
-Two patterns depending on what you're testing:
-
-**Testing a stream directly** — consume with `for await`. The stream's `finish()` ends the loop. Deterministic, no polling. From `VoicesTests/ChunkOrderingTests.swift`:
-
-```swift
-@Test("Fake produces exactly N chunks in order", .timeLimit(.minutes(1)))
-func producesCorrectChunks() async {
-    let producer = FakeRecordingService(count: 5)
-    var collected: [Int] = []
-    for await audioChunk in producer.audioChunks() {
-        collected.append(audioChunk.index)
-    }
-    #expect(collected == [0, 1, 2, 3, 4])
-}
-```
-
-**Testing a ViewModel with internal async Tasks** — use `Observations` (SE-0475, Swift 6.2 stdlib) to reactively await state changes. No polling, guaranteed to fire on every mutation. From `VoicesTests/VoicesViewModelTests.swift`:
+Use `Observations` (SE-0475, Swift 6.2 stdlib) to reactively await ViewModel state changes. No polling, guaranteed to fire on every `@Observable` mutation. From `VoicesTests/VoicesViewModelTests.swift`:
 
 ```swift
 @Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))
@@ -159,10 +143,10 @@ func stopCancelsProduction() async {
 ```
 
 **Key rules:**
-- `for await` on finite streams for testing producers/services directly
-- `Observations({ vm.property })` for awaiting ViewModel state changes from outside — it's an `AsyncSequence` over `@Observable` mutations, shipped in the `Observation` module
+- `Observations({ vm.property })` for awaiting ViewModel state changes — an `AsyncSequence` over `@Observable` mutations, shipped in the `Observation` module
 - `.timeLimit` as safety net on every async test
 - Avoid `while ... { await Task.yield() }` polling — `Observations` replaces it with a real guarantee
+- Only test through the ViewModel — don't test fakes or test infrastructure
 
 ### Fixture Extensions
 
