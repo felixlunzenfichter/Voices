@@ -8,7 +8,7 @@ final class VoicesViewModel {
     private(set) var isListening = false {
         didSet { checkMutualExclusion() }
     }
-    private(set) var chunks: [Chunk] = []
+    private(set) var audioChunks: [AudioChunk] = []
 
     private let recordingService: any RecordingService
     private var recordingTask: Task<Void, Never>?
@@ -28,11 +28,11 @@ final class VoicesViewModel {
     private func startRecording() {
         if isListening { stopListening() }
         isRecording = true
-        chunks = []
+        audioChunks = []
         recordingTask = Task {
-            for await chunk in recordingService.chunks() {
+            for await audioChunk in recordingService.audioChunks() {
                 guard !Task.isCancelled else { break }
-                chunks.append(chunk)
+                audioChunks.append(audioChunk)
             }
         }
         log("Recording started")

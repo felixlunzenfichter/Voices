@@ -38,17 +38,17 @@ struct VoicesViewModelTests {
         vm.toggleRecording()
 
         // Wait for at least one chunk — reactive, not polling
-        for await count in Observations({ vm.chunks.count }) {
+        for await count in Observations({ vm.audioChunks.count }) {
             if count >= 1 { break }
         }
 
         vm.toggleRecording()  // stop
-        let countAfterStop = vm.chunks.count
+        let countAfterStop = vm.audioChunks.count
 
         // Wait to see if any more chunks sneak through
         try? await Task.sleep(for: .milliseconds(50))
 
-        #expect(vm.chunks.count == countAfterStop, "No new chunks should arrive after stop")
+        #expect(vm.audioChunks.count == countAfterStop, "No new chunks should arrive after stop")
         #expect(countAfterStop < 1000, "Stream should have been cancelled before completing")
     }
 }

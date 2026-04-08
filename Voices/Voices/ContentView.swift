@@ -7,14 +7,14 @@ struct ContentView: View {
         ZStack(alignment: .bottom) {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 24))], spacing: 6) {
-                    ForEach(vm.chunks, id: \.index) { _ in
+                    ForEach(vm.audioChunks, id: \.index) { _ in
                         RoundedRectangle(cornerRadius: 4)
                             .fill(Color.green)
                             .frame(height: 24)
                     }
                 }
                 .padding()
-                .animation(.default, value: vm.chunks.count)
+                .animation(.default, value: vm.audioChunks.count)
             }
 
             HStack {

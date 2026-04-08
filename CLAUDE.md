@@ -127,8 +127,8 @@ Two patterns depending on what you're testing:
 func producesCorrectChunks() async {
     let producer = FakeRecordingService(count: 5)
     var collected: [Int] = []
-    for await chunk in producer.chunks() {
-        collected.append(chunk.index)
+    for await audioChunk in producer.audioChunks() {
+        collected.append(audioChunk.index)
     }
     #expect(collected == [0, 1, 2, 3, 4])
 }
@@ -144,16 +144,16 @@ func stopCancelsProduction() async {
 
     vm.toggleRecording()
 
-    // Reactive: yields every time chunks.count changes
-    for await count in Observations({ vm.chunks.count }) {
+    // Reactive: yields every time audioChunks.count changes
+    for await count in Observations({ vm.audioChunks.count }) {
         if count >= 1 { break }
     }
 
     vm.toggleRecording()  // stop
-    let countAfterStop = vm.chunks.count
+    let countAfterStop = vm.audioChunks.count
     try? await Task.sleep(for: .milliseconds(50))
 
-    #expect(vm.chunks.count == countAfterStop)
+    #expect(vm.audioChunks.count == countAfterStop)
     #expect(countAfterStop < 1000)
 }
 ```
