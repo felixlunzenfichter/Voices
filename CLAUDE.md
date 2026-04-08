@@ -118,7 +118,9 @@ extension Collection {
 
 ### Async Tests
 
-Consume async sequences directly with `for await`. The stream's `finish()` ends the loop — deterministic, no polling. Always set `.timeLimit` so a broken stream can't hang the suite. From `VoicesTests/ChunkOrderingTests.swift`:
+Two patterns depending on what you're testing:
+
+**Testing a stream directly** — consume with `for await`. The stream's `finish()` ends the loop. Deterministic, no polling. From `VoicesTests/ChunkOrderingTests.swift`:
 
 ```swift
 @Test("Fake produces exactly N chunks in order", .timeLimit(.minutes(1)))
@@ -132,7 +134,35 @@ func producesCorrectChunks() async {
 }
 ```
 
-**Key rules:** Inject a fake that produces a finite stream — `for await` ends when the stream finishes. `.timeLimit` is the safety net if the stream never terminates. Avoid `while ... { await Task.yield() }` polling — it depends on scheduler ordering and can flake under CI load.
+**Testing a ViewModel with internal async Tasks** — use `Observations` (SE-0475, Swift 6.2 stdlib) to reactively await state changes. No polling, guaranteed to fire on every mutation. From `VoicesTests/VoicesViewModelTests.swift`:
+
+```swift
+@Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))
+func stopCancelsProduction() async {
+    let producer = FakeChunkProducer(count: 1000)
+    let vm = VoicesViewModel(chunkProducer: producer)
+
+    vm.toggleRecording()
+
+    // Reactive: yields every time chunks.count changes
+    for await count in Observations({ vm.chunks.count }) {
+        if count >= 1 { break }
+    }
+
+    vm.toggleRecording()  // stop
+    let countAfterStop = vm.chunks.count
+    try? await Task.sleep(for: .milliseconds(50))
+
+    #expect(vm.chunks.count == countAfterStop)
+    #expect(countAfterStop < 1000)
+}
+```
+
+**Key rules:**
+- `for await` on finite streams for testing producers/services directly
+- `Observations({ vm.property })` for awaiting ViewModel state changes from outside — it's an `AsyncSequence` over `@Observable` mutations, shipped in the `Observation` module
+- `.timeLimit` as safety net on every async test
+- Avoid `while ... { await Task.yield() }` polling — `Observations` replaces it with a real guarantee
 
 ### Fixture Extensions
 
