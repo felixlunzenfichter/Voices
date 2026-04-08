@@ -116,6 +116,28 @@ extension Collection {
 
 **Test naming:** Swift Testing: `@Test("description")` with a short function name. XCTest (legacy): `test_<what>_<conditions>_<expected>()` (Roy Osherove convention, Ch 4).
 
+### Async Tests
+
+When testing code that produces values over time (e.g. `AsyncStream`), mark the test `async`, poll with `Task.yield()`, and always set `.timeLimit` so a broken stream can't hang the suite. From `VoicesTests/ChunkOrderingTests.swift`:
+
+```swift
+@Test("Chunks arrive in sequential order during recording", .timeLimit(.minutes(1)))
+func chunksArriveInOrder() async {
+    let producer = FakeChunkProducer(count: 5)
+    let vm = VoicesViewModel(chunkProducer: producer)
+
+    vm.toggleRecording()
+
+    while vm.chunks.count < 5 {
+        await Task.yield()
+    }
+
+    #expect(vm.chunks.map(\.index) == [0, 1, 2, 3, 4])
+}
+```
+
+**Key rules:** `await Task.yield()` gives the producer's `Task` a chance to run. `.timeLimit` ensures the test fails fast instead of hanging if the stream never delivers. Inject a `FakeChunkProducer` (yields N chunks immediately) so the test is deterministic — no real timers.
+
 ### Fixture Extensions
 
 Centralize construction with defaults. When the init grows, only the fixture updates. (Ch 5)
