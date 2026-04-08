@@ -142,11 +142,26 @@ func stopCancelsProduction() async {
 }
 ```
 
+**Testing a real service directly** — consume its stream with `for await`. The stream's `finish()` ends the loop, no polling needed. Use this when testing a real `RecordingService` implementation in isolation:
+
+```swift
+@Test("Audio service produces chunks in order", .timeLimit(.minutes(1)))
+func audioServiceChunkOrder() async {
+    let service = RealAudioRecordingService(source: .testFile("sample.wav"))
+    var collected: [Int] = []
+    for await audioChunk in service.audioChunks() {
+        collected.append(audioChunk.index)
+    }
+    #expect(collected == [0, 1, 2, 3, 4])
+}
+```
+
 **Key rules:**
-- `Observations({ vm.property })` for awaiting ViewModel state changes — an `AsyncSequence` over `@Observable` mutations, shipped in the `Observation` module
+- `Observations({ vm.property })` for ViewModel state changes — reactive, guaranteed
+- `for await` on finite streams for testing real services directly
 - `.timeLimit` as safety net on every async test
 - Avoid `while ... { await Task.yield() }` polling — `Observations` replaces it with a real guarantee
-- Only test through the ViewModel — don't test fakes or test infrastructure
+- Don't test fakes or test infrastructure — test through the ViewModel, or test real services
 
 ### Fixture Extensions
 
