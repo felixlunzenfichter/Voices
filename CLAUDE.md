@@ -157,7 +157,7 @@ func audioServiceChunkOrder() async {
 ```
 
 **Key rules:**
-- `Observations({ vm.property })` for ViewModel state changes — reactive, guaranteed
+- `Observations({ vm.property })` for ViewModel state changes — reactive, guaranteed. Note: fast mutations can coalesce (you get the latest value, not every intermediate), so assert on thresholds (`count >= 1`), not exact sequences
 - `for await` on finite streams for testing real services directly
 - `.timeLimit` as safety net on every async test
 - Avoid `while ... { await Task.yield() }` polling — `Observations` replaces it with a real guarantee
