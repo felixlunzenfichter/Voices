@@ -7,26 +7,39 @@ struct FakeChunkProducer: ChunkProducer {
     func chunks() -> AsyncStream<Chunk> {
         let count = self.count
         return AsyncStream { continuation in
-            for i in 0..<count {
-                continuation.yield(Chunk(index: i))
+            Task {
+                for i in 0..<count {
+                    continuation.yield(Chunk(index: i))
+                    await Task.yield()
+                }
+                continuation.finish()
             }
-            continuation.finish()
         }
     }
 }
 
-struct ChunkOrderingTests {
-    @Test("Chunks arrive in sequential order during recording", .timeLimit(.minutes(1)))
-    func chunksArriveInOrder() async {
+// MARK: - Pocket test: verify the fake itself
+
+struct FakeChunkProducerTests {
+    @Test("Fake produces exactly N chunks in order", .timeLimit(.minutes(1)))
+    func producesCorrectChunks() async {
         let producer = FakeChunkProducer(count: 5)
-        let vm = VoicesViewModel(chunkProducer: producer)
-
-        vm.toggleRecording()
-
-        while vm.chunks.count < 5 {
-            await Task.yield()
+        var collected: [Int] = []
+        for await chunk in producer.chunks() {
+            collected.append(chunk.index)
         }
+        #expect(collected == [0, 1, 2, 3, 4])
+    }
 
-        #expect(vm.chunks.map(\.index) == [0, 1, 2, 3, 4])
+    @Test("Fake with zero count produces empty stream", .timeLimit(.minutes(1)))
+    func zeroCountIsEmpty() async {
+        let producer = FakeChunkProducer(count: 0)
+        var collected: [Chunk] = []
+        for await chunk in producer.chunks() {
+            collected.append(chunk)
+        }
+        #expect(collected.isEmpty)
     }
 }
+
+

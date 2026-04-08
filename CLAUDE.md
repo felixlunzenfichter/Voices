@@ -118,25 +118,21 @@ extension Collection {
 
 ### Async Tests
 
-When testing code that produces values over time (e.g. `AsyncStream`), mark the test `async`, poll with `Task.yield()`, and always set `.timeLimit` so a broken stream can't hang the suite. From `VoicesTests/ChunkOrderingTests.swift`:
+Consume async sequences directly with `for await`. The stream's `finish()` ends the loop — deterministic, no polling. Always set `.timeLimit` so a broken stream can't hang the suite. From `VoicesTests/ChunkOrderingTests.swift`:
 
 ```swift
-@Test("Chunks arrive in sequential order during recording", .timeLimit(.minutes(1)))
-func chunksArriveInOrder() async {
+@Test("Fake produces exactly N chunks in order", .timeLimit(.minutes(1)))
+func producesCorrectChunks() async {
     let producer = FakeChunkProducer(count: 5)
-    let vm = VoicesViewModel(chunkProducer: producer)
-
-    vm.toggleRecording()
-
-    while vm.chunks.count < 5 {
-        await Task.yield()
+    var collected: [Int] = []
+    for await chunk in producer.chunks() {
+        collected.append(chunk.index)
     }
-
-    #expect(vm.chunks.map(\.index) == [0, 1, 2, 3, 4])
+    #expect(collected == [0, 1, 2, 3, 4])
 }
 ```
 
-**Key rules:** `await Task.yield()` gives the producer's `Task` a chance to run. `.timeLimit` ensures the test fails fast instead of hanging if the stream never delivers. Inject a `FakeChunkProducer` (yields N chunks immediately) so the test is deterministic — no real timers.
+**Key rules:** Inject a fake that produces a finite stream — `for await` ends when the stream finishes. `.timeLimit` is the safety net if the stream never terminates. Avoid `while ... { await Task.yield() }` polling — it depends on scheduler ordering and can flake under CI load.
 
 ### Fixture Extensions
 
