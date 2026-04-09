@@ -8,9 +8,12 @@ final class VoicesViewModel {
     private(set) var isListening = false {
         didSet { checkMutualExclusion() }
     }
-    private(set) var audioChunks: [AudioChunk] = []
     private(set) var recordings: [[AudioChunk]] = []
     private(set) var playbackIndex: Int = -1
+
+    var audioChunks: [AudioChunk] {
+        recordings.last ?? []
+    }
 
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
@@ -48,15 +51,15 @@ final class VoicesViewModel {
     private func startRecording() {
         if isListening { stopListening() }
         isRecording = true
-        audioChunks = []
+        recordings.append([])
         recordingTask = Task { await consumeAudioChunks() }
         log("Recording started")
     }
 
     private func stopRecording() {
         cancelTask(&recordingTask)
-        if !audioChunks.isEmpty {
-            recordings.append(audioChunks)
+        if audioChunks.isEmpty {
+            recordings.removeLast()
         }
         isRecording = false
         log("Recording stopped")
@@ -66,7 +69,7 @@ final class VoicesViewModel {
     private func consumeAudioChunks() async {
         for await audioChunk in recordingService.audioChunks() {
             guard !Task.isCancelled else { break }
-            audioChunks.append(audioChunk)
+            recordings[recordings.count - 1].append(audioChunk)
         }
     }
 
