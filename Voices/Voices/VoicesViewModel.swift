@@ -24,6 +24,8 @@ final class VoicesViewModel {
         self.playbackService = playbackService
     }
 
+    // MARK: - Public
+
     func toggleRecording() {
         isRecording ? stopRecording() : startRecording()
     }
@@ -32,53 +34,68 @@ final class VoicesViewModel {
         isListening ? stopListening() : startListening()
     }
 
+    // MARK: - Recording
+
     private func startRecording() {
         if isListening { stopListening() }
         isRecording = true
         audioChunks = []
-        recordingTask = Task {
-            for await audioChunk in recordingService.audioChunks() {
-                guard !Task.isCancelled else { break }
-                audioChunks.append(audioChunk)
-            }
-        }
+        recordingTask = Task { await consumeAudioChunks() }
         log("Recording started")
     }
 
     private func stopRecording() {
-        recordingTask?.cancel()
-        recordingTask = nil
+        cancelTask(&recordingTask)
         isRecording = false
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
     }
 
+    private func consumeAudioChunks() async {
+        for await audioChunk in recordingService.audioChunks() {
+            guard !Task.isCancelled else { break }
+            audioChunks.append(audioChunk)
+        }
+    }
+
+    // MARK: - Listening
+
     private func startListening() {
         if isRecording { stopRecording() }
         isListening = true
         playbackIndex = 0
-        playbackTask = Task {
-            for await index in playbackService.play(audioChunks) {
-                guard !Task.isCancelled else { break }
-                playbackIndex = index
-            }
-            if !Task.isCancelled {
-                isListening = false
-            }
-        }
+        playbackTask = Task { await consumePlayback() }
         log("Listening started")
     }
 
     private func stopListening() {
-        playbackTask?.cancel()
-        playbackTask = nil
+        cancelTask(&playbackTask)
         isListening = false
         log("Listening stopped")
     }
+
+    private func consumePlayback() async {
+        for await index in playbackService.play(audioChunks) {
+            guard !Task.isCancelled else { break }
+            playbackIndex = index
+        }
+        if !Task.isCancelled {
+            isListening = false
+        }
+    }
+
+    // MARK: - Invariants
 
     private func checkMutualExclusion() {
         if isRecording && isListening {
             logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
         }
+    }
+
+    // MARK: - Helpers
+
+    private func cancelTask(_ task: inout Task<Void, Never>?) {
+        task?.cancel()
+        task = nil
     }
 }
