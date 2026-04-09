@@ -42,7 +42,7 @@ struct VoicesViewModelTests {
 
         // Record some chunks so listening can start
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
@@ -59,7 +59,7 @@ struct VoicesViewModelTests {
         #expect(vm.isListening == false, "Listening must stop when recording starts")
 
         // Record more chunks, then stop, so listening can start again
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
@@ -86,7 +86,7 @@ struct VoicesViewModelTests {
 
         // Record 3 chunks
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
@@ -130,7 +130,7 @@ struct VoicesViewModelTests {
 
         // Record 5 chunks
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 5 { break }
         }
         vm.toggleRecording()
@@ -168,7 +168,7 @@ struct VoicesViewModelTests {
 
         // Record 3 chunks
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
@@ -198,7 +198,7 @@ struct VoicesViewModelTests {
 
         // Record 3 chunks
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
@@ -224,17 +224,17 @@ struct VoicesViewModelTests {
         vm.toggleRecording()
 
         // Wait for at least one chunk — reactive, not polling
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 1 { break }
         }
 
         vm.toggleRecording()  // stop
-        let countAfterStop = vm.audioChunks.count
+        let countAfterStop = vm.recordings.last?.count ?? 0
 
         // Wait to see if any more chunks sneak through
         try? await Task.sleep(for: .milliseconds(50))
 
-        #expect(vm.audioChunks.count == countAfterStop, "No new chunks should arrive after stop")
+        #expect(vm.recordings.last?.count ?? 0 == countAfterStop, "No new chunks should arrive after stop")
         #expect(countAfterStop < 1000, "Stream should have been cancelled before completing")
     }
 
@@ -247,14 +247,14 @@ struct VoicesViewModelTests {
 
         // First recording
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
 
         // Second recording
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 3 { break }
         }
         vm.toggleRecording()
@@ -272,14 +272,14 @@ struct VoicesViewModelTests {
 
         // First recording: chunks [0, 1]
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 2 { break }
         }
         vm.toggleRecording()
 
         // Second recording: chunks [0, 1]
         vm.toggleRecording()
-        for await count in Observations({ vm.audioChunks.count }) {
+        for await count in Observations({ vm.recordings.last?.count ?? 0 }) {
             if count >= 2 { break }
         }
         vm.toggleRecording()

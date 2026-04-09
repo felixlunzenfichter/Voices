@@ -11,10 +11,6 @@ final class VoicesViewModel {
     private(set) var recordings: [[AudioChunk]] = []
     private(set) var playbackIndex: Int = -1
 
-    var audioChunks: [AudioChunk] {
-        recordings.last ?? []
-    }
-
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
     private var recordingTask: Task<Void, Never>?
@@ -62,7 +58,7 @@ final class VoicesViewModel {
 
     private func stopRecording() {
         cancelTask(&recordingTask)
-        if audioChunks.isEmpty {
+        if recordings.last?.isEmpty ?? true {
             recordings.removeLast()
         }
         isRecording = false
