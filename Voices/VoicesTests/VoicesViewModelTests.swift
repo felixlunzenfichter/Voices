@@ -237,4 +237,14 @@ struct VoicesViewModelTests {
         #expect(vm.audioChunks.count == countAfterStop, "No new chunks should arrive after stop")
         #expect(countAfterStop < 1000, "Stream should have been cancelled before completing")
     }
+
+    // MARK: - Multiple recordings (pending)
+
+    // TEST: Recording twice creates two separate recordings
+    // BEHAVIOR: stop recording, start again, stop again → recordings list has two entries
+    // FAIL IF: recordings.count != 2 or second recording overwrites the first
+
+    // TEST: Playback plays all recordings sequentially
+    // BEHAVIOR: after two recordings, pressing listen plays first then second without pause
+    // FAIL IF: only one recording plays, or playback order is wrong
 }
