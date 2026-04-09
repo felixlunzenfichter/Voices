@@ -9,12 +9,19 @@ final class VoicesViewModel {
         didSet { checkMutualExclusion() }
     }
     private(set) var audioChunks: [AudioChunk] = []
+    private(set) var playbackIndex: Int = -1
 
     private let recordingService: any RecordingService
+    private let playbackService: any PlaybackService
     private var recordingTask: Task<Void, Never>?
+    private var playbackTask: Task<Void, Never>?
 
-    init(recordingService: any RecordingService = SilentRecordingService()) {
+    init(
+        recordingService: any RecordingService = SilentRecordingService(),
+        playbackService: any PlaybackService = SilentPlaybackService()
+    ) {
         self.recordingService = recordingService
+        self.playbackService = playbackService
     }
 
     func toggleRecording() {
@@ -49,10 +56,22 @@ final class VoicesViewModel {
     private func startListening() {
         if isRecording { stopRecording() }
         isListening = true
+        playbackIndex = 0
+        playbackTask = Task {
+            for await index in playbackService.play(audioChunks) {
+                guard !Task.isCancelled else { break }
+                playbackIndex = index
+            }
+            if !Task.isCancelled {
+                isListening = false
+            }
+        }
         log("Listening started")
     }
 
     private func stopListening() {
+        playbackTask?.cancel()
+        playbackTask = nil
         isListening = false
         log("Listening stopped")
     }

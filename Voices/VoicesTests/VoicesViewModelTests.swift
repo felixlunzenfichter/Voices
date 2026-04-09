@@ -19,6 +19,20 @@ struct FakeRecordingService: RecordingService {
     }
 }
 
+struct FakePlaybackService: PlaybackService {
+    func play(_ chunks: [AudioChunk]) -> AsyncStream<Int> {
+        AsyncStream { continuation in
+            Task {
+                for chunk in chunks {
+                    continuation.yield(chunk.index)
+                    await Task.yield()
+                }
+                continuation.finish()
+            }
+        }
+    }
+}
+
 struct VoicesViewModelTests {
     @Test("Recording and listening are never both true")
     func mutualExclusion() {
