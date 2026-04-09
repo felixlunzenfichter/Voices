@@ -1,20 +1,24 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var vm = VoicesViewModel(recordingService: DemoRecordingService())
+    @State private var vm = VoicesViewModel(
+        recordingService: DemoRecordingService(),
+        playbackService: DemoPlaybackService()
+    )
 
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 24))], spacing: 6) {
-                    ForEach(vm.audioChunks, id: \.index) { _ in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.green)
-                            .frame(height: 24)
+                VStack(spacing: 4) {
+                    ForEach(vm.audioChunks, id: \.index) { chunk in
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
+                            .frame(height: 8)
                     }
                 }
                 .padding()
                 .animation(.default, value: vm.audioChunks.count)
+                .animation(.default, value: vm.playbackIndex)
             }
 
             HStack {
