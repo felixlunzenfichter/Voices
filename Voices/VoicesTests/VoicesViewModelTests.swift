@@ -240,9 +240,29 @@ struct VoicesViewModelTests {
 
     // MARK: - Multiple recordings (pending)
 
-    // TEST: Recording twice creates two separate recordings
-    // BEHAVIOR: stop recording, start again, stop again → recordings list has two entries
-    // FAIL IF: recordings.count != 2 or second recording overwrites the first
+    @Test("Recording twice creates two separate recordings", .timeLimit(.minutes(1)))
+    func recordingTwiceCreatesTwoRecordings() async {
+        let producer = FakeRecordingService(count: 3)
+        let vm = VoicesViewModel(recordingService: producer)
+
+        // First recording
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Second recording
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        #expect(vm.recordings.count == 2, "Should have two recordings")
+        #expect(vm.recordings[0].count == 3, "First recording should have 3 chunks")
+        #expect(vm.recordings[1].count == 3, "Second recording should have 3 chunks")
+    }
 
     // TEST: Playback plays all recordings sequentially
     // BEHAVIOR: after two recordings, pressing listen plays first then second without pause
