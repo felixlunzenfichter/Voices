@@ -9,6 +9,7 @@ final class VoicesViewModel {
         didSet { checkMutualExclusion() }
     }
     private(set) var audioChunks: [AudioChunk] = []
+    private(set) var recordings: [[AudioChunk]] = []
     private(set) var playbackIndex: Int = -1
 
     private let recordingService: any RecordingService
@@ -54,6 +55,9 @@ final class VoicesViewModel {
 
     private func stopRecording() {
         cancelTask(&recordingTask)
+        if !audioChunks.isEmpty {
+            recordings.append(audioChunks)
+        }
         isRecording = false
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
