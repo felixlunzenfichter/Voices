@@ -122,6 +122,44 @@ struct VoicesViewModelTests {
         #expect(vm.playbackIndex == indexBefore, "playbackIndex should not move")
     }
 
+    @Test("Resume listening continues from where it stopped", .timeLimit(.minutes(1)))
+    func resumeContinuesFromCurrentIndex() async {
+        let producer = FakeRecordingService(count: 5)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // Record 5 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 5 { break }
+        }
+        vm.toggleRecording()
+
+        // Start listening
+        vm.toggleListening()
+
+        // Wait until playbackIndex reaches 2
+        for await index in Observations({ vm.playbackIndex }) {
+            if index >= 2 { break }
+        }
+
+        // Stop mid-playback
+        vm.toggleListening()
+        let stoppedAt = vm.playbackIndex
+
+        // Resume — should not reset playbackIndex
+        vm.toggleListening()
+        #expect(vm.playbackIndex == stoppedAt, "playbackIndex should not reset on resume")
+
+        // Wait for playback to finish
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        #expect(vm.playbackIndex == 4, "Should play through to the end")
+        #expect(vm.isListening == false)
+    }
+
     @Test("Listen does nothing when everything already played", .timeLimit(.minutes(1)))
     func listenNoOpWhenFullyPlayed() async {
         let producer = FakeRecordingService(count: 3)
