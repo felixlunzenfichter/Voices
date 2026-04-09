@@ -13,7 +13,7 @@ struct ContentView: View {
                     ForEach(vm.audioChunks, id: \.index) { chunk in
                         RoundedRectangle(cornerRadius: 4)
                             .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
-                            .frame(height: 24)
+                            .frame(height: 48)
                     }
                 }
                 .padding()
