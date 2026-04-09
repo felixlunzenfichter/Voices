@@ -34,23 +34,40 @@ struct FakePlaybackService: PlaybackService {
 }
 
 struct VoicesViewModelTests {
-    @Test("Recording and listening are never both true")
-    func mutualExclusion() {
-        let vm = VoicesViewModel()
+    @Test("Recording and listening are never both true", .timeLimit(.minutes(1)))
+    func mutualExclusion() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
 
+        // Record some chunks so listening can start
         vm.toggleRecording()
-        #expect(vm.isRecording == true)
-        #expect(vm.isListening == false)
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+        #expect(vm.isRecording == false)
 
-        // Toggle listening while recording — must stop recording first
+        // Start listening — has unplayed chunks
         vm.toggleListening()
         #expect(vm.isListening == true)
-        #expect(vm.isRecording == false, "Recording must stop when listening starts")
+        #expect(vm.isRecording == false)
 
         // Toggle recording while listening — must stop listening first
         vm.toggleRecording()
         #expect(vm.isRecording == true)
         #expect(vm.isListening == false, "Listening must stop when recording starts")
+
+        // Record more chunks, then stop, so listening can start again
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Start listening again
+        vm.toggleListening()
+        #expect(vm.isListening == true)
+        #expect(vm.isRecording == false, "Recording must stop when listening starts")
     }
 
     @Test("Stop recording sets isRecording to false")

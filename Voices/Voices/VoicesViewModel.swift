@@ -35,7 +35,11 @@ final class VoicesViewModel {
     }
 
     func toggleListening() {
-        isListening ? stopListening() : startListening()
+        if isListening {
+            stopListening()
+        } else if hasUnplayedChunks {
+            startListening()
+        }
     }
 
     // MARK: - Recording
