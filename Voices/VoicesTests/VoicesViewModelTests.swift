@@ -94,6 +94,35 @@ struct VoicesViewModelTests {
         #expect(vm.isListening == false, "Must auto-stop after last chunk")
     }
 
+    @Test("hasUnplayedChunks reflects playback state")
+    func hasUnplayedChunks() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // No chunks recorded — nothing to play
+        #expect(vm.hasUnplayedChunks == false)
+
+        // Record 3 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Chunks recorded but not yet played — something to play
+        #expect(vm.hasUnplayedChunks == true)
+
+        // Play all chunks
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Everything played — nothing left to play
+        #expect(vm.hasUnplayedChunks == false)
+    }
+
     @Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))
     func stopCancelsProduction() async {
         let producer = FakeRecordingService(count: 1000)
