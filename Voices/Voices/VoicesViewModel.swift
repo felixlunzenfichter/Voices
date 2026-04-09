@@ -1,20 +1,20 @@
-import SwiftUI
+import Observation
 
 @Observable @MainActor
 final class VoicesViewModel {
     private(set) var isRecording = false {
-        didSet {
-            if isRecording && isListening {
-                logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
-            }
-        }
+        didSet { checkMutualExclusion() }
     }
     private(set) var isListening = false {
-        didSet {
-            if isRecording && isListening {
-                logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
-            }
-        }
+        didSet { checkMutualExclusion() }
+    }
+    private(set) var audioChunks: [AudioChunk] = []
+
+    private let recordingService: any RecordingService
+    private var recordingTask: Task<Void, Never>?
+
+    init(recordingService: any RecordingService = SilentRecordingService()) {
+        self.recordingService = recordingService
     }
 
     func toggleRecording() {
@@ -26,27 +26,28 @@ final class VoicesViewModel {
     }
 
     private func startRecording() {
-        if isListening {
-            withAnimation(.spring(duration: 1/φ, bounce: 1 - 1/φ)) {
-                stopListening()
+        if isListening { stopListening() }
+        isRecording = true
+        audioChunks = []
+        recordingTask = Task {
+            for await audioChunk in recordingService.audioChunks() {
+                guard !Task.isCancelled else { break }
+                audioChunks.append(audioChunk)
             }
         }
-        isRecording = true
         log("Recording started")
     }
 
     private func stopRecording() {
+        recordingTask?.cancel()
+        recordingTask = nil
         isRecording = false
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
     }
 
     private func startListening() {
-        if isRecording {
-            withAnimation(.spring(duration: 1/φ, bounce: 1 - 1/φ)) {
-                stopRecording()
-            }
-        }
+        if isRecording { stopRecording() }
         isListening = true
         log("Listening started")
     }
@@ -54,5 +55,11 @@ final class VoicesViewModel {
     private func stopListening() {
         isListening = false
         log("Listening stopped")
+    }
+
+    private func checkMutualExclusion() {
+        if isRecording && isListening {
+            logError("INVARIANT: isRecording=\(isRecording) isListening=\(isListening) — both true simultaneously")
+        }
     }
 }
