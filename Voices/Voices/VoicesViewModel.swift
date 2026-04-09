@@ -26,6 +26,10 @@ final class VoicesViewModel {
 
     // MARK: - Public
 
+    var hasUnplayedChunks: Bool {
+        !audioChunks.isEmpty && playbackIndex < audioChunks.count - 1
+    }
+
     func toggleRecording() {
         isRecording ? stopRecording() : startRecording()
     }
