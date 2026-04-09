@@ -9,11 +9,11 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                VStack(spacing: 4) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 24))], spacing: 6) {
                     ForEach(vm.audioChunks, id: \.index) { chunk in
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: 4)
                             .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
-                            .frame(height: 8)
+                            .frame(height: 24)
                     }
                 }
                 .padding()
