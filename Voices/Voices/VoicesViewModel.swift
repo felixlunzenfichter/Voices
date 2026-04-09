@@ -30,8 +30,12 @@ final class VoicesViewModel {
 
     // MARK: - Public
 
+    var allChunks: [AudioChunk] {
+        recordings.flatMap { $0 }
+    }
+
     var hasUnplayedChunks: Bool {
-        !audioChunks.isEmpty && playbackIndex < audioChunks.count - 1
+        !allChunks.isEmpty && playbackIndex < allChunks.count - 1
     }
 
     func toggleRecording() {
@@ -91,7 +95,7 @@ final class VoicesViewModel {
     }
 
     private func consumePlayback(from startIndex: Int) async {
-        let remaining = Array(audioChunks.dropFirst(startIndex))
+        let remaining = Array(allChunks.dropFirst(startIndex))
         for await index in playbackService.play(remaining) {
             guard !Task.isCancelled else { break }
             playbackIndex = index
