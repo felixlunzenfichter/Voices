@@ -47,6 +47,39 @@ struct VoicesViewModelTests {
         #expect(vm.isRecording == false)
     }
 
+    @Test("Listening plays back recorded chunks sequentially", .timeLimit(.minutes(1)))
+    func listeningPlaysBackRecordedChunksSequentially() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // Record 3 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Listen
+        vm.toggleListening()
+        #expect(vm.isListening == true)
+
+        // Collect every playbackIndex change in order
+        var indices: [Int] = []
+        for await index in Observations({ vm.playbackIndex }) {
+            indices.append(index)
+            if index >= 2 { break }
+        }
+
+        // Wait for isListening to turn false
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        #expect(indices == [0, 1, 2], "Chunks must play sequentially, no skip")
+        #expect(vm.isListening == false, "Must auto-stop after last chunk")
+    }
+
     @Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))
     func stopCancelsProduction() async {
         let producer = FakeRecordingService(count: 1000)
