@@ -14,11 +14,12 @@ struct ContentView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
                             .frame(height: 48)
+                            .transition(.scale.combined(with: .opacity))
                     }
                 }
                 .padding()
-                .animation(.default, value: vm.audioChunks.count)
-                .animation(.default, value: vm.playbackIndex)
+                .animation(.easeInOut(duration: 0.3), value: vm.audioChunks.count)
+                .animation(.easeInOut(duration: 0.3), value: vm.playbackIndex)
             }
 
             HStack {
