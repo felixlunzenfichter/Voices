@@ -9,16 +9,21 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
-                    ForEach(vm.audioChunks, id: \.index) { chunk in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
-                            .frame(height: 48)
-                            .transition(.scale.combined(with: .opacity))
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(Array(vm.recordings.enumerated()), id: \.offset) { recordingIndex, recording in
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
+                            ForEach(recording, id: \.index) { chunk in
+                                let globalIndex = vm.recordings.prefix(recordingIndex).flatMap { $0 }.count + chunk.index
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(globalIndex <= vm.playbackIndex ? Color.blue : Color.purple)
+                                    .frame(height: 48)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                        }
                     }
                 }
                 .padding()
-                .animation(.easeInOut(duration: 0.3), value: vm.audioChunks.count)
+                .animation(.easeInOut(duration: 0.3), value: vm.recordings.count)
                 .animation(.easeInOut(duration: 0.3), value: vm.playbackIndex)
             }
 
