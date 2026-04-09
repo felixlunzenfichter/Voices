@@ -19,24 +19,55 @@ struct FakeRecordingService: RecordingService {
     }
 }
 
+struct FakePlaybackService: PlaybackService {
+    func play(_ chunks: [AudioChunk]) -> AsyncStream<Int> {
+        AsyncStream { continuation in
+            Task {
+                for chunk in chunks {
+                    continuation.yield(chunk.index)
+                    await Task.yield()
+                }
+                continuation.finish()
+            }
+        }
+    }
+}
+
 struct VoicesViewModelTests {
-    @Test("Recording and listening are never both true")
-    func mutualExclusion() {
-        let vm = VoicesViewModel()
+    @Test("Recording and listening are never both true", .timeLimit(.minutes(1)))
+    func mutualExclusion() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
 
+        // Record some chunks so listening can start
         vm.toggleRecording()
-        #expect(vm.isRecording == true)
-        #expect(vm.isListening == false)
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+        #expect(vm.isRecording == false)
 
-        // Toggle listening while recording — must stop recording first
+        // Start listening — has unplayed chunks
         vm.toggleListening()
         #expect(vm.isListening == true)
-        #expect(vm.isRecording == false, "Recording must stop when listening starts")
+        #expect(vm.isRecording == false)
 
         // Toggle recording while listening — must stop listening first
         vm.toggleRecording()
         #expect(vm.isRecording == true)
         #expect(vm.isListening == false, "Listening must stop when recording starts")
+
+        // Record more chunks, then stop, so listening can start again
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Start listening again
+        vm.toggleListening()
+        #expect(vm.isListening == true)
+        #expect(vm.isRecording == false, "Recording must stop when listening starts")
     }
 
     @Test("Stop recording sets isRecording to false")
@@ -45,6 +76,106 @@ struct VoicesViewModelTests {
         vm.toggleRecording()
         vm.toggleRecording()
         #expect(vm.isRecording == false)
+    }
+
+    @Test("Listening plays back recorded chunks sequentially", .timeLimit(.minutes(1)))
+    func listeningPlaysBackRecordedChunksSequentially() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // Record 3 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Listen
+        vm.toggleListening()
+        #expect(vm.isListening == true)
+
+        // Collect every playbackIndex change in order
+        var indices: [Int] = []
+        for await index in Observations({ vm.playbackIndex }) {
+            indices.append(index)
+            if index >= 2 { break }
+        }
+
+        // Wait for isListening to turn false
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        #expect(indices == [0, 1, 2], "Chunks must play sequentially, no skip")
+        #expect(vm.isListening == false, "Must auto-stop after last chunk")
+    }
+
+    @Test("Listen does nothing when no chunks recorded")
+    func listenNoOpWhenEmpty() {
+        let vm = VoicesViewModel()
+
+        let indexBefore = vm.playbackIndex
+        vm.toggleListening()
+
+        #expect(vm.isListening == false, "Should not start listening with nothing recorded")
+        #expect(vm.playbackIndex == indexBefore, "playbackIndex should not move")
+    }
+
+    @Test("Listen does nothing when everything already played", .timeLimit(.minutes(1)))
+    func listenNoOpWhenFullyPlayed() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // Record 3 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Play all chunks
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Everything played — listen again should be no-op
+        let indexBefore = vm.playbackIndex
+        vm.toggleListening()
+
+        #expect(vm.isListening == false, "Should not start listening when everything already played")
+        #expect(vm.playbackIndex == indexBefore, "playbackIndex should not move")
+    }
+
+    @Test("hasUnplayedChunks reflects playback state")
+    func hasUnplayedChunks() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // No chunks recorded — nothing to play
+        #expect(vm.hasUnplayedChunks == false)
+
+        // Record 3 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Chunks recorded but not yet played — something to play
+        #expect(vm.hasUnplayedChunks == true)
+
+        // Play all chunks
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Everything played — nothing left to play
+        #expect(vm.hasUnplayedChunks == false)
     }
 
     @Test("Stop recording cancels chunk production", .timeLimit(.minutes(1)))

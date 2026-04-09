@@ -1,24 +1,30 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var vm = VoicesViewModel(recordingService: DemoRecordingService())
+    @State private var vm = VoicesViewModel(
+        recordingService: DemoRecordingService(),
+        playbackService: DemoPlaybackService()
+    )
 
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 24))], spacing: 6) {
-                    ForEach(vm.audioChunks, id: \.index) { _ in
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
+                    ForEach(vm.audioChunks, id: \.index) { chunk in
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.green)
-                            .frame(height: 24)
+                            .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
+                            .frame(height: 48)
+                            .transition(.scale.combined(with: .opacity))
                     }
                 }
                 .padding()
-                .animation(.default, value: vm.audioChunks.count)
+                .animation(.easeInOut(duration: 0.3), value: vm.audioChunks.count)
+                .animation(.easeInOut(duration: 0.3), value: vm.playbackIndex)
             }
 
             HStack {
-                ListenButton(isListening: vm.isListening, onTap: { vm.toggleListening() })
+                ListenButton(isListening: vm.isListening, hasUnplayedChunks: vm.hasUnplayedChunks, onTap: { vm.toggleListening() })
+                    .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
                 Spacer()
                 RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
                     .animation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ), value: vm.isRecording)
@@ -57,6 +63,7 @@ struct RecordButton: View {
 
 struct ListenButton: View {
     let isListening: Bool
+    let hasUnplayedChunks: Bool
     let onTap: () -> Void
 
     private static let size: CGFloat = 100
@@ -67,7 +74,7 @@ struct ListenButton: View {
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
-                .foregroundColor(.blue)
+                .foregroundColor(hasUnplayedChunks ? .blue : .purple)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
