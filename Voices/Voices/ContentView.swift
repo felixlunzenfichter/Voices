@@ -24,6 +24,7 @@ struct ContentView: View {
 
             HStack {
                 ListenButton(isListening: vm.isListening, hasUnplayedChunks: vm.hasUnplayedChunks, onTap: { vm.toggleListening() })
+                    .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
                 Spacer()
                 RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
                     .animation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ), value: vm.isRecording)
