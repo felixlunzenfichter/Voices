@@ -264,7 +264,45 @@ struct VoicesViewModelTests {
         #expect(vm.recordings[1].count == 3, "Second recording should have 3 chunks")
     }
 
-    // TEST: Playback plays all recordings sequentially
-    // BEHAVIOR: after two recordings, pressing listen plays first then second without pause
-    // FAIL IF: only one recording plays, or playback order is wrong
+    @Test("Playback plays all recordings in order", .timeLimit(.minutes(1)))
+    func playbackPlaysAllRecordingsInOrder() async {
+        let producer = FakeRecordingService(count: 2)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // First recording: chunks [0, 1]
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+
+        // Second recording: chunks [0, 1]
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+
+        // Play all
+        vm.toggleListening()
+
+        // Collect all playbackIndex changes
+        var indices: [Int] = []
+        for await index in Observations({ vm.playbackIndex }) {
+            indices.append(index)
+            // Total chunks across both recordings = 4
+            // Last chunk of second recording has index 1
+            if indices.count >= 4 { break }
+        }
+
+        // Wait for auto-stop
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Should have played recording 1 [0, 1] then recording 2 [0, 1]
+        #expect(indices == [0, 1, 0, 1], "Should play recording 1 then recording 2")
+        #expect(vm.isListening == false, "Should auto-stop after all recordings played")
+    }
 }
