@@ -94,6 +94,44 @@ struct VoicesViewModelTests {
         #expect(vm.isListening == false, "Must auto-stop after last chunk")
     }
 
+    @Test("Listen does nothing when no chunks recorded")
+    func listenNoOpWhenEmpty() {
+        let vm = VoicesViewModel()
+
+        let indexBefore = vm.playbackIndex
+        vm.toggleListening()
+
+        #expect(vm.isListening == false, "Should not start listening with nothing recorded")
+        #expect(vm.playbackIndex == indexBefore, "playbackIndex should not move")
+    }
+
+    @Test("Listen does nothing when everything already played", .timeLimit(.minutes(1)))
+    func listenNoOpWhenFullyPlayed() async {
+        let producer = FakeRecordingService(count: 3)
+        let playback = FakePlaybackService()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback)
+
+        // Record 3 chunks
+        vm.toggleRecording()
+        for await count in Observations({ vm.audioChunks.count }) {
+            if count >= 3 { break }
+        }
+        vm.toggleRecording()
+
+        // Play all chunks
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Everything played — listen again should be no-op
+        let indexBefore = vm.playbackIndex
+        vm.toggleListening()
+
+        #expect(vm.isListening == false, "Should not start listening when everything already played")
+        #expect(vm.playbackIndex == indexBefore, "playbackIndex should not move")
+    }
+
     @Test("hasUnplayedChunks reflects playback state")
     func hasUnplayedChunks() async {
         let producer = FakeRecordingService(count: 3)
