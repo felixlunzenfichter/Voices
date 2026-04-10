@@ -13,15 +13,18 @@ final class VoicesViewModel {
 
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
+    private let database: any Database
     private var recordingTask: Task<Void, Never>?
     private var playbackTask: Task<Void, Never>?
 
     init(
         recordingService: any RecordingService = SilentRecordingService(),
-        playbackService: any PlaybackService = SilentPlaybackService()
+        playbackService: any PlaybackService = SilentPlaybackService(),
+        database: any Database = InMemoryDatabase()
     ) {
         self.recordingService = recordingService
         self.playbackService = playbackService
+        self.database = database
     }
 
     // MARK: - Public
