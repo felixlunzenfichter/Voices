@@ -8,7 +8,7 @@ final class VoicesViewModel {
     private(set) var isListening = false {
         didSet { checkMutualExclusion() }
     }
-    private(set) var recordings: [Recording] = []
+    var recordings: [Recording] { database.recordings }
     private(set) var playbackIndex: Int = -1
 
     private let recordingService: any RecordingService
@@ -25,7 +25,6 @@ final class VoicesViewModel {
         self.recordingService = recordingService
         self.playbackService = playbackService
         self.database = database
-        self.recordings = database.recordings
     }
 
     // MARK: - Public
@@ -52,7 +51,7 @@ final class VoicesViewModel {
     private func startRecording() {
         if isListening { stopListening() }
         isRecording = true
-        recordings.append(Recording())
+        database.addRecording(Recording())
         recordingTask = Task { await consumeAudioChunks() }
         log("Recording started")
     }
@@ -67,7 +66,7 @@ final class VoicesViewModel {
     private func consumeAudioChunks() async {
         for await audioChunk in recordingService.audioChunks() {
             guard !Task.isCancelled else { break }
-            recordings[recordings.count - 1].audioChunks.append(audioChunk)
+            database.recordings[database.recordings.count - 1].audioChunks.append(audioChunk)
         }
     }
 

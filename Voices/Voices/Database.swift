@@ -1,7 +1,7 @@
 import Observation
 
 protocol Database: AnyObject {
-    var recordings: [Recording] { get }
+    var recordings: [Recording] { get set }
     func addRecording(_ recording: Recording)
 }
 
