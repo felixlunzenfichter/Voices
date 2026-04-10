@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 @Observable @MainActor
@@ -14,6 +15,7 @@ final class VoicesViewModel {
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
     private let database: any Database
+    private var currentRecordingID: UUID?
     private var recordingTask: Task<Void, Never>?
     private var playbackTask: Task<Void, Never>?
 
@@ -51,7 +53,9 @@ final class VoicesViewModel {
     private func startRecording() {
         if isListening { stopListening() }
         isRecording = true
-        database.addRecording(Recording())
+        let recording = Recording()
+        currentRecordingID = recording.id
+        database.addRecording(recording)
         recordingTask = Task { await consumeAudioChunks() }
         log("Recording started")
     }
@@ -64,9 +68,10 @@ final class VoicesViewModel {
     }
 
     private func consumeAudioChunks() async {
+        guard let recordingID = currentRecordingID else { return }
         for await audioChunk in recordingService.audioChunks() {
             guard !Task.isCancelled else { break }
-            database.recordings[database.recordings.count - 1].audioChunks.append(audioChunk)
+            database.appendChunk(audioChunk, to: recordingID)
         }
     }
 
