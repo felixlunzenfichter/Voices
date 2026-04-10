@@ -4,6 +4,10 @@ import Testing
 
 struct FakeDatabase: Database {
     var recordings: [[AudioChunk]]
+
+    static func withOneRecording() -> FakeDatabase {
+        FakeDatabase(recordings: [[AudioChunk(index: 0)]])
+    }
 }
 
 struct VoicesViewModelTests {
@@ -27,9 +31,21 @@ struct VoicesViewModelTests {
         #expect(vm.isListening == false)
     }
 
+    @Test("Toggle listening toggles isListening")
+    func toggleListeningTogglesState() {
+        let vm = VoicesViewModel(database: FakeDatabase.withOneRecording())
+
+        #expect(vm.isListening == false)
+        vm.toggleListening()
+        #expect(vm.isListening == true)
+
+        vm.toggleListening()
+        #expect(vm.isListening == false)
+    }
+
     @Test("State transitions: record, listen, record")
     func stateTransitions() {
-        let db = FakeDatabase(recordings: [[AudioChunk(index: 0)]])
+        let db = FakeDatabase.withOneRecording()
         let vm = VoicesViewModel(database: db)
 
         // Start recording
