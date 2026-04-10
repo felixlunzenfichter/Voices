@@ -19,11 +19,18 @@ struct FakeRecordingService: RecordingService {
     }
 }
 
-struct FakeDatabase: Database {
-    var recordings: [Recording]
+@Observable
+final class FakeDatabase: Database {
+    var recordings: [Recording] = []
+
+    func addRecording(_ recording: Recording) {
+        recordings.append(recording)
+    }
 
     static func withOneRecording() -> FakeDatabase {
-        FakeDatabase(recordings: [Recording(audioChunks: [AudioChunk(index: 0)])])
+        let db = FakeDatabase()
+        db.addRecording(Recording(audioChunks: [AudioChunk(index: 0)]))
+        return db
     }
 }
 
@@ -79,6 +86,18 @@ struct VoicesViewModelTests {
         vm.toggleRecording()
         #expect(vm.isRecording == true)
         #expect(vm.isListening == false)
+    }
+
+    @Test("ViewModel reflects store changes")
+    func viewModelReflectsStoreChanges() {
+        let db = FakeDatabase()
+        let vm = VoicesViewModel(database: db)
+
+        #expect(vm.recordings.isEmpty)
+
+        db.addRecording(Recording(audioChunks: [AudioChunk(index: 0)]))
+
+        #expect(vm.recordings.count == 1)
     }
 
     @Test("Stop recording stops chunk production", .timeLimit(.minutes(1)))
