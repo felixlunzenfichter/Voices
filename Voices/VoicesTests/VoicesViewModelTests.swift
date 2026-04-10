@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 import Testing
 @testable import Voices
@@ -25,6 +26,11 @@ final class FakeDatabase: Database {
 
     func addRecording(_ recording: Recording) {
         recordings.append(recording)
+    }
+
+    func appendChunk(_ chunk: AudioChunk, to recordingID: UUID) {
+        guard let index = recordings.firstIndex(where: { $0.id == recordingID }) else { return }
+        recordings[index].audioChunks.append(chunk)
     }
 
     static func withOneRecording() -> FakeDatabase {
@@ -120,5 +126,23 @@ struct VoicesViewModelTests {
         #expect(countAfterWait == countAfterStop, "No chunks should arrive after stop")
         #expect(countAfterStop > 0, "Should have recorded some chunks")
         #expect(countAfterStop < 1000, "Should have stopped before finishing")
+    }
+
+    @Test("Recorded chunks appear in database", .timeLimit(.minutes(1)))
+    func recordedChunksAppearInDatabase() async throws {
+        let producer = FakeRecordingService(count: 3)
+        let db = FakeDatabase()
+        let vm = VoicesViewModel(recordingService: producer, database: db)
+
+        vm.toggleRecording()
+
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 3 { break }
+        }
+
+        vm.toggleRecording()
+
+        let recording = try #require(db.recordings.last)
+        #expect(recording.audioChunks.count == 3)
     }
 }

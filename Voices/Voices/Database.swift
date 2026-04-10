@@ -1,8 +1,10 @@
+import Foundation
 import Observation
 
 protocol Database: AnyObject {
-    var recordings: [Recording] { get set }
+    var recordings: [Recording] { get }
     func addRecording(_ recording: Recording)
+    func appendChunk(_ chunk: AudioChunk, to recordingID: UUID)
 }
 
 @Observable
@@ -11,5 +13,10 @@ final class InMemoryDatabase: Database {
 
     func addRecording(_ recording: Recording) {
         recordings.append(recording)
+    }
+
+    func appendChunk(_ chunk: AudioChunk, to recordingID: UUID) {
+        guard let index = recordings.firstIndex(where: { $0.id == recordingID }) else { return }
+        recordings[index].audioChunks.append(chunk)
     }
 }
