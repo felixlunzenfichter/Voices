@@ -2,6 +2,23 @@ import Observation
 import Testing
 @testable import Voices
 
+struct FakeRecordingService: RecordingService {
+    let count: Int
+
+    func audioChunks() -> AsyncStream<AudioChunk> {
+        let count = self.count
+        return AsyncStream { continuation in
+            Task {
+                for i in 0..<count {
+                    continuation.yield(AudioChunk(index: i))
+                    await Task.yield()
+                }
+                continuation.finish()
+            }
+        }
+    }
+}
+
 struct FakeDatabase: Database {
     var recordings: [[AudioChunk]]
 
@@ -62,5 +79,27 @@ struct VoicesViewModelTests {
         vm.toggleRecording()
         #expect(vm.isRecording == true)
         #expect(vm.isListening == false)
+    }
+
+    @Test("Stop recording stops chunk production", .timeLimit(.minutes(1)))
+    func stopRecordingStopsChunkProduction() async throws {
+        let producer = FakeRecordingService(count: 1000)
+        let vm = VoicesViewModel(recordingService: producer)
+
+        vm.toggleRecording()
+
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 1 { break }
+        }
+
+        vm.toggleRecording()
+        let countAfterStop = vm.recordings.last?.audioChunks.count ?? 0
+
+        try await Task.sleep(for: .milliseconds(50))
+
+        let countAfterWait = vm.recordings.last?.audioChunks.count ?? 0
+        #expect(countAfterWait == countAfterStop, "No chunks should arrive after stop")
+        #expect(countAfterStop > 0, "Should have recorded some chunks")
+        #expect(countAfterStop < 1000, "Should have stopped before finishing")
     }
 }

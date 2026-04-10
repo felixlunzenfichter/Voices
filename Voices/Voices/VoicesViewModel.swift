@@ -9,6 +9,7 @@ final class VoicesViewModel {
         didSet { checkMutualExclusion() }
     }
     private(set) var audioChunks: [AudioChunk] = []
+    private(set) var recordings: [Recording] = []
     private(set) var playbackIndex: Int = -1
 
     private let recordingService: any RecordingService
