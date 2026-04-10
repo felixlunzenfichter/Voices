@@ -53,6 +53,7 @@ final class VoicesViewModel {
         if isListening { stopListening() }
         isRecording = true
         audioChunks = []
+        recordings.append(Recording())
         recordingTask = Task { await consumeAudioChunks() }
         log("Recording started")
     }
@@ -68,6 +69,7 @@ final class VoicesViewModel {
         for await audioChunk in recordingService.audioChunks() {
             guard !Task.isCancelled else { break }
             audioChunks.append(audioChunk)
+            recordings[recordings.count - 1].audioChunks.append(audioChunk)
         }
     }
 
