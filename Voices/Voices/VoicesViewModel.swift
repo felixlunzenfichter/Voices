@@ -30,7 +30,8 @@ final class VoicesViewModel {
     // MARK: - Public
 
     var hasUnplayedChunks: Bool {
-        !audioChunks.isEmpty && playbackIndex < audioChunks.count - 1
+        let totalChunks = database.recordings.flatMap { $0 }.count
+        return totalChunks > 0 && playbackIndex < totalChunks - 1
     }
 
     func toggleRecording() {
