@@ -18,6 +18,15 @@ struct VoicesViewModelTests {
         #expect(vm.isRecording == false)
     }
 
+    @Test("Listen does nothing when nothing recorded")
+    func listenDoesNothingWhenNothingRecorded() {
+        let vm = VoicesViewModel()
+
+        #expect(vm.isListening == false)
+        vm.toggleListening()
+        #expect(vm.isListening == false)
+    }
+
     @Test("State transitions: record, listen, record")
     func stateTransitions() {
         let db = FakeDatabase(recordings: [[AudioChunk(index: 0)]])
