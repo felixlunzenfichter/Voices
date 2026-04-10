@@ -10,7 +10,7 @@ struct ContentView: View {
         ZStack(alignment: .bottom) {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
-                    ForEach(vm.audioChunks, id: \.index) { chunk in
+                    ForEach(vm.recordings.last?.audioChunks ?? [], id: \.index) { chunk in
                         RoundedRectangle(cornerRadius: 4)
                             .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
                             .frame(height: 48)
@@ -18,7 +18,7 @@ struct ContentView: View {
                     }
                 }
                 .padding()
-                .animation(.easeInOut(duration: 0.3), value: vm.audioChunks.count)
+                .animation(.easeInOut(duration: 0.3), value: vm.recordings.last?.audioChunks.count ?? 0)
                 .animation(.easeInOut(duration: 0.3), value: vm.playbackIndex)
             }
 

@@ -1,7 +1,7 @@
 protocol Database {
-    var recordings: [[AudioChunk]] { get }
+    var recordings: [Recording] { get }
 }
 
 struct InMemoryDatabase: Database {
-    var recordings: [[AudioChunk]] = []
+    var recordings: [Recording] = []
 }

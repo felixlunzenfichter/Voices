@@ -20,10 +20,10 @@ struct FakeRecordingService: RecordingService {
 }
 
 struct FakeDatabase: Database {
-    var recordings: [[AudioChunk]]
+    var recordings: [Recording]
 
     static func withOneRecording() -> FakeDatabase {
-        FakeDatabase(recordings: [[AudioChunk(index: 0)]])
+        FakeDatabase(recordings: [Recording(audioChunks: [AudioChunk(index: 0)])])
     }
 }
 

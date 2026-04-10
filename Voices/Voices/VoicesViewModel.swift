@@ -8,7 +8,6 @@ final class VoicesViewModel {
     private(set) var isListening = false {
         didSet { checkMutualExclusion() }
     }
-    private(set) var audioChunks: [AudioChunk] = []
     private(set) var recordings: [Recording] = []
     private(set) var playbackIndex: Int = -1
 
@@ -26,12 +25,13 @@ final class VoicesViewModel {
         self.recordingService = recordingService
         self.playbackService = playbackService
         self.database = database
+        self.recordings = database.recordings
     }
 
     // MARK: - Public
 
     var hasUnplayedChunks: Bool {
-        let totalChunks = database.recordings.flatMap { $0 }.count
+        let totalChunks = recordings.reduce(0) { $0 + $1.audioChunks.count }
         return totalChunks > 0 && playbackIndex < totalChunks - 1
     }
 
@@ -52,7 +52,6 @@ final class VoicesViewModel {
     private func startRecording() {
         if isListening { stopListening() }
         isRecording = true
-        audioChunks = []
         recordings.append(Recording())
         recordingTask = Task { await consumeAudioChunks() }
         log("Recording started")
@@ -68,7 +67,6 @@ final class VoicesViewModel {
     private func consumeAudioChunks() async {
         for await audioChunk in recordingService.audioChunks() {
             guard !Task.isCancelled else { break }
-            audioChunks.append(audioChunk)
             recordings[recordings.count - 1].audioChunks.append(audioChunk)
         }
     }
@@ -91,7 +89,7 @@ final class VoicesViewModel {
     }
 
     private func consumePlayback(from startIndex: Int) async {
-        let remaining = Array(audioChunks.dropFirst(startIndex))
+        let remaining = Array((recordings.last?.audioChunks ?? []).dropFirst(startIndex))
         for await index in playbackService.play(remaining) {
             guard !Task.isCancelled else { break }
             playbackIndex = index
