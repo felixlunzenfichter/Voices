@@ -7,6 +7,17 @@ struct FakeDatabase: Database {
 }
 
 struct VoicesViewModelTests {
+    @Test("Toggle recording toggles isRecording")
+    func toggleRecordingTogglesState() {
+        let vm = VoicesViewModel()
+
+        vm.toggleRecording()
+        #expect(vm.isRecording == true)
+
+        vm.toggleRecording()
+        #expect(vm.isRecording == false)
+    }
+
     @Test("State transitions: record, listen, record")
     func stateTransitions() {
         let db = FakeDatabase(recordings: [[AudioChunk(index: 0)]])
