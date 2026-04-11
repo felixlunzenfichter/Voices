@@ -266,4 +266,44 @@ struct VoicesViewModelTests {
             PlaybackPosition(recordingID: expectedID, chunkIndex: 2),
         ])
     }
+
+    @Test("Resume listening continues from where it stopped", .timeLimit(.minutes(1)))
+    func resumeListeningContinuesFromWhereItStopped() async {
+        let playback = FakePlaybackService()
+        let db = FakeDatabase.withRecording(chunkCount: 6)
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let expectedID = db.recordings.first!.id
+
+        // Phase 1: play first three
+        vm.toggleListening()
+        var phase1: [PlaybackPosition] = []
+        for await position in Observations({ vm.playbackPosition }) {
+            guard let position else { continue }
+            phase1.append(position)
+            if phase1.count >= 3 { break }
+        }
+        vm.toggleListening()
+
+        // Phase 2: resume, play next three
+        vm.toggleListening()
+        var phase2: [PlaybackPosition] = []
+        for await position in Observations({ vm.playbackPosition }) {
+            guard let position else { continue }
+            if position.chunkIndex > 2 {
+                phase2.append(position)
+            }
+            if phase2.count >= 3 { break }
+        }
+
+        #expect(phase1 == [
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 0),
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 1),
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 2),
+        ])
+        #expect(phase2 == [
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 3),
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 4),
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 5),
+        ])
+    }
 }
