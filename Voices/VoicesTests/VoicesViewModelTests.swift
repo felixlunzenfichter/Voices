@@ -20,6 +20,20 @@ struct FakeRecordingService: RecordingService {
     }
 }
 
+struct FakePlaybackService: PlaybackService {
+    func play(_ chunks: [AudioChunk]) -> AsyncStream<Int> {
+        AsyncStream { continuation in
+            Task {
+                for chunk in chunks {
+                    continuation.yield(chunk.index)
+                    await Task.yield()
+                }
+                continuation.finish()
+            }
+        }
+    }
+}
+
 @Observable
 final class FakeDatabase: Database {
     var recordings: [Recording] = []
@@ -171,5 +185,21 @@ struct VoicesViewModelTests {
         #expect(first.id != second.id, "Each recording should have a unique ID")
         #expect(first.audioChunks.count == 2)
         #expect(second.audioChunks.count == 2)
+    }
+
+    @Test("Listening auto-stops after last chunk", .timeLimit(.minutes(1)))
+    func listeningAutoStopsAfterLastChunk() async {
+        let playback = FakePlaybackService()
+        let db = FakeDatabase.withOneRecording()
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        vm.toggleListening()
+        #expect(vm.isListening == true)
+
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        #expect(vm.isListening == false)
     }
 }
