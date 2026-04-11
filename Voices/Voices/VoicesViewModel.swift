@@ -11,6 +11,7 @@ final class VoicesViewModel {
     }
     var recordings: [Recording] { database.recordings }
     private(set) var playbackIndex: Int = -1
+    private(set) var playbackPosition: PlaybackPosition?
 
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
@@ -93,10 +94,12 @@ final class VoicesViewModel {
     }
 
     private func consumePlayback(from startIndex: Int) async {
-        let remaining = Array((recordings.last?.audioChunks ?? []).dropFirst(startIndex))
+        guard let recording = recordings.last else { return }
+        let remaining = Array(recording.audioChunks.dropFirst(startIndex))
         for await index in playbackService.play(remaining) {
             guard !Task.isCancelled else { break }
             playbackIndex = index
+            playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: index)
         }
         if !Task.isCancelled {
             isListening = false
