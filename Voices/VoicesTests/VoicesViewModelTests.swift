@@ -145,4 +145,31 @@ struct VoicesViewModelTests {
         let recording = try #require(db.recordings.last)
         #expect(recording.audioChunks.count == 3)
     }
+
+    @Test("Recording twice creates two distinct recordings", .timeLimit(.minutes(1)))
+    func recordingTwiceCreatesTwoDistinctRecordings() async throws {
+        let producer = FakeRecordingService(count: 2)
+        let db = FakeDatabase()
+        let vm = VoicesViewModel(recordingService: producer, database: db)
+
+        vm.toggleRecording()
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+
+        vm.toggleRecording()
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+
+        #expect(vm.recordings.count == 2)
+
+        let first = try #require(vm.recordings.first)
+        let second = try #require(vm.recordings.last)
+        #expect(first.id != second.id, "Each recording should have a unique ID")
+        #expect(first.audioChunks.count == 2)
+        #expect(second.audioChunks.count == 2)
+    }
 }
