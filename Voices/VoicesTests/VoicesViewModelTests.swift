@@ -47,10 +47,15 @@ final class FakeDatabase: Database {
         recordings[index].audioChunks.append(chunk)
     }
 
-    static func withOneRecording() -> FakeDatabase {
+    static func withRecording(chunkCount: Int) -> FakeDatabase {
         let db = FakeDatabase()
-        db.addRecording(Recording(audioChunks: [AudioChunk(index: 0)]))
+        let chunks = (0..<chunkCount).map { AudioChunk(index: $0) }
+        db.addRecording(Recording(audioChunks: chunks))
         return db
+    }
+
+    static func withOneRecording() -> FakeDatabase {
+        withRecording(chunkCount: 1)
     }
 }
 
@@ -237,5 +242,28 @@ struct VoicesViewModelTests {
 
         let expectedID = db.recordings.first!.id
         #expect(vm.playbackPosition == PlaybackPosition(recordingID: expectedID, chunkIndex: 0))
+    }
+
+    @Test("Listening plays back chunks sequentially", .timeLimit(.minutes(1)))
+    func listeningPlaysBackChunksSequentially() async {
+        let playback = FakePlaybackService()
+        let db = FakeDatabase.withRecording(chunkCount: 3)
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        vm.toggleListening()
+
+        var positions: [PlaybackPosition] = []
+        for await position in Observations({ vm.playbackPosition }) {
+            guard let position else { continue }
+            positions.append(position)
+            if positions.count >= 3 { break }
+        }
+
+        let expectedID = db.recordings.first!.id
+        #expect(positions == [
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 0),
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 1),
+            PlaybackPosition(recordingID: expectedID, chunkIndex: 2),
+        ])
     }
 }
