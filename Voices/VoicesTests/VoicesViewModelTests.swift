@@ -220,4 +220,22 @@ struct VoicesViewModelTests {
         vm.toggleListening()
         #expect(vm.isListening == false)
     }
+
+    @Test("Playback position tracks recording and chunk", .timeLimit(.minutes(1)))
+    func playbackPositionTracksRecordingAndChunk() async {
+        let playback = FakePlaybackService()
+        let db = FakeDatabase.withOneRecording()
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        #expect(vm.playbackPosition == nil)
+
+        vm.toggleListening()
+
+        for await position in Observations({ vm.playbackPosition }) {
+            if position != nil { break }
+        }
+
+        let expectedID = db.recordings.first!.id
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: expectedID, chunkIndex: 0))
+    }
 }
