@@ -10,8 +10,9 @@ final class VoicesViewModel {
         didSet { checkMutualExclusion() }
     }
     var recordings: [Recording] { database.recordings }
-    private(set) var playbackIndex: Int = -1
     private(set) var playbackPosition: PlaybackPosition?
+
+    var playbackIndex: Int { playbackPosition?.chunkIndex ?? -1 }
 
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
@@ -34,7 +35,12 @@ final class VoicesViewModel {
 
     var hasUnplayedChunks: Bool {
         let totalChunks = recordings.reduce(0) { $0 + $1.audioChunks.count }
-        return totalChunks > 0 && playbackIndex < totalChunks - 1
+        guard totalChunks > 0 else { return false }
+        guard let position = playbackPosition else { return true }
+        // Find how many chunks come before and including the current position's recording
+        guard let recordingIndex = recordings.firstIndex(where: { $0.id == position.recordingID }) else { return true }
+        let chunksPlayedThrough = recordings.prefix(recordingIndex).reduce(0) { $0 + $1.audioChunks.count } + position.chunkIndex + 1
+        return chunksPlayedThrough < totalChunks
     }
 
     func toggleRecording() {
@@ -81,8 +87,7 @@ final class VoicesViewModel {
     private func startListening() {
         if isRecording { stopRecording() }
         isListening = true
-        let startFrom = playbackIndex < 0 ? 0 : playbackIndex
-        playbackIndex = startFrom
+        let startFrom = playbackPosition?.chunkIndex ?? 0
         playbackTask = Task { await consumePlayback(from: startFrom) }
         log("Listening started")
     }
@@ -98,7 +103,6 @@ final class VoicesViewModel {
         let remaining = Array(recording.audioChunks.dropFirst(startIndex))
         for await index in playbackService.play(remaining) {
             guard !Task.isCancelled else { break }
-            playbackIndex = index
             playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: index)
         }
         if !Task.isCancelled {
