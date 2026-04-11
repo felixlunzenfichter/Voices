@@ -202,4 +202,22 @@ struct VoicesViewModelTests {
 
         #expect(vm.isListening == false)
     }
+
+    @Test("Listen does nothing when everything already played", .timeLimit(.minutes(1)))
+    func listenDoesNothingWhenEverythingAlreadyPlayed() async {
+        let playback = FakePlaybackService()
+        let db = FakeDatabase.withOneRecording()
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        // Play everything
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Try again — should be a no-op
+        #expect(vm.isListening == false)
+        vm.toggleListening()
+        #expect(vm.isListening == false)
+    }
 }
