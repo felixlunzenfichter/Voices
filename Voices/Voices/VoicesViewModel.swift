@@ -64,13 +64,17 @@ final class VoicesViewModel {
 
     private func stopRecording() {
         cancelTask(&recordingTask)
-        if let id = currentRecordingID,
-           recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true {
-            database.removeRecording(id)
-        }
+        removeCurrentRecordingIfEmpty()
         isRecording = false
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")
+    }
+
+    private func removeCurrentRecordingIfEmpty() {
+        guard let id = currentRecordingID,
+              recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true
+        else { return }
+        database.removeRecording(id)
     }
 
     private func consumeAudioChunks() async {
