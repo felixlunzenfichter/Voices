@@ -19,6 +19,7 @@ struct ContentView: View {
                                         .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
+                                        .id("\(recording.id)-\(chunk.index)")
                                 }
                             }
                             .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
@@ -28,11 +29,18 @@ struct ContentView: View {
                     .padding()
                     .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
                 }
-                .scrollDisabled(vm.isRecording)
+                .scrollDisabled(vm.isRecording || vm.isListening)
                 .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
                     if vm.isRecording {
                         withAnimation {
                             proxy.scrollTo("bottom")
+                        }
+                    }
+                }
+                .onChange(of: vm.playbackPosition) {
+                    if let position = vm.playbackPosition, vm.isListening {
+                        withAnimation {
+                            proxy.scrollTo("\(position.recordingID)-\(position.chunkIndex)")
                         }
                     }
                 }
