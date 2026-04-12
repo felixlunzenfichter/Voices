@@ -87,6 +87,13 @@ final class VoicesViewModel {
     private func startListening() {
         if isRecording { stopRecording() }
         isListening = true
+        let (startRecording, startChunk) = resumePoint()
+        if startRecording < recordings.count {
+            playbackPosition = PlaybackPosition(
+                recordingID: recordings[startRecording].id,
+                chunkIndex: startChunk
+            )
+        }
         playbackTask = Task { await consumePlayback() }
         log("Listening started")
     }
@@ -115,7 +122,11 @@ final class VoicesViewModel {
         guard let position = playbackPosition,
               let index = recordings.firstIndex(where: { $0.id == position.recordingID })
         else { return (0, 0) }
-        return (index, position.chunkIndex)
+        let nextChunk = position.chunkIndex + 1
+        if nextChunk < recordings[index].audioChunks.count {
+            return (index, nextChunk)
+        }
+        return (index + 1, 0)
     }
 
     private func playRecording(_ recording: Recording, startingAt chunkIndex: Int) async {
