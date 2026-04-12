@@ -24,6 +24,7 @@ struct ContentView: View {
                     }
                 }
                 .padding()
+                .padding(.bottom, 160)
                 .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
             }
 
