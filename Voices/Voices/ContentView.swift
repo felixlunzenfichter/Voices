@@ -19,10 +19,10 @@ struct ContentView: View {
                                     .transition(.scale.combined(with: .opacity))
                             }
                         }
+                        .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
                     }
                 }
                 .padding()
-                .animation(.easeInOut(duration: 0.3), value: vm.recordings.count)
                 .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
             }
 
