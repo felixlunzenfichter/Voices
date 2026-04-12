@@ -78,7 +78,7 @@ struct ListenButton: View {
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
-                .foregroundColor(hasUnplayedChunks ? .blue : .purple)
+                .foregroundColor(hasUnplayedChunks ? .purple : .blue)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
