@@ -333,4 +333,47 @@ struct VoicesViewModelTests {
             PlaybackPosition(recordingID: r2.id, chunkIndex: 1),
         ])
     }
+
+    @Test("Record after full playback plays only new recording", .timeLimit(.minutes(1)))
+    func recordAfterFullPlaybackPlaysOnlyNewRecording() async {
+        let producer = FakeRecordingService(count: 2)
+        let playback = FakePlaybackService()
+        let db = FakeDatabase()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
+
+        // Record first
+        vm.toggleRecording()
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+
+        // Play all
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Record again
+        vm.toggleRecording()
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+        let secondID = vm.recordings.last!.id
+
+        // Play again
+        vm.toggleListening()
+        var positions: [PlaybackPosition] = []
+        for await position in Observations({ vm.playbackPosition }) {
+            guard let position else { continue }
+            positions.append(position)
+            if positions.count >= 2 { break }
+        }
+
+        #expect(positions == [
+            PlaybackPosition(recordingID: secondID, chunkIndex: 0),
+            PlaybackPosition(recordingID: secondID, chunkIndex: 1),
+        ])
+    }
 }
