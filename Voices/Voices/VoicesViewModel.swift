@@ -64,6 +64,10 @@ final class VoicesViewModel {
 
     private func stopRecording() {
         cancelTask(&recordingTask)
+        if let id = currentRecordingID,
+           recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true {
+            database.removeRecording(id)
+        }
         isRecording = false
         log("Recording stopped")
         sendNotification(title: "Recording", body: "Stopped")

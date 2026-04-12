@@ -47,6 +47,10 @@ final class FakeDatabase: Database {
         recordings[index].audioChunks.append(chunk)
     }
 
+    func removeRecording(_ recordingID: UUID) {
+        recordings.removeAll { $0.id == recordingID }
+    }
+
     static func withRecording(chunkCount: Int) -> FakeDatabase {
         let db = FakeDatabase()
         let chunks = (0..<chunkCount).map { AudioChunk(index: $0) }
