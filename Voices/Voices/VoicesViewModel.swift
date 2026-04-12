@@ -34,13 +34,15 @@ final class VoicesViewModel {
     // MARK: - Public
 
     var hasUnplayedChunks: Bool {
-        let totalChunks = recordings.reduce(0) { $0 + $1.audioChunks.count }
-        guard totalChunks > 0 else { return false }
-        guard let position = playbackPosition else { return true }
-        // Find how many chunks come before and including the current position's recording
-        guard let recordingIndex = recordings.firstIndex(where: { $0.id == position.recordingID }) else { return true }
-        let chunksPlayedThrough = recordings.prefix(recordingIndex).reduce(0) { $0 + $1.audioChunks.count } + position.chunkIndex + 1
-        return chunksPlayedThrough < totalChunks
+        let total = recordings.reduce(0) { $0 + $1.audioChunks.count }
+        return total > 0 && chunksPlayedThrough < total
+    }
+
+    private var chunksPlayedThrough: Int {
+        guard let position = playbackPosition,
+              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
+        else { return 0 }
+        return recordings.prefix(index).reduce(0) { $0 + $1.audioChunks.count } + position.chunkIndex + 1
     }
 
     func toggleRecording() {
