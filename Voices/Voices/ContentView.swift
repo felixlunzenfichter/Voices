@@ -9,23 +9,34 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(vm.recordings) { recording in
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
-                            ForEach(recording.audioChunks, id: \.index) { chunk in
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
-                                    .frame(height: 48)
-                                    .transition(.scale.combined(with: .opacity))
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(vm.recordings) { recording in
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
+                                ForEach(recording.audioChunks, id: \.index) { chunk in
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
+                                        .frame(height: 48)
+                                        .transition(.scale.combined(with: .opacity))
+                                }
                             }
+                            .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
                         }
-                        .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
+                        Color.clear.frame(height: 1).id("bottom")
+                    }
+                    .padding()
+                    .padding(.bottom, 160)
+                    .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
+                }
+                .scrollDisabled(vm.isRecording)
+                .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
+                    if vm.isRecording {
+                        withAnimation {
+                            proxy.scrollTo("bottom")
+                        }
                     }
                 }
-                .padding()
-                .padding(.bottom, 160)
-                .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
             }
 
             HStack {
