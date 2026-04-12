@@ -12,8 +12,6 @@ final class VoicesViewModel {
     var recordings: [Recording] { database.recordings }
     private(set) var playbackPosition: PlaybackPosition?
 
-    var playbackIndex: Int { playbackPosition?.chunkIndex ?? -1 }
-
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
     private let database: any Database

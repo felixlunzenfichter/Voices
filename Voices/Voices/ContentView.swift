@@ -9,17 +9,21 @@ struct ContentView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
-                    ForEach(vm.recordings.last?.audioChunks ?? [], id: \.index) { chunk in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
-                            .frame(height: 48)
-                            .transition(.scale.combined(with: .opacity))
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(vm.recordings) { recording in
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
+                            ForEach(recording.audioChunks, id: \.index) { chunk in
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
+                                    .frame(height: 48)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                        }
                     }
                 }
                 .padding()
-                .animation(.easeInOut(duration: 0.3), value: vm.recordings.last?.audioChunks.count ?? 0)
-                .animation(.easeInOut(duration: 0.3), value: vm.playbackIndex)
+                .animation(.easeInOut(duration: 0.3), value: vm.recordings.count)
+                .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
             }
 
             HStack {
@@ -78,6 +82,20 @@ struct ListenButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
+    }
+}
+
+// MARK: - Helpers
+
+extension ContentView {
+    func isPlayed(recording: Recording, chunkIndex: Int) -> Bool {
+        guard let position = vm.playbackPosition else { return false }
+        guard let positionRecordingIndex = vm.recordings.firstIndex(where: { $0.id == position.recordingID }),
+              let thisRecordingIndex = vm.recordings.firstIndex(where: { $0.id == recording.id })
+        else { return false }
+        if thisRecordingIndex < positionRecordingIndex { return true }
+        if thisRecordingIndex > positionRecordingIndex { return false }
+        return chunkIndex <= position.chunkIndex
     }
 }
 
