@@ -306,4 +306,31 @@ struct VoicesViewModelTests {
             PlaybackPosition(recordingID: expectedID, chunkIndex: 5),
         ])
     }
+
+    @Test("Playback crosses recording boundary", .timeLimit(.minutes(1)))
+    func playbackCrossesRecordingBoundary() async {
+        let playback = FakePlaybackService()
+        let db = FakeDatabase()
+        let r1 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1)])
+        let r2 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1)])
+        db.addRecording(r1)
+        db.addRecording(r2)
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        vm.toggleListening()
+
+        var positions: [PlaybackPosition] = []
+        for await position in Observations({ vm.playbackPosition }) {
+            guard let position else { continue }
+            positions.append(position)
+            if positions.count >= 4 { break }
+        }
+
+        #expect(positions == [
+            PlaybackPosition(recordingID: r1.id, chunkIndex: 0),
+            PlaybackPosition(recordingID: r1.id, chunkIndex: 1),
+            PlaybackPosition(recordingID: r2.id, chunkIndex: 0),
+            PlaybackPosition(recordingID: r2.id, chunkIndex: 1),
+        ])
+    }
 }
