@@ -38,13 +38,6 @@ final class VoicesViewModel {
         return total > 0 && chunksPlayedThrough < total
     }
 
-    private var chunksPlayedThrough: Int {
-        guard let position = playbackPosition,
-              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
-        else { return 0 }
-        return recordings.prefix(index).reduce(0) { $0 + $1.audioChunks.count } + position.chunkIndex + 1
-    }
-
     func toggleRecording() {
         isRecording ? stopRecording() : startRecording()
     }
@@ -95,10 +88,15 @@ final class VoicesViewModel {
         log("Listening started")
     }
 
-    private func stopListening() {
-        cancelTask(&playbackTask)
-        isListening = false
-        log("Listening stopped")
+    private func resumePoint() -> (recordingIndex: Int, chunkIndex: Int) {
+        guard let position = playbackPosition,
+              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
+        else { return (0, 0) }
+        let nextChunk = position.chunkIndex + 1
+        if nextChunk < recordings[index].audioChunks.count {
+            return (index, nextChunk)
+        }
+        return (index + 1, 0)
     }
 
     private func setPlaybackPosition(from point: (recordingIndex: Int, chunkIndex: Int)) {
@@ -121,23 +119,18 @@ final class VoicesViewModel {
         }
     }
 
-    private func resumePoint() -> (recordingIndex: Int, chunkIndex: Int) {
-        guard let position = playbackPosition,
-              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
-        else { return (0, 0) }
-        let nextChunk = position.chunkIndex + 1
-        if nextChunk < recordings[index].audioChunks.count {
-            return (index, nextChunk)
-        }
-        return (index + 1, 0)
-    }
-
     private func playRecording(_ recording: Recording, startingAt chunkIndex: Int) async {
         let chunks = Array(recording.audioChunks.dropFirst(chunkIndex))
         for await index in playbackService.play(chunks) {
             guard !Task.isCancelled else { return }
             playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: index)
         }
+    }
+
+    private func stopListening() {
+        cancelTask(&playbackTask)
+        isListening = false
+        log("Listening stopped")
     }
 
     // MARK: - Invariants
@@ -149,6 +142,13 @@ final class VoicesViewModel {
     }
 
     // MARK: - Helpers
+
+    private var chunksPlayedThrough: Int {
+        guard let position = playbackPosition,
+              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
+        else { return 0 }
+        return recordings.prefix(index).reduce(0) { $0 + $1.audioChunks.count } + position.chunkIndex + 1
+    }
 
     private func cancelTask(_ task: inout Task<Void, Never>?) {
         task?.cancel()
