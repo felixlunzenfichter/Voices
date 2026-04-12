@@ -23,10 +23,9 @@ struct ContentView: View {
                             }
                             .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
                         }
-                        Color.clear.frame(height: 1).id("bottom")
+                        Color.clear.frame(height: 160).id("bottom")
                     }
                     .padding()
-                    .padding(.bottom, 160)
                     .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
                 }
                 .scrollDisabled(vm.isRecording)
