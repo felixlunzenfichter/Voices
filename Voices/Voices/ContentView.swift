@@ -40,7 +40,7 @@ struct ContentView: View {
                 .onChange(of: vm.playbackPosition) {
                     if let position = vm.playbackPosition, vm.isListening {
                         withAnimation {
-                            proxy.scrollTo("\(position.recordingID)-\(position.chunkIndex)")
+                            proxy.scrollTo("\(position.recordingID)-\(position.chunkIndex)", anchor: .center)
                         }
                     }
                 }
