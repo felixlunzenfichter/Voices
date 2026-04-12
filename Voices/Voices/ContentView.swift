@@ -35,6 +35,7 @@ struct ContentView: View {
                         vm.toggleRecording()
                     }
                 })
+                    .animation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ), value: vm.isRecording)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 60)
