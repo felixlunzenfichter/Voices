@@ -376,4 +376,14 @@ struct VoicesViewModelTests {
             PlaybackPosition(recordingID: secondID, chunkIndex: 1),
         ])
     }
+
+    @Test("Immediate stop does not persist empty recording")
+    func immediateStopDoesNotPersistEmptyRecording() {
+        let vm = VoicesViewModel()
+
+        vm.toggleRecording()
+        vm.toggleRecording()
+
+        #expect(vm.recordings.isEmpty, "No empty recording should remain in the database")
+    }
 }
