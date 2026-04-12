@@ -390,4 +390,38 @@ struct VoicesViewModelTests {
 
         #expect(vm.recordings.isEmpty, "No empty recording should remain in the database")
     }
+
+    @Test("hasUnplayedChunks reflects playback state", .timeLimit(.minutes(1)))
+    func hasUnplayedChunksReflectsPlaybackState() async {
+        let producer = FakeRecordingService(count: 2)
+        let playback = FakePlaybackService()
+        let db = FakeDatabase()
+        let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
+
+        // Nothing recorded — nothing to play
+        #expect(vm.hasUnplayedChunks == false)
+
+        // After recording — something to play
+        vm.toggleRecording()
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+        #expect(vm.hasUnplayedChunks == true)
+
+        // After full playback — nothing to play
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+        #expect(vm.hasUnplayedChunks == false)
+
+        // After recording again — something to play again
+        vm.toggleRecording()
+        for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
+            if count >= 2 { break }
+        }
+        vm.toggleRecording()
+        #expect(vm.hasUnplayedChunks == true)
+    }
 }
