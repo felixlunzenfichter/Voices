@@ -87,8 +87,7 @@ final class VoicesViewModel {
     private func startListening() {
         if isRecording { stopRecording() }
         isListening = true
-        let startFrom = playbackPosition?.chunkIndex ?? 0
-        playbackTask = Task { await consumePlayback(from: startFrom) }
+        playbackTask = Task { await consumePlayback() }
         log("Listening started")
     }
 
@@ -98,13 +97,21 @@ final class VoicesViewModel {
         log("Listening stopped")
     }
 
-    private func consumePlayback(from startIndex: Int) async {
-        guard let recording = recordings.last else { return }
-        let remaining = Array(recording.audioChunks.dropFirst(startIndex))
-        for await index in playbackService.play(remaining) {
-            guard !Task.isCancelled else { break }
-            playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: index)
+    private func consumePlayback() async {
+        let startRecordingIndex = recordings.firstIndex(where: { $0.id == playbackPosition?.recordingID }) ?? 0
+        let startChunkIndex = playbackPosition?.chunkIndex ?? 0
+
+        for recordingIndex in startRecordingIndex..<recordings.count {
+            let recording = recordings[recordingIndex]
+            let skipCount = (recordingIndex == startRecordingIndex) ? startChunkIndex : 0
+            let chunks = Array(recording.audioChunks.dropFirst(skipCount))
+
+            for await index in playbackService.play(chunks) {
+                guard !Task.isCancelled else { return }
+                playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: index)
+            }
         }
+
         if !Task.isCancelled {
             isListening = false
         }
