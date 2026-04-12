@@ -5,6 +5,7 @@ struct ContentView: View {
         recordingService: DemoRecordingService(),
         playbackService: DemoPlaybackService()
     )
+    @State private var isRecordingAnimated = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -30,15 +31,15 @@ struct ContentView: View {
                 ListenButton(isListening: vm.isListening, hasUnplayedChunks: vm.hasUnplayedChunks, onTap: { vm.toggleListening() })
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
                 Spacer()
-                RecordButton(isRecording: vm.isRecording, onTap: {
-                    withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
-                        vm.toggleRecording()
-                    }
-                })
-                    .animation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ), value: vm.isRecording)
+                RecordButton(isRecording: isRecordingAnimated, onTap: { vm.toggleRecording() })
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 60)
+        }
+        .onChange(of: vm.isRecording) { _, newValue in
+            withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
+                isRecordingAnimated = newValue
+            }
         }
     }
 }
