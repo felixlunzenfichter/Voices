@@ -18,8 +18,6 @@ final class DemoRecordingService: RecordingService {
     private weak var database: (any Database)?
     private var task: Task<Void, Never>?
 
-    nonisolated init() {}
-
     func start(into database: any Database) {
         stop()
         self.database = database

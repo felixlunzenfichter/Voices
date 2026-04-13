@@ -14,8 +14,6 @@ final class DemoPlaybackService: PlaybackService {
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
 
-    nonisolated init() {}
-
     func play(_ recordings: [Recording], from position: PlaybackPosition?) {
         stop()
         isPlaying = true
