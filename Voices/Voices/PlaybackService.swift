@@ -15,7 +15,6 @@ final class DemoPlaybackService: PlaybackService {
     private var task: Task<Void, Never>?
 
     func play(_ recordings: [Recording], from position: PlaybackPosition?) {
-        stop()
         isPlaying = true
         let resume = resumePoint(in: recordings, from: position)
         if resume.recordingIndex < recordings.count {

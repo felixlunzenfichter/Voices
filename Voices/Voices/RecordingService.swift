@@ -19,7 +19,6 @@ final class DemoRecordingService: RecordingService {
     private var task: Task<Void, Never>?
 
     func start(into database: any Database) {
-        stop()
         self.database = database
         isRecording = true
         let recording = Recording()
