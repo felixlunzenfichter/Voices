@@ -3,20 +3,44 @@ import Observation
 import Testing
 @testable import Voices
 
-struct FakeRecordingService: RecordingService {
-    let count: Int
+@Observable @MainActor
+final class FakeRecordingService: RecordingService {
+    private(set) var isRecording = false
+    private let count: Int
+    private var currentRecordingID: UUID?
+    private weak var database: (any Database)?
+    private var task: Task<Void, Never>?
 
-    func audioChunks() -> AsyncStream<AudioChunk> {
-        let count = self.count
-        return AsyncStream { continuation in
-            Task {
-                for i in 0..<count {
-                    continuation.yield(AudioChunk(index: i))
-                    await Task.yield()
-                }
-                continuation.finish()
+    init(count: Int = 0) {
+        self.count = count
+    }
+
+    func start(into database: any Database) {
+        stop()
+        self.database = database
+        isRecording = true
+        let recording = Recording()
+        currentRecordingID = recording.id
+        database.addRecording(recording)
+        task = Task {
+            for i in 0..<count {
+                await Task.yield()
+                guard !Task.isCancelled else { break }
+                database.appendChunk(AudioChunk(index: i), to: recording.id)
             }
         }
+    }
+
+    func stop() {
+        task?.cancel()
+        task = nil
+        if let id = currentRecordingID, let database,
+           database.recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true {
+            database.removeRecording(id)
+        }
+        currentRecordingID = nil
+        self.database = nil
+        isRecording = false
     }
 }
 
