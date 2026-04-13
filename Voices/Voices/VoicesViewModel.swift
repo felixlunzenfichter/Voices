@@ -6,18 +6,15 @@ final class VoicesViewModel {
     private(set) var isRecording = false {
         didSet { checkMutualExclusion() }
     }
-    private(set) var isListening = false {
-        didSet { checkMutualExclusion() }
-    }
+    var isListening: Bool { playbackService.isPlaying }
     var recordings: [Recording] { database.recordings }
-    private(set) var playbackPosition: PlaybackPosition?
+    var playbackPosition: PlaybackPosition? { playbackService.playbackPosition }
 
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
     private let database: any Database
     private var currentRecordingID: UUID?
     private var recordingTask: Task<Void, Never>?
-    private var playbackTask: Task<Void, Never>?
 
     init(
         recordingService: any RecordingService = SilentRecordingService(),
@@ -87,55 +84,12 @@ final class VoicesViewModel {
 
     private func startListening() {
         if isRecording { stopRecording() }
-        isListening = true
-        let resume = resumePoint()
-        setPlaybackPosition(from: resume)
-        playbackTask = Task { await consumePlayback(from: resume) }
+        playbackService.play(recordings, from: playbackPosition)
         log("Listening started")
     }
 
-    private func resumePoint() -> (recordingIndex: Int, chunkIndex: Int) {
-        guard let position = playbackPosition,
-              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
-        else { return (0, 0) }
-        let nextChunk = position.chunkIndex + 1
-        if nextChunk < recordings[index].audioChunks.count {
-            return (index, nextChunk)
-        }
-        return (index + 1, 0)
-    }
-
-    private func setPlaybackPosition(from point: (recordingIndex: Int, chunkIndex: Int)) {
-        guard point.recordingIndex < recordings.count else { return }
-        playbackPosition = PlaybackPosition(
-            recordingID: recordings[point.recordingIndex].id,
-            chunkIndex: point.chunkIndex
-        )
-    }
-
-    private func consumePlayback(from start: (recordingIndex: Int, chunkIndex: Int)) async {
-        for recordingIndex in start.recordingIndex..<recordings.count {
-            let skipCount = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
-            await playRecording(recordings[recordingIndex], startingAt: skipCount)
-            guard !Task.isCancelled else { return }
-        }
-
-        if !Task.isCancelled {
-            isListening = false
-        }
-    }
-
-    private func playRecording(_ recording: Recording, startingAt chunkIndex: Int) async {
-        let chunks = Array(recording.audioChunks.dropFirst(chunkIndex))
-        for await index in playbackService.play(chunks) {
-            guard !Task.isCancelled else { return }
-            playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: index)
-        }
-    }
-
     private func stopListening() {
-        cancelTask(&playbackTask)
-        isListening = false
+        playbackService.stop()
         log("Listening stopped")
     }
 
