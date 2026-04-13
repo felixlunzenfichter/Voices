@@ -4,7 +4,7 @@ import Observation
 @MainActor protocol PlaybackService: AnyObject {
     var playbackPosition: PlaybackPosition? { get }
     var isPlaying: Bool { get }
-    func play(_ recordings: [Recording], from position: PlaybackPosition?)
+    func play(_ recordings: [Recording])
     func stop()
 }
 
@@ -14,9 +14,9 @@ final class DemoPlaybackService: PlaybackService {
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
 
-    func play(_ recordings: [Recording], from position: PlaybackPosition?) {
+    func play(_ recordings: [Recording]) {
         isPlaying = true
-        let resume = resumePoint(in: recordings, from: position)
+        let resume = resumePoint(in: recordings, from: playbackPosition)
         if resume.recordingIndex < recordings.count {
             playbackPosition = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
@@ -69,7 +69,7 @@ final class SilentPlaybackService: PlaybackService {
 
     nonisolated init() {}
 
-    func play(_ recordings: [Recording], from position: PlaybackPosition?) {
+    func play(_ recordings: [Recording]) {
         isPlaying = true
     }
 

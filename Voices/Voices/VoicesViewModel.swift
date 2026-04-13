@@ -59,7 +59,7 @@ final class VoicesViewModel {
 
     private func startListening() {
         if isRecording { stopRecording() }
-        playbackService.play(recordings, from: playbackPosition)
+        playbackService.play(recordings)
         log("Listening started")
     }
 
