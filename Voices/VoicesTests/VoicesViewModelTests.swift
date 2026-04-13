@@ -3,33 +3,96 @@ import Observation
 import Testing
 @testable import Voices
 
-struct FakeRecordingService: RecordingService {
-    let count: Int
+@Observable @MainActor
+final class FakeRecordingService: RecordingService {
+    private(set) var isRecording = false
+    private let count: Int
+    private var currentRecordingID: UUID?
+    private weak var database: (any Database)?
+    private var task: Task<Void, Never>?
 
-    func audioChunks() -> AsyncStream<AudioChunk> {
-        let count = self.count
-        return AsyncStream { continuation in
-            Task {
-                for i in 0..<count {
-                    continuation.yield(AudioChunk(index: i))
-                    await Task.yield()
-                }
-                continuation.finish()
+    init(count: Int = 0) {
+        self.count = count
+    }
+
+    func start(into database: any Database) {
+        self.database = database
+        isRecording = true
+        let recording = Recording()
+        currentRecordingID = recording.id
+        database.addRecording(recording)
+        task = Task {
+            for i in 0..<count {
+                await Task.yield()
+                guard !Task.isCancelled else { break }
+                database.appendChunk(AudioChunk(index: i), to: recording.id)
             }
         }
     }
+
+    func stop() {
+        task?.cancel()
+        task = nil
+        if let id = currentRecordingID, let database,
+           database.recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true {
+            database.removeRecording(id)
+        }
+        currentRecordingID = nil
+        self.database = nil
+        isRecording = false
+    }
 }
 
-struct FakePlaybackService: PlaybackService {
-    func play(_ chunks: [AudioChunk]) -> AsyncStream<Int> {
-        AsyncStream { continuation in
-            Task {
-                for chunk in chunks {
-                    continuation.yield(chunk.index)
-                    await Task.yield()
-                }
-                continuation.finish()
+@Observable @MainActor
+final class FakePlaybackService: PlaybackService {
+    private(set) var playbackPosition: PlaybackPosition?
+    private(set) var isPlaying = false
+    private var task: Task<Void, Never>?
+
+    func play(_ recordings: [Recording]) {
+        isPlaying = true
+        let resume = resumePoint(in: recordings, from: playbackPosition)
+        if resume.recordingIndex < recordings.count {
+            playbackPosition = PlaybackPosition(
+                recordingID: recordings[resume.recordingIndex].id,
+                chunkIndex: resume.chunkIndex
+            )
+        }
+        task = Task { await consumePlayback(recordings, from: resume) }
+    }
+
+    func stop() {
+        task?.cancel()
+        task = nil
+        isPlaying = false
+    }
+
+    private func resumePoint(in recordings: [Recording], from position: PlaybackPosition?) -> (recordingIndex: Int, chunkIndex: Int) {
+        guard let position,
+              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
+        else { return (0, 0) }
+        let nextChunk = position.chunkIndex + 1
+        if nextChunk < recordings[index].audioChunks.count {
+            return (index, nextChunk)
+        }
+        return (index + 1, 0)
+    }
+
+    private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
+        for recordingIndex in start.recordingIndex..<recordings.count {
+            let recording = recordings[recordingIndex]
+            let skipCount = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
+            let chunks = Array(recording.audioChunks.dropFirst(skipCount))
+
+            for chunk in chunks {
+                guard !Task.isCancelled else { return }
+                await Task.yield()
+                playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
             }
+        }
+
+        if !Task.isCancelled {
+            isPlaying = false
         }
     }
 }
