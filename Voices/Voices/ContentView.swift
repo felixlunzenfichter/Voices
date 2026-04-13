@@ -5,32 +5,60 @@ struct ContentView: View {
         recordingService: DemoRecordingService(),
         playbackService: DemoPlaybackService()
     )
+    @State private var isRecordingAnimated = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
-                    ForEach(vm.audioChunks, id: \.index) { chunk in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(chunk.index <= vm.playbackIndex ? Color.blue : Color.purple)
-                            .frame(height: 48)
-                            .transition(.scale.combined(with: .opacity))
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(vm.recordings) { recording in
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
+                                ForEach(recording.audioChunks, id: \.index) { chunk in
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
+                                        .frame(height: 48)
+                                        .transition(.scale.combined(with: .opacity))
+                                        .id("\(recording.id)-\(chunk.index)")
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
+                        }
+                        Color.clear.frame(height: 160).id("bottom")
+                    }
+                    .padding()
+                    .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
+                }
+                .scrollDisabled(vm.isRecording || vm.isListening)
+                .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
+                    if vm.isRecording {
+                        withAnimation {
+                            proxy.scrollTo("bottom")
+                        }
                     }
                 }
-                .padding()
-                .animation(.easeInOut(duration: 0.3), value: vm.audioChunks.count)
-                .animation(.easeInOut(duration: 0.3), value: vm.playbackIndex)
+                .onChange(of: vm.playbackPosition) {
+                    if let position = vm.playbackPosition, vm.isListening {
+                        withAnimation {
+                            proxy.scrollTo("\(position.recordingID)-\(position.chunkIndex)", anchor: .center)
+                        }
+                    }
+                }
             }
 
             HStack {
                 ListenButton(isListening: vm.isListening, hasUnplayedChunks: vm.hasUnplayedChunks, onTap: { vm.toggleListening() })
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
                 Spacer()
-                RecordButton(isRecording: vm.isRecording, onTap: { vm.toggleRecording() })
-                    .animation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ), value: vm.isRecording)
+                RecordButton(isRecording: isRecordingAnimated, onTap: { vm.toggleRecording() })
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 60)
+        }
+        .onChange(of: vm.isRecording) { _, newValue in
+            withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
+                isRecordingAnimated = newValue
+            }
         }
     }
 }
@@ -74,10 +102,24 @@ struct ListenButton: View {
         }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
-                .foregroundColor(hasUnplayedChunks ? .blue : .purple)
+                .foregroundColor(hasUnplayedChunks ? .purple : .blue)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
+    }
+}
+
+// MARK: - Helpers
+
+extension ContentView {
+    func isPlayed(recording: Recording, chunkIndex: Int) -> Bool {
+        guard let position = vm.playbackPosition else { return false }
+        guard let positionRecordingIndex = vm.recordings.firstIndex(where: { $0.id == position.recordingID }),
+              let thisRecordingIndex = vm.recordings.firstIndex(where: { $0.id == recording.id })
+        else { return false }
+        if thisRecordingIndex < positionRecordingIndex { return true }
+        if thisRecordingIndex > positionRecordingIndex { return false }
+        return chunkIndex <= position.chunkIndex
     }
 }
 
