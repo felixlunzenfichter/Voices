@@ -16,7 +16,6 @@ final class FakeRecordingService: RecordingService {
     }
 
     func start(into database: any Database) {
-        stop()
         self.database = database
         isRecording = true
         let recording = Recording()
@@ -51,7 +50,6 @@ final class FakePlaybackService: PlaybackService {
     private var task: Task<Void, Never>?
 
     func play(_ recordings: [Recording], from position: PlaybackPosition?) {
-        stop()
         isPlaying = true
         let resume = resumePoint(in: recordings, from: position)
         if resume.recordingIndex < recordings.count {
