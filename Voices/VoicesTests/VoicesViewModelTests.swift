@@ -522,6 +522,19 @@ struct ChunkListenedStateTests {
 
     @Test("Chunks ahead of cursor remain not-listened during playback", .timeLimit(.minutes(1)))
     func chunksAheadNotListened() async {
+        let db = FakeDatabase.withRecording(chunkCount: 6)
+        let playback = FakePlaybackService(database: db)
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        vm.toggleListening()
+        for await pos in Observations({ vm.playbackPosition }) {
+            if let p = pos, p.chunkIndex >= 2 { break }
+        }
+        vm.toggleListening()
+
+        let chunks = db.recordings[0].audioChunks
+        #expect(chunks[0...2].allSatisfy { $0.listened })
+        #expect(chunks[3...5].allSatisfy { !$0.listened })
     }
 
     @Test("All chunks listened after full playback", .timeLimit(.minutes(1)))
