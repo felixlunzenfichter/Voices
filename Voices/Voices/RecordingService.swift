@@ -21,7 +21,7 @@ final class DemoRecordingService: RecordingService {
     private weak var database: (any Database)?
     private var task: Task<Void, Never>?
 
-    init(count: Int = .max, delay: Duration = .milliseconds(300)) {
+    init(count: Int = .max, delay: Duration = .zero) {
         self.count = count
         self.delay = delay
     }

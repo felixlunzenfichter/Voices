@@ -4,8 +4,8 @@ struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
         return VoicesViewModel(
-            recordingService: DemoRecordingService(),
-            playbackService: DemoPlaybackService(database: db),
+            recordingService: DemoRecordingService(delay: .milliseconds(300)),
+            playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
             database: db
         )
     }()

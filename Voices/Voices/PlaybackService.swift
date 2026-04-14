@@ -17,7 +17,7 @@ final class DemoPlaybackService: PlaybackService {
 
     private let delay: Duration
 
-    init(database: any Database, delay: Duration = .milliseconds(300)) {
+    init(database: any Database, delay: Duration = .zero) {
         self.database = database
         self.delay = delay
     }
