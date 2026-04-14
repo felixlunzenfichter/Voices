@@ -19,9 +19,12 @@ struct ContentView: View {
                         ForEach(vm.recordings) { recording in
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
+                                    let color = isCurrent(recording: recording, chunk: chunk)
+                                        ? Color.white
+                                        : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(chunk.listened ? Color.blue : Color.purple)
-                                        .animation(.easeInOut(duration: 0.3), value: chunk.listened)
+                                        .fill(color)
+                                        .animation(.easeInOut(duration: 0.3), value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -110,6 +113,16 @@ struct ListenButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
+    }
+}
+
+// MARK: - Helpers
+
+extension ContentView {
+    private func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
+        vm.isListening
+            && vm.playbackPosition?.recordingID == recording.id
+            && vm.playbackPosition?.chunkIndex == chunk.index
     }
 }
 
