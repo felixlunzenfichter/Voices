@@ -516,10 +516,6 @@ struct ChunkListenedStateTests {
         #expect(chunk.listened == false)
     }
 
-    @Test("Playback marks each chunk listened as cursor reaches it", .timeLimit(.minutes(1)))
-    func playbackMarksChunksListened() async {
-    }
-
     @Test("Chunks ahead of cursor remain not-listened during playback", .timeLimit(.minutes(1)))
     func chunksAheadNotListened() async {
         let db = FakeDatabase.withRecording(chunkCount: 6)
@@ -535,10 +531,6 @@ struct ChunkListenedStateTests {
         let chunks = db.recordings[0].audioChunks
         #expect(chunks[0...2].allSatisfy { $0.listened })
         #expect(chunks[3...5].allSatisfy { !$0.listened })
-    }
-
-    @Test("All chunks listened after full playback", .timeLimit(.minutes(1)))
-    func allChunksListenedAfterFullPlayback() async {
     }
 
     @Test("markListened is observable through ViewModel derived state")
