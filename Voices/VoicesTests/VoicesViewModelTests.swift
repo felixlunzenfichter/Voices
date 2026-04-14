@@ -515,5 +515,16 @@ struct ChunkListenedStateTests {
 
     @Test("markListened is observable through ViewModel derived state")
     func markListenedObservableThroughViewModel() {
+        let db = FakeDatabase.withRecording(chunkCount: 3)
+        let vm = VoicesViewModel(database: db)
+        let rid = db.recordings[0].id
+
+        #expect(vm.hasUnplayedChunks == true)
+
+        db.markListened(recordingID: rid, chunkIndex: 0)
+        db.markListened(recordingID: rid, chunkIndex: 1)
+        db.markListened(recordingID: rid, chunkIndex: 2)
+
+        #expect(vm.hasUnplayedChunks == false)
     }
 }
