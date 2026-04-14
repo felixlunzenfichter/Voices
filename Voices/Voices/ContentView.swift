@@ -21,6 +21,7 @@ struct ContentView: View {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(chunk.listened ? Color.blue : Color.purple)
+                                        .animation(.easeInOut(duration: 0.3), value: chunk.listened)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
