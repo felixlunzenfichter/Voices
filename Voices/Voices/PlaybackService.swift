@@ -4,7 +4,7 @@ import Observation
 @MainActor protocol PlaybackService: AnyObject {
     var playbackPosition: PlaybackPosition? { get }
     var isPlaying: Bool { get }
-    func play(_ recordings: [Recording])
+    func play(_ recordings: [Recording], onChunkPlayed: @escaping (PlaybackPosition) -> Void)
     func stop()
 }
 
@@ -14,16 +14,18 @@ final class DemoPlaybackService: PlaybackService {
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
 
-    func play(_ recordings: [Recording]) {
+    func play(_ recordings: [Recording], onChunkPlayed: @escaping (PlaybackPosition) -> Void) {
         isPlaying = true
         let resume = resumePoint(in: recordings, from: playbackPosition)
         if resume.recordingIndex < recordings.count {
-            playbackPosition = PlaybackPosition(
+            let position = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
                 chunkIndex: resume.chunkIndex
             )
+            playbackPosition = position
+            onChunkPlayed(position)
         }
-        task = Task { await consumePlayback(recordings, from: resume) }
+        task = Task { await consumePlayback(recordings, from: resume, onChunkPlayed: onChunkPlayed) }
     }
 
     func stop() {
@@ -43,7 +45,7 @@ final class DemoPlaybackService: PlaybackService {
         return (index + 1, 0)
     }
 
-    private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
+    private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int), onChunkPlayed: @escaping (PlaybackPosition) -> Void) async {
         for recordingIndex in start.recordingIndex..<recordings.count {
             let recording = recordings[recordingIndex]
             let skipCount = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
@@ -52,7 +54,9 @@ final class DemoPlaybackService: PlaybackService {
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
                 try? await Task.sleep(for: .milliseconds(300))
-                playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                playbackPosition = position
+                onChunkPlayed(position)
             }
         }
 
@@ -69,7 +73,7 @@ final class SilentPlaybackService: PlaybackService {
 
     nonisolated init() {}
 
-    func play(_ recordings: [Recording]) {
+    func play(_ recordings: [Recording], onChunkPlayed: @escaping (PlaybackPosition) -> Void) {
         isPlaying = true
     }
 

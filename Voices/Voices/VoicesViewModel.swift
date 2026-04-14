@@ -25,8 +25,7 @@ final class VoicesViewModel {
     // MARK: - Public
 
     var hasUnplayedChunks: Bool {
-        let total = recordings.reduce(0) { $0 + $1.audioChunks.count }
-        return total > 0 && chunksPlayedThrough < total
+        recordings.flatMap(\.audioChunks).contains { !$0.listened }
     }
 
     func toggleRecording() {
@@ -59,7 +58,9 @@ final class VoicesViewModel {
 
     private func startListening() {
         if isRecording { stopRecording() }
-        playbackService.play(recordings)
+        playbackService.play(recordings) { [database] position in
+            database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
+        }
         log("Listening started")
     }
 
@@ -68,12 +69,4 @@ final class VoicesViewModel {
         log("Listening stopped")
     }
 
-    // MARK: - Helpers
-
-    private var chunksPlayedThrough: Int {
-        guard let position = playbackPosition,
-              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
-        else { return 0 }
-        return recordings.prefix(index).reduce(0) { $0 + $1.audioChunks.count } + position.chunkIndex + 1
-    }
 }

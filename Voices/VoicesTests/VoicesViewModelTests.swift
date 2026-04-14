@@ -49,16 +49,18 @@ final class FakePlaybackService: PlaybackService {
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
 
-    func play(_ recordings: [Recording]) {
+    func play(_ recordings: [Recording], onChunkPlayed: @escaping (PlaybackPosition) -> Void) {
         isPlaying = true
         let resume = resumePoint(in: recordings, from: playbackPosition)
         if resume.recordingIndex < recordings.count {
-            playbackPosition = PlaybackPosition(
+            let position = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
                 chunkIndex: resume.chunkIndex
             )
+            playbackPosition = position
+            onChunkPlayed(position)
         }
-        task = Task { await consumePlayback(recordings, from: resume) }
+        task = Task { await consumePlayback(recordings, from: resume, onChunkPlayed: onChunkPlayed) }
     }
 
     func stop() {
@@ -78,7 +80,7 @@ final class FakePlaybackService: PlaybackService {
         return (index + 1, 0)
     }
 
-    private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
+    private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int), onChunkPlayed: @escaping (PlaybackPosition) -> Void) async {
         for recordingIndex in start.recordingIndex..<recordings.count {
             let recording = recordings[recordingIndex]
             let skipCount = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
@@ -87,7 +89,9 @@ final class FakePlaybackService: PlaybackService {
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
                 await Task.yield()
-                playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                playbackPosition = position
+                onChunkPlayed(position)
             }
         }
 
@@ -112,6 +116,12 @@ final class FakeDatabase: Database {
 
     func removeRecording(_ recordingID: UUID) {
         recordings.removeAll { $0.id == recordingID }
+    }
+
+    func markListened(recordingID: UUID, chunkIndex: Int) {
+        guard let rIdx = recordings.firstIndex(where: { $0.id == recordingID }),
+              chunkIndex < recordings[rIdx].audioChunks.count else { return }
+        recordings[rIdx].audioChunks[chunkIndex].listened = true
     }
 
     static func withRecording(chunkCount: Int) -> FakeDatabase {
