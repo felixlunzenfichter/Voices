@@ -24,7 +24,7 @@ struct ContentView: View {
                                         : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(color)
-                                        .animation(.easeInOut(duration: 0.3), value: color)
+                                        .animation(.easeInOut(duration: 2.4), value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
