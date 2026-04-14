@@ -6,6 +6,7 @@ protocol Database: AnyObject {
     func addRecording(_ recording: Recording)
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID)
     func removeRecording(_ recordingID: UUID)
+    func markListened(recordingID: UUID, chunkIndex: Int)
 }
 
 @Observable
@@ -23,5 +24,11 @@ final class InMemoryDatabase: Database {
 
     func removeRecording(_ recordingID: UUID) {
         recordings.removeAll { $0.id == recordingID }
+    }
+
+    func markListened(recordingID: UUID, chunkIndex: Int) {
+        guard let rIdx = recordings.firstIndex(where: { $0.id == recordingID }),
+              chunkIndex < recordings[rIdx].audioChunks.count else { return }
+        recordings[rIdx].audioChunks[chunkIndex].listened = true
     }
 }

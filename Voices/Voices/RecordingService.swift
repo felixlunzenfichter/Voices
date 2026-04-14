@@ -3,6 +3,7 @@ import Observation
 
 struct AudioChunk: Equatable {
     let index: Int
+    var listened: Bool = false
 }
 
 @MainActor protocol RecordingService: AnyObject {

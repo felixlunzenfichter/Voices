@@ -1,10 +1,14 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var vm = VoicesViewModel(
-        recordingService: DemoRecordingService(),
-        playbackService: DemoPlaybackService()
-    )
+    @State private var vm: VoicesViewModel = {
+        let db = InMemoryDatabase()
+        return VoicesViewModel(
+            recordingService: DemoRecordingService(),
+            playbackService: DemoPlaybackService(database: db),
+            database: db
+        )
+    }()
     @State private var isRecordingAnimated = false
 
     var body: some View {
@@ -15,8 +19,12 @@ struct ContentView: View {
                         ForEach(vm.recordings) { recording in
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
+                                    let color = isCurrent(recording: recording, chunk: chunk)
+                                        ? Color.white
+                                        : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
+                                        .fill(color)
+                                        .animation(.easeInOut(duration: 2.4), value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -27,7 +35,6 @@ struct ContentView: View {
                         Color.clear.frame(height: 160).id("bottom")
                     }
                     .padding()
-                    .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
                 }
                 .scrollDisabled(vm.isRecording || vm.isListening)
                 .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
@@ -112,14 +119,10 @@ struct ListenButton: View {
 // MARK: - Helpers
 
 extension ContentView {
-    func isPlayed(recording: Recording, chunkIndex: Int) -> Bool {
-        guard let position = vm.playbackPosition else { return false }
-        guard let positionRecordingIndex = vm.recordings.firstIndex(where: { $0.id == position.recordingID }),
-              let thisRecordingIndex = vm.recordings.firstIndex(where: { $0.id == recording.id })
-        else { return false }
-        if thisRecordingIndex < positionRecordingIndex { return true }
-        if thisRecordingIndex > positionRecordingIndex { return false }
-        return chunkIndex <= position.chunkIndex
+    private func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
+        vm.isListening
+            && vm.playbackPosition?.recordingID == recording.id
+            && vm.playbackPosition?.chunkIndex == chunk.index
     }
 }
 

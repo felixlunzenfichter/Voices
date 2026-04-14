@@ -48,15 +48,22 @@ final class FakePlaybackService: PlaybackService {
     private(set) var playbackPosition: PlaybackPosition?
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
+    private let database: any Database
+
+    init(database: any Database) {
+        self.database = database
+    }
 
     func play(_ recordings: [Recording]) {
         isPlaying = true
-        let resume = resumePoint(in: recordings, from: playbackPosition)
+        let resume = resumePoint(in: recordings)
         if resume.recordingIndex < recordings.count {
-            playbackPosition = PlaybackPosition(
+            let position = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
                 chunkIndex: resume.chunkIndex
             )
+            playbackPosition = position
+            database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
         }
         task = Task { await consumePlayback(recordings, from: resume) }
     }
@@ -67,15 +74,15 @@ final class FakePlaybackService: PlaybackService {
         isPlaying = false
     }
 
-    private func resumePoint(in recordings: [Recording], from position: PlaybackPosition?) -> (recordingIndex: Int, chunkIndex: Int) {
-        guard let position,
-              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
-        else { return (0, 0) }
-        let nextChunk = position.chunkIndex + 1
-        if nextChunk < recordings[index].audioChunks.count {
-            return (index, nextChunk)
+    private func resumePoint(in recordings: [Recording]) -> (recordingIndex: Int, chunkIndex: Int) {
+        for (rIdx, recording) in recordings.enumerated() {
+            for (cIdx, chunk) in recording.audioChunks.enumerated() {
+                if !chunk.listened {
+                    return (rIdx, cIdx)
+                }
+            }
         }
-        return (index + 1, 0)
+        return (recordings.count, 0)
     }
 
     private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
@@ -87,7 +94,9 @@ final class FakePlaybackService: PlaybackService {
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
                 await Task.yield()
-                playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                playbackPosition = position
+                database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
             }
         }
 
@@ -112,6 +121,12 @@ final class FakeDatabase: Database {
 
     func removeRecording(_ recordingID: UUID) {
         recordings.removeAll { $0.id == recordingID }
+    }
+
+    func markListened(recordingID: UUID, chunkIndex: Int) {
+        guard let rIdx = recordings.firstIndex(where: { $0.id == recordingID }),
+              chunkIndex < recordings[rIdx].audioChunks.count else { return }
+        recordings[rIdx].audioChunks[chunkIndex].listened = true
     }
 
     static func withRecording(chunkCount: Int) -> FakeDatabase {
@@ -261,8 +276,8 @@ struct VoicesViewModelTests {
 
     @Test("Listening auto-stops after last chunk", .timeLimit(.minutes(1)))
     func listeningAutoStopsAfterLastChunk() async {
-        let playback = FakePlaybackService()
         let db = FakeDatabase.withOneRecording()
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(playbackService: playback, database: db)
 
         vm.toggleListening()
@@ -277,8 +292,8 @@ struct VoicesViewModelTests {
 
     @Test("Listen does nothing when everything already played", .timeLimit(.minutes(1)))
     func listenDoesNothingWhenEverythingAlreadyPlayed() async {
-        let playback = FakePlaybackService()
         let db = FakeDatabase.withOneRecording()
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(playbackService: playback, database: db)
 
         // Play everything
@@ -295,8 +310,8 @@ struct VoicesViewModelTests {
 
     @Test("Playback position tracks recording and chunk", .timeLimit(.minutes(1)))
     func playbackPositionTracksRecordingAndChunk() async {
-        let playback = FakePlaybackService()
         let db = FakeDatabase.withOneRecording()
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(playbackService: playback, database: db)
 
         #expect(vm.playbackPosition == nil)
@@ -313,8 +328,8 @@ struct VoicesViewModelTests {
 
     @Test("Listening plays back chunks sequentially", .timeLimit(.minutes(1)))
     func listeningPlaysBackChunksSequentially() async {
-        let playback = FakePlaybackService()
         let db = FakeDatabase.withRecording(chunkCount: 3)
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(playbackService: playback, database: db)
 
         vm.toggleListening()
@@ -336,8 +351,8 @@ struct VoicesViewModelTests {
 
     @Test("Resume listening continues from where it stopped", .timeLimit(.minutes(1)))
     func resumeListeningContinuesFromWhereItStopped() async {
-        let playback = FakePlaybackService()
         let db = FakeDatabase.withRecording(chunkCount: 6)
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(playbackService: playback, database: db)
         let expectedID = db.recordings.first!.id
 
@@ -376,12 +391,12 @@ struct VoicesViewModelTests {
 
     @Test("Playback crosses recording boundary", .timeLimit(.minutes(1)))
     func playbackCrossesRecordingBoundary() async {
-        let playback = FakePlaybackService()
         let db = FakeDatabase()
         let r1 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1)])
         let r2 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1)])
         db.addRecording(r1)
         db.addRecording(r2)
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(playbackService: playback, database: db)
 
         vm.toggleListening()
@@ -404,8 +419,8 @@ struct VoicesViewModelTests {
     @Test("Record after full playback plays only new recording", .timeLimit(.minutes(1)))
     func recordAfterFullPlaybackPlaysOnlyNewRecording() async {
         let producer = FakeRecordingService(count: 2)
-        let playback = FakePlaybackService()
         let db = FakeDatabase()
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
 
         // Record first
@@ -457,8 +472,8 @@ struct VoicesViewModelTests {
     @Test("hasUnplayedChunks reflects playback state", .timeLimit(.minutes(1)))
     func hasUnplayedChunksReflectsPlaybackState() async {
         let producer = FakeRecordingService(count: 2)
-        let playback = FakePlaybackService()
         let db = FakeDatabase()
+        let playback = FakePlaybackService(database: db)
         let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
 
         // Nothing recorded — nothing to play
@@ -486,5 +501,50 @@ struct VoicesViewModelTests {
         }
         vm.toggleRecording()
         #expect(vm.hasUnplayedChunks == true)
+    }
+}
+
+// MARK: - Commit 1: Chunk-level listened state
+
+struct ChunkListenedStateTests {
+
+    // --- New: chunk.listened behavior ---
+
+    @Test("New chunks have listened = false")
+    func newChunksStartUnlistened() {
+        let chunk = AudioChunk(index: 0)
+        #expect(chunk.listened == false)
+    }
+
+    @Test("Chunks ahead of cursor remain not-listened during playback", .timeLimit(.minutes(1)))
+    func chunksAheadNotListened() async {
+        let db = FakeDatabase.withRecording(chunkCount: 6)
+        let playback = FakePlaybackService(database: db)
+        let vm = VoicesViewModel(playbackService: playback, database: db)
+
+        vm.toggleListening()
+        for await pos in Observations({ vm.playbackPosition }) {
+            if let p = pos, p.chunkIndex >= 2 { break }
+        }
+        vm.toggleListening()
+
+        let chunks = db.recordings[0].audioChunks
+        #expect(chunks[0...2].allSatisfy { $0.listened })
+        #expect(chunks[3...5].allSatisfy { !$0.listened })
+    }
+
+    @Test("markListened is observable through ViewModel derived state")
+    func markListenedObservableThroughViewModel() {
+        let db = FakeDatabase.withRecording(chunkCount: 3)
+        let vm = VoicesViewModel(database: db)
+        let rid = db.recordings[0].id
+
+        #expect(vm.hasUnplayedChunks == true)
+
+        db.markListened(recordingID: rid, chunkIndex: 0)
+        db.markListened(recordingID: rid, chunkIndex: 1)
+        db.markListened(recordingID: rid, chunkIndex: 2)
+
+        #expect(vm.hasUnplayedChunks == false)
     }
 }

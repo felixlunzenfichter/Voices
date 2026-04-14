@@ -13,15 +13,22 @@ final class DemoPlaybackService: PlaybackService {
     private(set) var playbackPosition: PlaybackPosition?
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
+    private let database: any Database
+
+    init(database: any Database) {
+        self.database = database
+    }
 
     func play(_ recordings: [Recording]) {
         isPlaying = true
-        let resume = resumePoint(in: recordings, from: playbackPosition)
+        let resume = resumePoint(in: recordings)
         if resume.recordingIndex < recordings.count {
-            playbackPosition = PlaybackPosition(
+            let position = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
                 chunkIndex: resume.chunkIndex
             )
+            playbackPosition = position
+            database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
         }
         task = Task { await consumePlayback(recordings, from: resume) }
     }
@@ -32,15 +39,15 @@ final class DemoPlaybackService: PlaybackService {
         isPlaying = false
     }
 
-    private func resumePoint(in recordings: [Recording], from position: PlaybackPosition?) -> (recordingIndex: Int, chunkIndex: Int) {
-        guard let position,
-              let index = recordings.firstIndex(where: { $0.id == position.recordingID })
-        else { return (0, 0) }
-        let nextChunk = position.chunkIndex + 1
-        if nextChunk < recordings[index].audioChunks.count {
-            return (index, nextChunk)
+    private func resumePoint(in recordings: [Recording]) -> (recordingIndex: Int, chunkIndex: Int) {
+        for (rIdx, recording) in recordings.enumerated() {
+            for (cIdx, chunk) in recording.audioChunks.enumerated() {
+                if !chunk.listened {
+                    return (rIdx, cIdx)
+                }
+            }
         }
-        return (index + 1, 0)
+        return (recordings.count, 0)
     }
 
     private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
@@ -52,7 +59,9 @@ final class DemoPlaybackService: PlaybackService {
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
                 try? await Task.sleep(for: .milliseconds(300))
-                playbackPosition = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+                playbackPosition = position
+                database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
             }
         }
 
