@@ -4,7 +4,7 @@ import Observation
 @MainActor protocol PlaybackService: AnyObject {
     var playbackPosition: PlaybackPosition? { get }
     var isPlaying: Bool { get }
-    func play(_ recordings: [Recording])
+    func play()
     func stop()
 }
 
@@ -22,7 +22,8 @@ final class DemoPlaybackService: PlaybackService {
         self.delay = delay
     }
 
-    func play(_ recordings: [Recording]) {
+    func play() {
+        let recordings = database.recordings
         isPlaying = true
         let resume = resumePoint(in: recordings)
         if resume.recordingIndex < recordings.count {
@@ -85,7 +86,7 @@ final class SilentPlaybackService: PlaybackService {
 
     nonisolated init() {}
 
-    func play(_ recordings: [Recording]) {
+    func play() {
         isPlaying = true
     }
 
