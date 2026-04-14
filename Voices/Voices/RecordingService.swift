@@ -15,9 +15,16 @@ struct AudioChunk: Equatable {
 @Observable @MainActor
 final class DemoRecordingService: RecordingService {
     private(set) var isRecording = false
+    private let count: Int
+    private let delay: Duration
     private var currentRecordingID: UUID?
     private weak var database: (any Database)?
     private var task: Task<Void, Never>?
+
+    init(count: Int = .max, delay: Duration = .milliseconds(300)) {
+        self.count = count
+        self.delay = delay
+    }
 
     func start(into database: any Database) {
         self.database = database
@@ -46,12 +53,14 @@ final class DemoRecordingService: RecordingService {
 
     private func produceChunks() async {
         guard let recordingID = currentRecordingID else { return }
-        var index = 0
-        while !Task.isCancelled {
-            try? await Task.sleep(for: .milliseconds(300))
+        for index in 0..<count {
+            if delay > .zero {
+                try? await Task.sleep(for: delay)
+            } else {
+                await Task.yield()
+            }
             guard !Task.isCancelled else { break }
             database?.appendChunk(AudioChunk(index: index), to: recordingID)
-            index += 1
         }
     }
 }

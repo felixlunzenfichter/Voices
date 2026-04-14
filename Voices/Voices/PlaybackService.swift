@@ -15,8 +15,11 @@ final class DemoPlaybackService: PlaybackService {
     private var task: Task<Void, Never>?
     private let database: any Database
 
-    init(database: any Database) {
+    private let delay: Duration
+
+    init(database: any Database, delay: Duration = .milliseconds(300)) {
         self.database = database
+        self.delay = delay
     }
 
     func play(_ recordings: [Recording]) {
@@ -58,7 +61,11 @@ final class DemoPlaybackService: PlaybackService {
 
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
-                try? await Task.sleep(for: .milliseconds(300))
+                if delay > .zero {
+                    try? await Task.sleep(for: delay)
+                } else {
+                    await Task.yield()
+                }
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
