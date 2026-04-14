@@ -1,10 +1,14 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var vm = VoicesViewModel(
-        recordingService: DemoRecordingService(),
-        playbackService: DemoPlaybackService()
-    )
+    @State private var vm: VoicesViewModel = {
+        let db = InMemoryDatabase()
+        return VoicesViewModel(
+            recordingService: DemoRecordingService(),
+            playbackService: DemoPlaybackService(database: db),
+            database: db
+        )
+    }()
     @State private var isRecordingAnimated = false
 
     var body: some View {

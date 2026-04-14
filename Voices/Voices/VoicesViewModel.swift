@@ -58,9 +58,7 @@ final class VoicesViewModel {
 
     private func startListening() {
         if isRecording { stopRecording() }
-        playbackService.play(recordings) { [database] position in
-            database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
-        }
+        playbackService.play(recordings)
         log("Listening started")
     }
 
