@@ -8,7 +8,7 @@ struct AudioChunk: Equatable {
 
 @MainActor protocol RecordingService: AnyObject {
     var isRecording: Bool { get }
-    func start(into database: any Database)
+    func start()
     func stop()
 }
 
@@ -17,17 +17,17 @@ final class DemoRecordingService: RecordingService {
     private(set) var isRecording = false
     private let count: Int
     private let delay: Duration
+    private let database: any Database
     private var currentRecordingID: UUID?
-    private weak var database: (any Database)?
     private var task: Task<Void, Never>?
 
-    init(count: Int = .max, delay: Duration = .zero) {
+    init(database: any Database, count: Int = .max, delay: Duration = .zero) {
+        self.database = database
         self.count = count
         self.delay = delay
     }
 
-    func start(into database: any Database) {
-        self.database = database
+    func start() {
         isRecording = true
         let recording = Recording()
         currentRecordingID = recording.id
@@ -40,12 +40,11 @@ final class DemoRecordingService: RecordingService {
         task = nil
         removeCurrentRecordingIfEmpty()
         currentRecordingID = nil
-        database = nil
         isRecording = false
     }
 
     private func removeCurrentRecordingIfEmpty() {
-        guard let id = currentRecordingID, let database else { return }
+        guard let id = currentRecordingID else { return }
         if database.recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true {
             database.removeRecording(id)
         }
@@ -60,7 +59,7 @@ final class DemoRecordingService: RecordingService {
                 await Task.yield()
             }
             guard !Task.isCancelled else { break }
-            database?.appendChunk(AudioChunk(index: index), to: recordingID)
+            database.appendChunk(AudioChunk(index: index), to: recordingID)
         }
     }
 }
@@ -71,7 +70,7 @@ final class SilentRecordingService: RecordingService {
 
     nonisolated init() {}
 
-    func start(into database: any Database) {
+    func start() {
         isRecording = true
     }
 

@@ -44,7 +44,7 @@ final class VoicesViewModel {
 
     private func startRecording() {
         if isListening { stopListening() }
-        recordingService.start(into: database)
+        recordingService.start()
         log("Recording started")
     }
 

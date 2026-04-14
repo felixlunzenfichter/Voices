@@ -86,8 +86,9 @@ struct VoicesViewModelTests {
 
     @Test("Stop recording stops chunk production", .timeLimit(.minutes(1)))
     func stopRecordingStopsChunkProduction() async throws {
-        let producer = DemoRecordingService(count: 1000)
-        let vm = VoicesViewModel(recordingService: producer)
+        let db = InMemoryDatabase()
+        let producer = DemoRecordingService(database: db, count: 1000)
+        let vm = VoicesViewModel(recordingService: producer, database: db)
 
         vm.toggleRecording()
 
@@ -108,8 +109,8 @@ struct VoicesViewModelTests {
 
     @Test("Recorded chunks appear in database", .timeLimit(.minutes(1)))
     func recordedChunksAppearInDatabase() async throws {
-        let producer = DemoRecordingService(count: 3)
         let db = InMemoryDatabase()
+        let producer = DemoRecordingService(database: db, count: 3)
         let vm = VoicesViewModel(recordingService: producer, database: db)
 
         vm.toggleRecording()
@@ -126,8 +127,8 @@ struct VoicesViewModelTests {
 
     @Test("Recording twice creates two distinct recordings", .timeLimit(.minutes(1)))
     func recordingTwiceCreatesTwoDistinctRecordings() async throws {
-        let producer = DemoRecordingService(count: 2)
         let db = InMemoryDatabase()
+        let producer = DemoRecordingService(database: db, count: 2)
         let vm = VoicesViewModel(recordingService: producer, database: db)
 
         vm.toggleRecording()
@@ -295,8 +296,8 @@ struct VoicesViewModelTests {
 
     @Test("Record after full playback plays only new recording", .timeLimit(.minutes(1)))
     func recordAfterFullPlaybackPlaysOnlyNewRecording() async {
-        let producer = DemoRecordingService(count: 2)
         let db = InMemoryDatabase()
+        let producer = DemoRecordingService(database: db, count: 2)
         let playback = DemoPlaybackService(database: db)
         let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
 
@@ -348,8 +349,8 @@ struct VoicesViewModelTests {
 
     @Test("hasUnplayedChunks reflects playback state", .timeLimit(.minutes(1)))
     func hasUnplayedChunksReflectsPlaybackState() async {
-        let producer = DemoRecordingService(count: 2)
         let db = InMemoryDatabase()
+        let producer = DemoRecordingService(database: db, count: 2)
         let playback = DemoPlaybackService(database: db)
         let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
 
