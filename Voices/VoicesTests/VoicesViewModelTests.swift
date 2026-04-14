@@ -497,6 +497,8 @@ struct ChunkListenedStateTests {
 
     @Test("New chunks have listened = false")
     func newChunksStartUnlistened() {
+        let chunk = AudioChunk(index: 0)
+        #expect(chunk.listened == false)
     }
 
     @Test("Playback marks each chunk listened as cursor reaches it", .timeLimit(.minutes(1)))
