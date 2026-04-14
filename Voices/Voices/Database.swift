@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-protocol Database: AnyObject {
+@MainActor protocol Database: AnyObject {
     var recordings: [Recording] { get }
     func addRecording(_ recording: Recording)
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID)
@@ -9,9 +9,11 @@ protocol Database: AnyObject {
     func markListened(recordingID: UUID, chunkIndex: Int)
 }
 
-@Observable
+@Observable @MainActor
 final class InMemoryDatabase: Database {
     var recordings: [Recording] = []
+
+    nonisolated init() {}
 
     func addRecording(_ recording: Recording) {
         recordings.append(recording)
