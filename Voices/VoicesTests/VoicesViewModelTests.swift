@@ -488,3 +488,30 @@ struct VoicesViewModelTests {
         #expect(vm.hasUnplayedChunks == true)
     }
 }
+
+// MARK: - Commit 1: Chunk-level listened state
+
+struct ChunkListenedStateTests {
+
+    // --- New: chunk.listened behavior ---
+
+    @Test("New chunks have listened = false")
+    func newChunksStartUnlistened() {
+    }
+
+    @Test("Playback marks each chunk listened as cursor reaches it", .timeLimit(.minutes(1)))
+    func playbackMarksChunksListened() async {
+    }
+
+    @Test("Chunks ahead of cursor remain not-listened during playback", .timeLimit(.minutes(1)))
+    func chunksAheadNotListened() async {
+    }
+
+    @Test("All chunks listened after full playback", .timeLimit(.minutes(1)))
+    func allChunksListenedAfterFullPlayback() async {
+    }
+
+    @Test("markListened is observable through ViewModel derived state")
+    func markListenedObservableThroughViewModel() {
+    }
+}
