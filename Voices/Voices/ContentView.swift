@@ -20,7 +20,7 @@ struct ContentView: View {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(isPlayed(recording: recording, chunkIndex: chunk.index) ? Color.blue : Color.purple)
+                                        .fill(chunk.listened ? Color.blue : Color.purple)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -31,7 +31,6 @@ struct ContentView: View {
                         Color.clear.frame(height: 160).id("bottom")
                     }
                     .padding()
-                    .animation(.easeInOut(duration: 0.3), value: vm.playbackPosition)
                 }
                 .scrollDisabled(vm.isRecording || vm.isListening)
                 .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
@@ -110,20 +109,6 @@ struct ListenButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
-    }
-}
-
-// MARK: - Helpers
-
-extension ContentView {
-    func isPlayed(recording: Recording, chunkIndex: Int) -> Bool {
-        guard let position = vm.playbackPosition else { return false }
-        guard let positionRecordingIndex = vm.recordings.firstIndex(where: { $0.id == position.recordingID }),
-              let thisRecordingIndex = vm.recordings.firstIndex(where: { $0.id == recording.id })
-        else { return false }
-        if thisRecordingIndex < positionRecordingIndex { return true }
-        if thisRecordingIndex > positionRecordingIndex { return false }
-        return chunkIndex <= position.chunkIndex
     }
 }
 
