@@ -128,4 +128,4 @@ extension ContentView {
 
 // MARK: - Constants
 
-let φ: CGFloat = (1 + sqrt(5)) / 2
+private let φ: CGFloat = (1 + sqrt(5)) / 2

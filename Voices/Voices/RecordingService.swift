@@ -1,11 +1,6 @@
 import Foundation
 import Observation
 
-struct AudioChunk: Equatable {
-    let index: Int
-    var listened: Bool = false
-}
-
 @MainActor protocol RecordingService: AnyObject {
     var isRecording: Bool { get }
     func start()
