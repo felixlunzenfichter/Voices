@@ -1,5 +1,10 @@
 import Foundation
 
+struct AudioChunk: Equatable {
+    let index: Int
+    var listened: Bool = false
+}
+
 struct Recording: Identifiable {
     let id: UUID
     var audioChunks: [AudioChunk] = []

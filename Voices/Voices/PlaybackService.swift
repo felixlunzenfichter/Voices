@@ -4,7 +4,7 @@ import Observation
 @MainActor protocol PlaybackService: AnyObject {
     var playbackPosition: PlaybackPosition? { get }
     var isPlaying: Bool { get }
-    func play(_ recordings: [Recording])
+    func play()
     func stop()
 }
 
@@ -15,20 +15,22 @@ final class DemoPlaybackService: PlaybackService {
     private var task: Task<Void, Never>?
     private let database: any Database
 
-    init(database: any Database) {
+    private let delay: Duration
+
+    init(database: any Database, delay: Duration = .zero) {
         self.database = database
+        self.delay = delay
     }
 
-    func play(_ recordings: [Recording]) {
+    func play() {
+        let recordings = database.recordings
         isPlaying = true
         let resume = resumePoint(in: recordings)
         if resume.recordingIndex < recordings.count {
-            let position = PlaybackPosition(
+            playbackPosition = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
                 chunkIndex: resume.chunkIndex
             )
-            playbackPosition = position
-            database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
         }
         task = Task { await consumePlayback(recordings, from: resume) }
     }
@@ -58,7 +60,11 @@ final class DemoPlaybackService: PlaybackService {
 
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
-                try? await Task.sleep(for: .milliseconds(300))
+                if delay > .zero {
+                    try? await Task.sleep(for: delay)
+                } else {
+                    await Task.yield()
+                }
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
@@ -78,7 +84,7 @@ final class SilentPlaybackService: PlaybackService {
 
     nonisolated init() {}
 
-    func play(_ recordings: [Recording]) {
+    func play() {
         isPlaying = true
     }
 

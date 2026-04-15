@@ -4,8 +4,8 @@ struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
         return VoicesViewModel(
-            recordingService: DemoRecordingService(),
-            playbackService: DemoPlaybackService(database: db),
+            recordingService: DemoRecordingService(database: db, delay: .milliseconds(300)),
+            playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
             database: db
         )
     }()
@@ -128,4 +128,4 @@ extension ContentView {
 
 // MARK: - Constants
 
-let φ: CGFloat = (1 + sqrt(5)) / 2
+private let φ: CGFloat = (1 + sqrt(5)) / 2

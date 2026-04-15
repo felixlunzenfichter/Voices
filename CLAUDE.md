@@ -38,6 +38,35 @@ grep '"isError":true' ~/clawcontraw.log | grep '"device":"Felix'"'"'s iPhone"'
 
 **Requires:** Tailscale VPN on the iPhone and `NSAllowsArbitraryLoads` in `Info.plist` for `ws://` connections.
 
+## Extracting Swift Testing Failure Details
+
+Swift Testing does not print assertion failure details to xcodebuild stdout. When a test fails with no visible message, extract it from the xcresult bundle:
+
+```bash
+# Run tests with an explicit result bundle path
+xcodebuild test -project Voices/Voices.xcodeproj -scheme Voices \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -resultBundlePath /tmp/voices-test-result.xcresult
+
+# Extract failure messages from the bundle
+xcresulttool get test-results tests --path /tmp/voices-test-result.xcresult \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+def walk(node):
+    if node.get('result') == 'Failed' and 'children' not in node:
+        print(node.get('name', ''))
+    for child in node.get('children', []):
+        if child.get('nodeType') == 'Failure Message':
+            print(child.get('name', ''))
+        walk(child)
+for n in data.get('testNodes', []):
+    walk(n)
+"
+```
+
+Failed test nodes have `children` with `"nodeType": "Failure Message"` containing the full `#expect` expansion (actual vs expected values, source location).
+
 ## TDD
 
 Distilled from Gio Lodi's *TDD in Swift* (Apress, 2021), adapted to this repo's `@Observable` architecture and Swift Testing.

@@ -1,26 +1,28 @@
 import Foundation
 import Observation
 
-struct AudioChunk: Equatable {
-    let index: Int
-    var listened: Bool = false
-}
-
 @MainActor protocol RecordingService: AnyObject {
     var isRecording: Bool { get }
-    func start(into database: any Database)
+    func start()
     func stop()
 }
 
 @Observable @MainActor
 final class DemoRecordingService: RecordingService {
     private(set) var isRecording = false
+    private let count: Int
+    private let delay: Duration
+    private let database: any Database
     private var currentRecordingID: UUID?
-    private weak var database: (any Database)?
     private var task: Task<Void, Never>?
 
-    func start(into database: any Database) {
+    init(database: any Database, count: Int = .max, delay: Duration = .zero) {
         self.database = database
+        self.count = count
+        self.delay = delay
+    }
+
+    func start() {
         isRecording = true
         let recording = Recording()
         currentRecordingID = recording.id
@@ -33,12 +35,11 @@ final class DemoRecordingService: RecordingService {
         task = nil
         removeCurrentRecordingIfEmpty()
         currentRecordingID = nil
-        database = nil
         isRecording = false
     }
 
     private func removeCurrentRecordingIfEmpty() {
-        guard let id = currentRecordingID, let database else { return }
+        guard let id = currentRecordingID else { return }
         if database.recordings.first(where: { $0.id == id })?.audioChunks.isEmpty == true {
             database.removeRecording(id)
         }
@@ -46,12 +47,14 @@ final class DemoRecordingService: RecordingService {
 
     private func produceChunks() async {
         guard let recordingID = currentRecordingID else { return }
-        var index = 0
-        while !Task.isCancelled {
-            try? await Task.sleep(for: .milliseconds(300))
+        for index in 0..<count {
+            if delay > .zero {
+                try? await Task.sleep(for: delay)
+            } else {
+                await Task.yield()
+            }
             guard !Task.isCancelled else { break }
-            database?.appendChunk(AudioChunk(index: index), to: recordingID)
-            index += 1
+            database.appendChunk(AudioChunk(index: index), to: recordingID)
         }
     }
 }
@@ -62,7 +65,7 @@ final class SilentRecordingService: RecordingService {
 
     nonisolated init() {}
 
-    func start(into database: any Database) {
+    func start() {
         isRecording = true
     }
 
