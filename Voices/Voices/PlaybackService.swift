@@ -60,7 +60,11 @@ final class DemoPlaybackService: PlaybackService {
 
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
-                try? await Task.sleep(for: max(delay, .milliseconds(1)))
+                if delay > .zero {
+                    try? await Task.sleep(for: delay)
+                } else {
+                    await Task.yield()
+                }
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
