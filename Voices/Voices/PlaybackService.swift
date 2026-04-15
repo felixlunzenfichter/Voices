@@ -27,12 +27,10 @@ final class DemoPlaybackService: PlaybackService {
         isPlaying = true
         let resume = resumePoint(in: recordings)
         if resume.recordingIndex < recordings.count {
-            let position = PlaybackPosition(
+            playbackPosition = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
                 chunkIndex: resume.chunkIndex
             )
-            playbackPosition = position
-            database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
         }
         task = Task { await consumePlayback(recordings, from: resume) }
     }
@@ -62,11 +60,7 @@ final class DemoPlaybackService: PlaybackService {
 
             for chunk in chunks {
                 guard !Task.isCancelled else { return }
-                if delay > .zero {
-                    try? await Task.sleep(for: delay)
-                } else {
-                    await Task.yield()
-                }
+                try? await Task.sleep(for: max(delay, .milliseconds(1)))
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
