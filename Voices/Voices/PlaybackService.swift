@@ -76,19 +76,3 @@ final class DemoPlaybackService: PlaybackService {
         }
     }
 }
-
-@Observable @MainActor
-final class SilentPlaybackService: PlaybackService {
-    private(set) var playbackPosition: PlaybackPosition?
-    private(set) var isPlaying = false
-
-    nonisolated init() {}
-
-    func play() {
-        isPlaying = true
-    }
-
-    func stop() {
-        isPlaying = false
-    }
-}

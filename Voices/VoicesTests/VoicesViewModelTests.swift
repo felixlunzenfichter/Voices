@@ -18,10 +18,31 @@ extension InMemoryDatabase {
     }
 }
 
+extension VoicesViewModel {
+    @MainActor
+    static func fixture(
+        db: InMemoryDatabase = InMemoryDatabase(),
+        recordingCount: Int = .max
+    ) -> VoicesViewModel {
+        let rec = DemoRecordingService(database: db, count: recordingCount)
+        let play = DemoPlaybackService(database: db)
+        return VoicesViewModel(recordingService: rec, playbackService: play, database: db)
+    }
+
+    @MainActor
+    static func fixtureWithDatabase(
+        db: InMemoryDatabase = InMemoryDatabase(),
+        recordingCount: Int = .max
+    ) -> (vm: VoicesViewModel, db: InMemoryDatabase) {
+        let vm = fixture(db: db, recordingCount: recordingCount)
+        return (vm, db)
+    }
+}
+
 struct VoicesViewModelTests {
     @Test("Toggle recording toggles isRecording")
     func toggleRecordingTogglesState() {
-        let vm = VoicesViewModel()
+        let vm = VoicesViewModel.fixture()
 
         vm.toggleRecording()
         #expect(vm.isRecording == true)
@@ -32,7 +53,7 @@ struct VoicesViewModelTests {
 
     @Test("Listen does nothing when nothing recorded")
     func listenDoesNothingWhenNothingRecorded() {
-        let vm = VoicesViewModel()
+        let vm = VoicesViewModel.fixture()
 
         #expect(vm.isListening == false)
         vm.toggleListening()
@@ -41,7 +62,7 @@ struct VoicesViewModelTests {
 
     @Test("Toggle listening toggles isListening")
     func toggleListeningTogglesState() {
-        let vm = VoicesViewModel(database: InMemoryDatabase.withOneRecording())
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withOneRecording())
 
         #expect(vm.isListening == false)
         vm.toggleListening()
@@ -53,8 +74,7 @@ struct VoicesViewModelTests {
 
     @Test("State transitions: record, listen, record")
     func stateTransitions() {
-        let db = InMemoryDatabase.withOneRecording()
-        let vm = VoicesViewModel(database: db)
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withOneRecording())
 
         // Start recording
         vm.toggleRecording()
@@ -74,8 +94,7 @@ struct VoicesViewModelTests {
 
     @Test("ViewModel reflects store changes")
     func viewModelReflectsStoreChanges() {
-        let db = InMemoryDatabase()
-        let vm = VoicesViewModel(database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase()
 
         #expect(vm.recordings.isEmpty)
 
@@ -86,9 +105,7 @@ struct VoicesViewModelTests {
 
     @Test("Stop recording stops chunk production", .timeLimit(.minutes(1)))
     func stopRecordingStopsChunkProduction() async throws {
-        let db = InMemoryDatabase()
-        let producer = DemoRecordingService(database: db, count: 1000)
-        let vm = VoicesViewModel(recordingService: producer, database: db)
+        let vm = VoicesViewModel.fixture(recordingCount: 1000)
 
         vm.toggleRecording()
 
@@ -109,9 +126,7 @@ struct VoicesViewModelTests {
 
     @Test("Recorded chunks appear in database", .timeLimit(.minutes(1)))
     func recordedChunksAppearInDatabase() async throws {
-        let db = InMemoryDatabase()
-        let producer = DemoRecordingService(database: db, count: 3)
-        let vm = VoicesViewModel(recordingService: producer, database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(recordingCount: 3)
 
         vm.toggleRecording()
 
@@ -127,9 +142,7 @@ struct VoicesViewModelTests {
 
     @Test("Recording twice creates two distinct recordings", .timeLimit(.minutes(1)))
     func recordingTwiceCreatesTwoDistinctRecordings() async throws {
-        let db = InMemoryDatabase()
-        let producer = DemoRecordingService(database: db, count: 2)
-        let vm = VoicesViewModel(recordingService: producer, database: db)
+        let vm = VoicesViewModel.fixture(recordingCount: 2)
 
         vm.toggleRecording()
         for await count in Observations({ vm.recordings.last?.audioChunks.count ?? 0 }) {
@@ -154,9 +167,7 @@ struct VoicesViewModelTests {
 
     @Test("Listening auto-stops after last chunk", .timeLimit(.minutes(1)))
     func listeningAutoStopsAfterLastChunk() async {
-        let db = InMemoryDatabase.withOneRecording()
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withOneRecording())
 
         vm.toggleListening()
         #expect(vm.isListening == true)
@@ -170,9 +181,7 @@ struct VoicesViewModelTests {
 
     @Test("Listen does nothing when everything already played", .timeLimit(.minutes(1)))
     func listenDoesNothingWhenEverythingAlreadyPlayed() async {
-        let db = InMemoryDatabase.withOneRecording()
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withOneRecording())
 
         // Play everything
         vm.toggleListening()
@@ -188,9 +197,7 @@ struct VoicesViewModelTests {
 
     @Test("Playback position tracks recording and chunk", .timeLimit(.minutes(1)))
     func playbackPositionTracksRecordingAndChunk() async {
-        let db = InMemoryDatabase.withOneRecording()
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withOneRecording())
 
         #expect(vm.playbackPosition == nil)
 
@@ -206,9 +213,7 @@ struct VoicesViewModelTests {
 
     @Test("Listening plays back chunks sequentially", .timeLimit(.minutes(1)))
     func listeningPlaysBackChunksSequentially() async {
-        let db = InMemoryDatabase.withRecording(chunkCount: 3)
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 3))
 
         vm.toggleListening()
 
@@ -229,9 +234,7 @@ struct VoicesViewModelTests {
 
     @Test("Resume listening continues from where it stopped", .timeLimit(.minutes(1)))
     func resumeListeningContinuesFromWhereItStopped() async {
-        let db = InMemoryDatabase.withRecording(chunkCount: 6)
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 6))
         let expectedID = db.recordings.first!.id
 
         // Phase 1: play first three
@@ -274,8 +277,7 @@ struct VoicesViewModelTests {
         let r2 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1)])
         db.addRecording(r1)
         db.addRecording(r2)
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let vm = VoicesViewModel.fixture(db: db)
 
         vm.toggleListening()
 
@@ -296,10 +298,7 @@ struct VoicesViewModelTests {
 
     @Test("Record after full playback plays only new recording", .timeLimit(.minutes(1)))
     func recordAfterFullPlaybackPlaysOnlyNewRecording() async {
-        let db = InMemoryDatabase()
-        let producer = DemoRecordingService(database: db, count: 2)
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
+        let vm = VoicesViewModel.fixture(recordingCount: 2)
 
         // Record first
         vm.toggleRecording()
@@ -339,7 +338,7 @@ struct VoicesViewModelTests {
 
     @Test("Immediate stop does not persist empty recording")
     func immediateStopDoesNotPersistEmptyRecording() {
-        let vm = VoicesViewModel()
+        let vm = VoicesViewModel.fixture()
 
         vm.toggleRecording()
         vm.toggleRecording()
@@ -349,10 +348,7 @@ struct VoicesViewModelTests {
 
     @Test("hasUnplayedChunks reflects playback state", .timeLimit(.minutes(1)))
     func hasUnplayedChunksReflectsPlaybackState() async {
-        let db = InMemoryDatabase()
-        let producer = DemoRecordingService(database: db, count: 2)
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(recordingService: producer, playbackService: playback, database: db)
+        let vm = VoicesViewModel.fixture(recordingCount: 2)
 
         // Nothing recorded — nothing to play
         #expect(vm.hasUnplayedChunks == false)
@@ -394,9 +390,7 @@ struct ChunkListenedStateTests {
 
     @Test("Chunks ahead of cursor remain not-listened during playback", .timeLimit(.minutes(1)))
     func chunksAheadNotListened() async {
-        let db = InMemoryDatabase.withRecording(chunkCount: 6)
-        let playback = DemoPlaybackService(database: db)
-        let vm = VoicesViewModel(playbackService: playback, database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 6))
 
         vm.toggleListening()
         for await pos in Observations({ vm.playbackPosition }) {
@@ -411,8 +405,7 @@ struct ChunkListenedStateTests {
 
     @Test("markListened is observable through ViewModel derived state")
     func markListenedObservableThroughViewModel() {
-        let db = InMemoryDatabase.withRecording(chunkCount: 3)
-        let vm = VoicesViewModel(database: db)
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 3))
         let rid = db.recordings[0].id
 
         #expect(vm.hasUnplayedChunks == true)
