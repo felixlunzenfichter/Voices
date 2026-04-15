@@ -58,18 +58,3 @@ final class DemoRecordingService: RecordingService {
         }
     }
 }
-
-@Observable @MainActor
-final class SilentRecordingService: RecordingService {
-    private(set) var isRecording = false
-
-    nonisolated init() {}
-
-    func start() {
-        isRecording = true
-    }
-
-    func stop() {
-        isRecording = false
-    }
-}

@@ -13,9 +13,9 @@ final class VoicesViewModel {
     private let database: any Database
 
     init(
-        recordingService: any RecordingService = SilentRecordingService(),
-        playbackService: any PlaybackService = SilentPlaybackService(),
-        database: any Database = InMemoryDatabase()
+        recordingService: any RecordingService,
+        playbackService: any PlaybackService,
+        database: any Database
     ) {
         self.recordingService = recordingService
         self.playbackService = playbackService
