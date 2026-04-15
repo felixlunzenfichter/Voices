@@ -32,7 +32,7 @@ Voice messaging app where everyone talks directly to Felix.
 
 ### Next PRs
 
-1. **Picker-wheel navigation** — Wheel-style scrubber between Listen and Record for navigating across all chunks and messages. Tap a message to start playback from its beginning. Scrolling the wheel auto-pauses playback, moves the cursor across chunks and message boundaries, then auto-resumes from the selected position on release. Updates listened state accordingly.
+1. **Picker-wheel navigation** — Wheel-style scrubber between Listen and Record for navigating across all chunks and messages. Tap a message to start playback from its beginning. Scrolling the wheel auto-pauses playback, moves the cursor across chunks and message boundaries, then auto-resumes from the selected position on release. The cursor (current position) updates immediately during navigation; listened state updates only for chunks that have actually been played back, not merely scrolled over.
 2. **Multi-user conversation model** — Replace single-user recording list with a conversation between multiple users. Each message belongs to a sender. UI shows messages grouped by sender.
 3. **Real database/server** — Replace InMemoryDatabase with persistent storage and server sync. Recordings survive app restarts. Listened state syncs across devices.
 4. **Real audio services** — Replace DemoRecordingService/DemoPlaybackService with actual microphone capture, audio encoding, and AVAudioPlayer playback. Chunk intervals driven by real audio segmentation.
