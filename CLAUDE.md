@@ -186,7 +186,7 @@ func audioServiceChunkOrder() async {
 ```
 
 **Key rules:**
-- `Observations({ vm.property })` for ViewModel state changes — reactive, guaranteed. Note: fast mutations can coalesce (you get the latest value, not every intermediate), so assert on thresholds (`count >= 1`), not exact sequences
+- `Observations({ vm.property })` for ViewModel state changes — reactive, eventually consistent. Synchronous writes between suspension points coalesce into a single emitted value (SE-0475, by design). You always get the latest value, never a stale one, but may miss intermediates. **Testing strategy:** prefer durable end-state assertions (wait for `isListening == false`, then check `chunk.listened`) over exact observed-position sequences. Use `Observations` only for termination signals and threshold checks. If exact sequences are required, use `AsyncStream` with `willSet` spies, not `Observations`. *Future: SE-0506 (Advanced Observation Tracking) proposes non-coalesced observation, but is not available in shipped toolchains yet*
 - `for await` on finite streams for testing real services directly
 - `.timeLimit` as safety net on every async test
 - Avoid `while ... { await Task.yield() }` polling — `Observations` replaces it with a real guarantee

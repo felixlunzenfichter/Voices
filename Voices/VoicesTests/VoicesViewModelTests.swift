@@ -211,63 +211,29 @@ struct VoicesViewModelTests {
         #expect(vm.playbackPosition == PlaybackPosition(recordingID: expectedID, chunkIndex: 0))
     }
 
-    @Test("Listening plays back chunks sequentially", .timeLimit(.minutes(1)))
-    func listeningPlaysBackChunksSequentially() async {
-        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 3))
-
-        vm.toggleListening()
-
-        var positions: [PlaybackPosition] = []
-        for await position in Observations({ vm.playbackPosition }) {
-            guard let position else { continue }
-            positions.append(position)
-            if positions.count >= 3 { break }
-        }
-
-        let expectedID = db.recordings.first!.id
-        #expect(positions == [
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 0),
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 1),
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 2),
-        ])
-    }
-
     @Test("Resume listening continues from where it stopped", .timeLimit(.minutes(1)))
     func resumeListeningContinuesFromWhereItStopped() async {
-        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 6))
-        let expectedID = db.recordings.first!.id
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withRecording(chunkCount: 6))
 
-        // Phase 1: play first three
+        // Phase 1: play first three, then stop
         vm.toggleListening()
-        var phase1: [PlaybackPosition] = []
-        for await position in Observations({ vm.playbackPosition }) {
-            guard let position else { continue }
-            phase1.append(position)
-            if phase1.count >= 3 { break }
+        for await pos in Observations({ vm.playbackPosition }) {
+            if let p = pos, p.chunkIndex >= 2 { break }
         }
         vm.toggleListening()
 
-        // Phase 2: resume, play next three
+        // Chunks 0-2 listened, 3-5 unlistened
+        #expect(vm.recordings[0].audioChunks[0...2].allSatisfy { $0.listened })
+        #expect(vm.recordings[0].audioChunks[3...5].allSatisfy { !$0.listened })
+
+        // Phase 2: resume and play to completion
         vm.toggleListening()
-        var phase2: [PlaybackPosition] = []
-        for await position in Observations({ vm.playbackPosition }) {
-            guard let position else { continue }
-            if position.chunkIndex > 2 {
-                phase2.append(position)
-            }
-            if phase2.count >= 3 { break }
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
         }
 
-        #expect(phase1 == [
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 0),
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 1),
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 2),
-        ])
-        #expect(phase2 == [
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 3),
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 4),
-            PlaybackPosition(recordingID: expectedID, chunkIndex: 5),
-        ])
+        // All chunks listened
+        #expect(vm.recordings[0].audioChunks.allSatisfy { $0.listened })
     }
 
     @Test("Playback crosses recording boundary", .timeLimit(.minutes(1)))
@@ -280,20 +246,13 @@ struct VoicesViewModelTests {
         let vm = VoicesViewModel.fixture(db: db)
 
         vm.toggleListening()
-
-        var positions: [PlaybackPosition] = []
-        for await position in Observations({ vm.playbackPosition }) {
-            guard let position else { continue }
-            positions.append(position)
-            if positions.count >= 4 { break }
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
         }
 
-        #expect(positions == [
-            PlaybackPosition(recordingID: r1.id, chunkIndex: 0),
-            PlaybackPosition(recordingID: r1.id, chunkIndex: 1),
-            PlaybackPosition(recordingID: r2.id, chunkIndex: 0),
-            PlaybackPosition(recordingID: r2.id, chunkIndex: 1),
-        ])
+        // All chunks across both recordings listened
+        #expect(db.recordings[0].audioChunks.allSatisfy { $0.listened })
+        #expect(db.recordings[1].audioChunks.allSatisfy { $0.listened })
     }
 
     @Test("Record after full playback plays only new recording", .timeLimit(.minutes(1)))
@@ -319,21 +278,17 @@ struct VoicesViewModelTests {
             if count >= 2 { break }
         }
         vm.toggleRecording()
-        let secondID = vm.recordings.last!.id
 
-        // Play again
+        // Play again — wait for completion
         vm.toggleListening()
-        var positions: [PlaybackPosition] = []
-        for await position in Observations({ vm.playbackPosition }) {
-            guard let position else { continue }
-            positions.append(position)
-            if positions.count >= 2 { break }
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
         }
 
-        #expect(positions == [
-            PlaybackPosition(recordingID: secondID, chunkIndex: 0),
-            PlaybackPosition(recordingID: secondID, chunkIndex: 1),
-        ])
+        // Second recording was played
+        #expect(vm.recordings.last!.audioChunks.allSatisfy { $0.listened })
+        // First recording still listened from earlier
+        #expect(vm.recordings.first!.audioChunks.allSatisfy { $0.listened })
     }
 
     @Test("Immediate stop does not persist empty recording")
