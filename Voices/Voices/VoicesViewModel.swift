@@ -24,6 +24,20 @@ final class VoicesViewModel {
 
     // MARK: - Seek
 
+    var totalChunkCount: Int {
+        recordings.reduce(0) { $0 + $1.audioChunks.count }
+    }
+
+    var cursorGlobalIndex: Int {
+        guard let pos = playbackPosition else { return 0 }
+        var index = 0
+        for rec in recordings {
+            if rec.id == pos.recordingID { return index + pos.chunkIndex }
+            index += rec.audioChunks.count
+        }
+        return 0
+    }
+
     func seekTo(_ globalIndex: Int) {
         let allChunks = recordings.flatMap { rec in
             rec.audioChunks.map { (rec.id, $0.index) }
