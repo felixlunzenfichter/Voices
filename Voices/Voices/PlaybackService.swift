@@ -25,7 +25,14 @@ final class DemoPlaybackService: PlaybackService {
     func play() {
         let recordings = database.recordings
         isPlaying = true
-        let resume = resumePoint(in: recordings)
+        let resume: (recordingIndex: Int, chunkIndex: Int)
+        if let pos = playbackPosition,
+           let rIdx = recordings.firstIndex(where: { $0.id == pos.recordingID }),
+           pos.chunkIndex < recordings[rIdx].audioChunks.count {
+            resume = (rIdx, pos.chunkIndex)
+        } else {
+            resume = resumePoint(in: recordings)
+        }
         if resume.recordingIndex < recordings.count {
             playbackPosition = PlaybackPosition(
                 recordingID: recordings[resume.recordingIndex].id,
@@ -65,6 +72,7 @@ final class DemoPlaybackService: PlaybackService {
                 } else {
                     await Task.yield()
                 }
+                guard !Task.isCancelled else { return }
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
@@ -72,6 +80,9 @@ final class DemoPlaybackService: PlaybackService {
         }
 
         if !Task.isCancelled {
+            await Task.yield()
+            playbackPosition = nil
+            await Task.yield()
             isPlaying = false
         }
     }

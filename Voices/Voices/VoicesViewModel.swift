@@ -24,7 +24,15 @@ final class VoicesViewModel {
 
     // MARK: - Seek
 
-    func seekTo(_ globalIndex: Int) {}
+    func seekTo(_ globalIndex: Int) {
+        let allChunks = recordings.flatMap { rec in
+            rec.audioChunks.map { (rec.id, $0.index) }
+        }
+        guard !allChunks.isEmpty else { return }
+        let clamped = max(0, min(globalIndex, allChunks.count - 1))
+        let (rid, idx) = allChunks[clamped]
+        playbackService.playbackPosition = PlaybackPosition(recordingID: rid, chunkIndex: idx)
+    }
 
     // MARK: - Public
 
@@ -39,7 +47,7 @@ final class VoicesViewModel {
     func toggleListening() {
         if isListening {
             stopListening()
-        } else if hasUnplayedChunks {
+        } else if hasUnplayedChunks || playbackPosition != nil {
             startListening()
         }
     }
