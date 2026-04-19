@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
-        for _ in 0..<30 {
+        for _ in 0..<5 {
             let chunks = (0..<50).map { AudioChunk(index: $0) }
             db.addRecording(Recording(audioChunks: chunks))
         }
@@ -68,7 +68,7 @@ struct ContentView: View {
                 HStack {
                     ListenButton(
                         isListening: vm.isListening,
-                        hasUnplayedChunks: vm.hasUnplayedChunks || vm.playbackPosition != nil,
+                        hasUnplayedChunks: vm.hasUnplayedChunks,
                         onTap: { vm.toggleListening() }
                     )
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
