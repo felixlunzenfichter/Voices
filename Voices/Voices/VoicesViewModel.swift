@@ -24,10 +24,6 @@ final class VoicesViewModel {
 
     // MARK: - Seek
 
-    var totalChunkCount: Int {
-        recordings.reduce(0) { $0 + $1.audioChunks.count }
-    }
-
     var cursorGlobalIndex: Int {
         guard let pos = playbackPosition else { return 0 }
         var index = 0

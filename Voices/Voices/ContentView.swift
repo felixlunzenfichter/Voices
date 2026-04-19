@@ -57,9 +57,9 @@ struct ContentView: View {
 
             // Control area: invisible scrubber behind, buttons + chunk number on top
             ZStack {
-                if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
+                if !vm.isListening && !vm.isRecording {
                     InvisibleScrubber(
-                        totalChunks: vm.totalChunkCount,
+                        totalChunks: vm.recordings.reduce(0) { $0 + $1.audioChunks.count },
                         currentIndex: vm.cursorGlobalIndex,
                         onIndexChanged: { vm.seekTo($0) }
                     )
@@ -75,14 +75,12 @@ struct ContentView: View {
 
                     Spacer()
 
-                    if vm.totalChunkCount > 0 {
-                        VStack {
-                            Text("\(vm.cursorGlobalIndex)")
-                                .font(.system(size: 28, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white)
-                                .padding(.top, 10)
-                            Spacer()
-                        }
+                    VStack {
+                        Text("\(vm.cursorGlobalIndex)")
+                            .font(.system(size: 28, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                            .padding(.top, 10)
+                        Spacer()
                     }
 
                     Spacer()
