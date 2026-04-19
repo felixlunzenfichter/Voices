@@ -57,9 +57,9 @@ struct ContentView: View {
 
             // Control area: invisible scrubber behind, buttons + chunk number on top
             ZStack {
-                if !vm.isListening && !vm.isRecording {
+                if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
                     InvisibleScrubber(
-                        totalChunks: vm.recordings.reduce(0) { $0 + $1.audioChunks.count },
+                        totalChunks: vm.totalChunkCount,
                         currentIndex: vm.cursorGlobalIndex,
                         onIndexChanged: { vm.seekTo($0) }
                     )
@@ -75,12 +75,14 @@ struct ContentView: View {
 
                     Spacer()
 
-                    VStack {
-                        Text("\(vm.cursorGlobalIndex)")
-                            .font(.system(size: 28, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
-                            .padding(.top, 10)
-                        Spacer()
+                    if vm.totalChunkCount > 0 {
+                        VStack {
+                            Text("\(vm.cursorGlobalIndex)")
+                                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white)
+                                .padding(.top, 10)
+                            Spacer()
+                        }
                     }
 
                     Spacer()
@@ -140,14 +142,14 @@ struct InvisibleScrubber: UIViewRepresentable {
         coord.totalChunks = totalChunks
 
         let contentWidth = CGFloat(totalChunks) * Self.itemWidth
-        let inset = sv.bounds.width / 2
+        let halfView = sv.bounds.width / 2
 
         coord.contentView?.frame = CGRect(x: 0, y: 0, width: contentWidth, height: sv.bounds.height)
         sv.contentSize = CGSize(width: contentWidth, height: sv.bounds.height)
-        sv.contentInset = UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
+        sv.contentInset = UIEdgeInsets(top: 0, left: halfView, bottom: 0, right: halfView)
 
         if !coord.isUserScrolling {
-            let targetX = CGFloat(currentIndex) * Self.itemWidth
+            let targetX = CGFloat(currentIndex) * Self.itemWidth - halfView
             if abs(sv.contentOffset.x - targetX) > 0.5 {
                 sv.setContentOffset(CGPoint(x: targetX, y: 0), animated: false)
             }
@@ -168,7 +170,7 @@ struct InvisibleScrubber: UIViewRepresentable {
         }
 
         private func currentIndex(in sv: UIScrollView) -> Int {
-            let x = sv.contentOffset.x + InvisibleScrubber.itemWidth / 2
+            let x = sv.contentOffset.x + sv.contentInset.left
             let index = Int(round(x / InvisibleScrubber.itemWidth))
             return max(0, min(index, totalChunks - 1))
         }
@@ -191,8 +193,10 @@ struct InvisibleScrubber: UIViewRepresentable {
         func scrollViewWillEndDragging(_ scrollView: UIScrollView,
                                         withVelocity velocity: CGPoint,
                                         targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-            let snapped = round(targetContentOffset.pointee.x / InvisibleScrubber.itemWidth) * InvisibleScrubber.itemWidth
-            targetContentOffset.pointee.x = snapped
+            let inset = scrollView.contentInset.left
+            let adjusted = targetContentOffset.pointee.x + inset
+            let snapped = round(adjusted / InvisibleScrubber.itemWidth) * InvisibleScrubber.itemWidth
+            targetContentOffset.pointee.x = snapped - inset
         }
 
         func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
