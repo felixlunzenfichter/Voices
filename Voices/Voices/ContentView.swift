@@ -3,6 +3,10 @@ import SwiftUI
 struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
+        for _ in 0..<30 {
+            let chunks = (0..<50).map { AudioChunk(index: $0) }
+            db.addRecording(Recording(audioChunks: chunks))
+        }
         return VoicesViewModel(
             recordingService: DemoRecordingService(database: db, delay: .milliseconds(300)),
             playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
@@ -24,7 +28,7 @@ struct ContentView: View {
                                         : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(color)
-                                        .animation(vm.isListening ? .easeInOut(duration: 2.4) : nil, value: color)
+                                        .animation(vm.isListening ? .easeInOut(duration: 0.3) : nil, value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -72,9 +76,13 @@ struct ContentView: View {
                     Spacer()
 
                     if vm.totalChunkCount > 0 {
-                        Text("\(vm.cursorGlobalIndex)")
-                            .font(.system(size: 22, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
+                        VStack {
+                            Text("\(vm.cursorGlobalIndex)")
+                                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white)
+                                .padding(.top, 10)
+                            Spacer()
+                        }
                     }
 
                     Spacer()
