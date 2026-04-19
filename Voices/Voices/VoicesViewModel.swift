@@ -22,6 +22,10 @@ final class VoicesViewModel {
         self.database = database
     }
 
+    // MARK: - Seek
+
+    func seekTo(_ globalIndex: Int) {}
+
     // MARK: - Public
 
     var hasUnplayedChunks: Bool {

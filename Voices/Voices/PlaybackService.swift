@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 @MainActor protocol PlaybackService: AnyObject {
-    var playbackPosition: PlaybackPosition? { get }
+    var playbackPosition: PlaybackPosition? { get set }
     var isPlaying: Bool { get }
     func play()
     func stop()
@@ -10,7 +10,7 @@ import Observation
 
 @Observable @MainActor
 final class DemoPlaybackService: PlaybackService {
-    private(set) var playbackPosition: PlaybackPosition?
+    var playbackPosition: PlaybackPosition?
     private(set) var isPlaying = false
     private var task: Task<Void, Never>?
     private let database: any Database
