@@ -55,14 +55,10 @@ struct ContentView: View {
                 }
             }
 
-            // Control area: invisible scrubber behind, buttons + chunk number on top
+            // Control area: SwiftUI scrubber behind, buttons + chunk number on top
             ZStack {
                 if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
-                    InvisibleScrubber(
-                        totalChunks: vm.totalChunkCount,
-                        currentIndex: vm.cursorGlobalIndex,
-                        onIndexChanged: { vm.seekTo($0) }
-                    )
+                    SwiftUIScrubber(vm: vm)
                 }
 
                 HStack {
@@ -102,115 +98,40 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Invisible Scrubber
+// MARK: - SwiftUI Scrubber
 
-struct InvisibleScrubber: UIViewRepresentable {
-    var totalChunks: Int
-    var currentIndex: Int
-    var onIndexChanged: (Int) -> Void
+struct SwiftUIScrubber: View {
+    @Bindable var vm: VoicesViewModel
+    @State private var scrolledID: Int?
 
-    static let itemWidth: CGFloat = 20
+    private static let itemWidth: CGFloat = 20
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onIndexChanged: onIndexChanged)
-    }
-
-    func makeUIView(context: Context) -> UIScrollView {
-        let sv = UIScrollView()
-        sv.showsHorizontalScrollIndicator = false
-        sv.showsVerticalScrollIndicator = false
-        sv.decelerationRate = .normal
-        sv.delegate = context.coordinator
-        sv.backgroundColor = .clear
-
-        let content = UIView()
-        content.backgroundColor = .clear
-        sv.addSubview(content)
-        context.coordinator.contentView = content
-        context.coordinator.scrollView = sv
-
-        let haptic = UISelectionFeedbackGenerator()
-        haptic.prepare()
-        context.coordinator.haptic = haptic
-
-        return sv
-    }
-
-    func updateUIView(_ sv: UIScrollView, context: Context) {
-        let coord = context.coordinator
-        coord.onIndexChanged = onIndexChanged
-        coord.totalChunks = totalChunks
-
-        let contentWidth = CGFloat(totalChunks) * Self.itemWidth
-        let halfView = sv.bounds.width / 2
-
-        coord.contentView?.frame = CGRect(x: 0, y: 0, width: contentWidth, height: sv.bounds.height)
-        sv.contentSize = CGSize(width: contentWidth, height: sv.bounds.height)
-        sv.contentInset = UIEdgeInsets(top: 0, left: halfView, bottom: 0, right: halfView)
-
-        if !coord.isUserScrolling {
-            let targetX = CGFloat(currentIndex) * Self.itemWidth - halfView
-            if abs(sv.contentOffset.x - targetX) > 0.5 {
-                sv.setContentOffset(CGPoint(x: targetX, y: 0), animated: false)
+    var body: some View {
+        GeometryReader { geo in
+            let inset = geo.size.width / 2 - Self.itemWidth / 2
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(0..<vm.totalChunkCount, id: \.self) { i in
+                        Color.clear
+                            .frame(width: Self.itemWidth, height: 1)
+                            .id(i)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, inset, for: .scrollContent)
+            .scrollPosition(id: $scrolledID, anchor: .center)
+        }
+        .sensoryFeedback(.selection, trigger: scrolledID)
+        .onChange(of: scrolledID) { _, newID in
+            if let id = newID {
+                vm.seekTo(id)
             }
         }
-    }
-
-    class Coordinator: NSObject, UIScrollViewDelegate {
-        var onIndexChanged: (Int) -> Void
-        var totalChunks: Int = 0
-        var isUserScrolling = false
-        var lastIndex: Int?
-        var scrollView: UIScrollView?
-        var contentView: UIView?
-        var haptic: UISelectionFeedbackGenerator?
-
-        init(onIndexChanged: @escaping (Int) -> Void) {
-            self.onIndexChanged = onIndexChanged
-        }
-
-        private func currentIndex(in sv: UIScrollView) -> Int {
-            let x = sv.contentOffset.x + sv.contentInset.left
-            let index = Int(round(x / InvisibleScrubber.itemWidth))
-            return max(0, min(index, totalChunks - 1))
-        }
-
-        func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-            isUserScrolling = true
-            haptic?.prepare()
-        }
-
-        func scrollViewDidScroll(_ scrollView: UIScrollView) {
-            guard isUserScrolling else { return }
-            let index = currentIndex(in: scrollView)
-            if lastIndex != index {
-                lastIndex = index
-                haptic?.selectionChanged()
-                onIndexChanged(index)
+        .onChange(of: vm.cursorGlobalIndex) { _, newIndex in
+            if scrolledID != newIndex {
+                scrolledID = newIndex
             }
-        }
-
-        func scrollViewWillEndDragging(_ scrollView: UIScrollView,
-                                        withVelocity velocity: CGPoint,
-                                        targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-            let inset = scrollView.contentInset.left
-            let adjusted = targetContentOffset.pointee.x + inset
-            let snapped = round(adjusted / InvisibleScrubber.itemWidth) * InvisibleScrubber.itemWidth
-            targetContentOffset.pointee.x = snapped - inset
-        }
-
-        func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-            finish(scrollView)
-        }
-
-        func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-            if !decelerate { finish(scrollView) }
-        }
-
-        private func finish(_ scrollView: UIScrollView) {
-            isUserScrolling = false
-            let index = currentIndex(in: scrollView)
-            onIndexChanged(index)
         }
     }
 }
