@@ -90,6 +90,7 @@ struct ContentView: View {
             .frame(height: 120)
             .padding(.bottom, 20)
         }
+        .sensoryFeedback(.selection, trigger: vm.playbackPosition)
         .onChange(of: vm.isRecording) { _, newValue in
             withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
                 isRecordingAnimated = newValue
@@ -122,7 +123,6 @@ struct SwiftUIScrubber: View {
             .contentMargins(.horizontal, inset, for: .scrollContent)
             .scrollPosition(id: $scrolledID, anchor: .center)
         }
-        .sensoryFeedback(.selection, trigger: scrolledID)
         .onChange(of: scrolledID) { _, newID in
             if let id = newID {
                 vm.seekTo(id)
