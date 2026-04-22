@@ -66,6 +66,7 @@ struct ContentView: View {
                     ListenButton(
                         isListening: vm.isListening,
                         hasUnplayedChunks: vm.hasUnplayedChunks,
+                        canPlay: vm.hasUnplayedChunks || vm.cursorGlobalIndex < vm.totalChunkCount - 1,
                         onTap: { vm.toggleListening() }
                     )
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
@@ -177,6 +178,7 @@ struct RecordButton: View {
 struct ListenButton: View {
     let isListening: Bool
     let hasUnplayedChunks: Bool
+    let canPlay: Bool
     let onTap: () -> Void
 
     private static let size: CGFloat = 100
@@ -186,9 +188,11 @@ struct ListenButton: View {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
                 .foregroundColor(hasUnplayedChunks ? .purple : .blue)
+                .opacity(canPlay || isListening ? 1.0 : 0.3)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
+        .disabled(!canPlay && !isListening)
     }
 }
 
