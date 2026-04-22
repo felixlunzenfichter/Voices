@@ -14,6 +14,7 @@ struct ContentView: View {
         )
     }()
     @State private var isRecordingAnimated = false
+    @State private var lastCursorIndex = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,7 +59,7 @@ struct ContentView: View {
             // Control area: SwiftUI scrubber behind, buttons + chunk number on top
             ZStack {
                 if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
-                    SwiftUIScrubber(vm: vm)
+                    SwiftUIScrubber(vm: vm, initialIndex: lastCursorIndex)
                 }
 
                 HStack {
@@ -91,6 +92,13 @@ struct ContentView: View {
             .padding(.bottom, 20)
         }
         .sensoryFeedback(.selection, trigger: vm.playbackPosition)
+        .onChange(of: vm.playbackPosition) { _, newPos in
+            if newPos != nil {
+                lastCursorIndex = vm.cursorGlobalIndex
+            } else if vm.hasUnplayedChunks {
+                lastCursorIndex = vm.firstUnlistenedGlobalIndex
+            }
+        }
         .onChange(of: vm.isRecording) { _, newValue in
             withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
                 isRecordingAnimated = newValue
@@ -103,6 +111,7 @@ struct ContentView: View {
 
 struct SwiftUIScrubber: View {
     @Bindable var vm: VoicesViewModel
+    var initialIndex: Int
     @State private var scrolledID: Int?
 
     private static let itemWidth: CGFloat = 20
@@ -122,6 +131,9 @@ struct SwiftUIScrubber: View {
             }
             .contentMargins(.horizontal, inset, for: .scrollContent)
             .scrollPosition(id: $scrolledID, anchor: .center)
+        }
+        .onAppear {
+            scrolledID = initialIndex
         }
         .onChange(of: scrolledID) { _, newID in
             if let id = newID {
