@@ -417,3 +417,94 @@ struct ChunkListenedStateTests {
         #expect(vm.hasUnplayedChunks == false)
     }
 }
+
+// MARK: - Seek
+
+struct SeekTests {
+
+    @Test("seekTo clamps to valid range")
+    func seekToClampsToValidRange() {
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 5))
+        let rid = db.recordings[0].id
+
+        vm.seekTo(-10)
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 0))
+
+        vm.seekTo(99)
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 4))
+    }
+
+    @Test("seekTo does not mark chunks listened")
+    func seekToDoesNotMarkListened() {
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withRecording(chunkCount: 5))
+
+        vm.seekTo(3)
+
+        let allChunks = vm.recordings.flatMap(\.audioChunks)
+        #expect(allChunks.allSatisfy { !$0.listened })
+    }
+
+    @Test("seekTo crosses message boundaries")
+    func seekToCrossesMessageBoundaries() {
+        let db = InMemoryDatabase()
+        let r1 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1), AudioChunk(index: 2)])
+        let r2 = Recording(audioChunks: [AudioChunk(index: 0), AudioChunk(index: 1)])
+        db.addRecording(r1)
+        db.addRecording(r2)
+        let vm = VoicesViewModel.fixture(db: db)
+
+        vm.seekTo(4)
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: r2.id, chunkIndex: 1))
+
+        vm.seekTo(1)
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: r1.id, chunkIndex: 1))
+    }
+
+    @Test("Listen after seekTo starts from seeked position", .timeLimit(.minutes(1)))
+    func listenAfterSeekToStartsFromSeekedPosition() async {
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withRecording(chunkCount: 10))
+
+        vm.seekTo(5)
+        vm.toggleListening()
+
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Chunks 0-4 unlistened, 5-9 listened
+        #expect(vm.recordings[0].audioChunks[0...4].allSatisfy { !$0.listened })
+        #expect(vm.recordings[0].audioChunks[5...9].allSatisfy { $0.listened })
+    }
+
+    @Test("Seek to listened chunk and listen starts from there", .timeLimit(.minutes(1)))
+    func seekToListenedChunkAndListenStartsFromThere() async {
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 10))
+        let rid = db.recordings[0].id
+
+        // Play all to completion
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // All listened. Seek back to chunk 7.
+        #expect(vm.hasUnplayedChunks == false)
+        vm.seekTo(7)
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 7))
+
+        // Listen again — collect positions 7 through 9
+        vm.toggleListening()
+        var positions: [PlaybackPosition] = []
+        for await pos in Observations({ vm.playbackPosition }) {
+            guard let p = pos else { continue }
+            positions.append(p)
+            if positions.count >= 3 { break }
+        }
+
+        #expect(positions == [
+            PlaybackPosition(recordingID: rid, chunkIndex: 7),
+            PlaybackPosition(recordingID: rid, chunkIndex: 8),
+            PlaybackPosition(recordingID: rid, chunkIndex: 9),
+        ])
+    }
+}

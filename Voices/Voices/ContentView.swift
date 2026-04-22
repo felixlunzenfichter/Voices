@@ -3,6 +3,10 @@ import SwiftUI
 struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
+        for _ in 0..<5 {
+            let chunks = (0..<50).map { AudioChunk(index: $0) }
+            db.addRecording(Recording(audioChunks: chunks))
+        }
         return VoicesViewModel(
             recordingService: DemoRecordingService(database: db, delay: .milliseconds(300)),
             playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
@@ -12,7 +16,7 @@ struct ContentView: View {
     @State private var isRecordingAnimated = false
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -24,7 +28,7 @@ struct ContentView: View {
                                         : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(color)
-                                        .animation(.easeInOut(duration: 2.4), value: color)
+                                        .animation(vm.isListening ? .easeInOut(duration: 0.3) : nil, value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -32,35 +36,59 @@ struct ContentView: View {
                             }
                             .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
                         }
-                        Color.clear.frame(height: 160).id("bottom")
+                        Color.clear.frame(height: 40).id("bottom")
                     }
                     .padding()
                 }
                 .scrollDisabled(vm.isRecording || vm.isListening)
                 .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
                     if vm.isRecording {
-                        withAnimation {
-                            proxy.scrollTo("bottom")
-                        }
+                        withAnimation { proxy.scrollTo("bottom") }
                     }
                 }
                 .onChange(of: vm.playbackPosition) {
-                    if let position = vm.playbackPosition, vm.isListening {
+                    if let pos = vm.playbackPosition {
                         withAnimation {
-                            proxy.scrollTo("\(position.recordingID)-\(position.chunkIndex)", anchor: .center)
+                            proxy.scrollTo("\(pos.recordingID)-\(pos.chunkIndex)", anchor: .center)
                         }
                     }
                 }
             }
 
-            HStack {
-                ListenButton(isListening: vm.isListening, hasUnplayedChunks: vm.hasUnplayedChunks, onTap: { vm.toggleListening() })
+            // Control area: SwiftUI scrubber behind, buttons + chunk number on top
+            ZStack {
+                if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
+                    SwiftUIScrubber(vm: vm)
+                }
+
+                HStack {
+                    ListenButton(
+                        isListening: vm.isListening,
+                        hasUnplayedChunks: vm.hasUnplayedChunks,
+                        onTap: { vm.toggleListening() }
+                    )
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
-                Spacer()
-                RecordButton(isRecording: isRecordingAnimated, onTap: { vm.toggleRecording() })
+
+                    Spacer()
+
+                    if vm.totalChunkCount > 0 {
+                        VStack {
+                            Text("\(vm.cursorGlobalIndex)")
+                                .font(.system(size: 28, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white)
+                                .padding(.top, 10)
+                            Spacer()
+                        }
+                    }
+
+                    Spacer()
+
+                    RecordButton(isRecording: isRecordingAnimated, onTap: { vm.toggleRecording() })
+                }
+                .padding(.horizontal, 40)
             }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 60)
+            .frame(height: 120)
+            .padding(.bottom, 20)
         }
         .onChange(of: vm.isRecording) { _, newValue in
             withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
@@ -69,6 +97,46 @@ struct ContentView: View {
         }
     }
 }
+
+// MARK: - SwiftUI Scrubber
+
+struct SwiftUIScrubber: View {
+    @Bindable var vm: VoicesViewModel
+    @State private var scrolledID: Int?
+
+    private static let itemWidth: CGFloat = 20
+
+    var body: some View {
+        GeometryReader { geo in
+            let inset = geo.size.width / 2 - Self.itemWidth / 2
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(0..<vm.totalChunkCount, id: \.self) { i in
+                        Color.clear
+                            .frame(width: Self.itemWidth, height: 1)
+                            .id(i)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, inset, for: .scrollContent)
+            .scrollPosition(id: $scrolledID, anchor: .center)
+        }
+        .sensoryFeedback(.selection, trigger: scrolledID)
+        .onChange(of: scrolledID) { _, newID in
+            if let id = newID {
+                vm.seekTo(id)
+            }
+        }
+        .onChange(of: vm.cursorGlobalIndex) { _, newIndex in
+            if scrolledID != newIndex {
+                scrolledID = newIndex
+            }
+        }
+    }
+}
+
+// MARK: - Buttons
 
 struct RecordButton: View {
     let isRecording: Bool
@@ -79,9 +147,7 @@ struct RecordButton: View {
     private static let cornerRadius: CGFloat = squareSize / pow(φ, 4)
 
     var body: some View {
-        Button(action: {
-            onTap()
-        }) {
+        Button(action: { onTap() }) {
             RoundedRectangle(cornerRadius: isRecording ? Self.cornerRadius : Self.circleSize / 2, style: .continuous)
                 .fill(Color.red)
                 .frame(width: isRecording ? Self.squareSize : Self.circleSize, height: isRecording ? Self.squareSize : Self.circleSize)
@@ -104,9 +170,7 @@ struct ListenButton: View {
     private static let size: CGFloat = 100
 
     var body: some View {
-        Button(action: {
-            onTap()
-        }) {
+        Button(action: { onTap() }) {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
                 .foregroundColor(hasUnplayedChunks ? .purple : .blue)
@@ -120,9 +184,8 @@ struct ListenButton: View {
 
 extension ContentView {
     private func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
-        vm.isListening
-            && vm.playbackPosition?.recordingID == recording.id
-            && vm.playbackPosition?.chunkIndex == chunk.index
+        guard let pos = vm.playbackPosition else { return false }
+        return pos.recordingID == recording.id && pos.chunkIndex == chunk.index
     }
 }
 
