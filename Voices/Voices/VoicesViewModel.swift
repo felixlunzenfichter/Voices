@@ -22,12 +22,11 @@ final class VoicesViewModel {
         self.database = database
     }
 
-    // MARK: - Seek
+    // MARK: - State
 
     var totalChunkCount: Int {
         recordings.reduce(0) { $0 + $1.audioChunks.count }
     }
-
 
     var cursorGlobalIndex: Int {
         if let pos = playbackPosition {
@@ -37,13 +36,31 @@ final class VoicesViewModel {
                 index += rec.audioChunks.count
             }
         }
-        // No position: if all listened, stay at last chunk; otherwise 0
         let total = totalChunkCount
         if total > 0 && !hasUnplayedChunks {
             return total - 1
         }
         return 0
     }
+
+    var hasUnplayedChunks: Bool {
+        recordings.flatMap(\.audioChunks).contains { !$0.listened }
+    }
+
+    var canPlay: Bool {
+        hasUnplayedChunks || cursorGlobalIndex < totalChunkCount - 1
+    }
+
+    var canSeek: Bool {
+        !isListening && !isRecording && totalChunkCount > 0
+    }
+
+    func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
+        guard let pos = playbackPosition else { return false }
+        return pos.recordingID == recording.id && pos.chunkIndex == chunk.index
+    }
+
+    // MARK: - Actions
 
     func seekTo(_ globalIndex: Int) {
         let allChunks = recordings.flatMap { rec in
@@ -53,12 +70,6 @@ final class VoicesViewModel {
         let clamped = max(0, min(globalIndex, allChunks.count - 1))
         let (rid, idx) = allChunks[clamped]
         playbackService.playbackPosition = PlaybackPosition(recordingID: rid, chunkIndex: idx)
-    }
-
-    // MARK: - Public
-
-    var hasUnplayedChunks: Bool {
-        recordings.flatMap(\.audioChunks).contains { !$0.listened }
     }
 
     func toggleRecording() {

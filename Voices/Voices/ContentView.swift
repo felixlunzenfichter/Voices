@@ -20,7 +20,7 @@ struct ContentView: View {
                         ForEach(vm.recordings) { recording in
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
-                                    let color = isCurrent(recording: recording, chunk: chunk)
+                                    let color = vm.isCurrent(recording: recording, chunk: chunk)
                                         ? Color.white
                                         : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
@@ -52,9 +52,8 @@ struct ContentView: View {
                 }
             }
 
-            // Control area: SwiftUI scrubber behind, buttons + chunk number on top
             ZStack {
-                if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
+                if vm.canSeek {
                     SwiftUIScrubber(vm: vm)
                 }
 
@@ -62,7 +61,7 @@ struct ContentView: View {
                     ListenButton(
                         isListening: vm.isListening,
                         hasUnplayedChunks: vm.hasUnplayedChunks,
-                        canPlay: vm.hasUnplayedChunks || vm.cursorGlobalIndex < vm.totalChunkCount - 1,
+                        canPlay: vm.canPlay,
                         onTap: { vm.toggleListening() }
                     )
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
@@ -181,15 +180,6 @@ struct ListenButton: View {
                 .frame(width: Self.size, height: Self.size)
         }
         .disabled(!canPlay && !isListening)
-    }
-}
-
-// MARK: - Helpers
-
-extension ContentView {
-    private func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
-        guard let pos = vm.playbackPosition else { return false }
-        return pos.recordingID == recording.id && pos.chunkIndex == chunk.index
     }
 }
 
