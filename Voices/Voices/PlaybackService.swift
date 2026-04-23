@@ -24,21 +24,21 @@ final class DemoPlaybackService: PlaybackService {
 
     func play() {
         let recordings = database.recordings
-        isPlaying = true
         let resume: (recordingIndex: Int, chunkIndex: Int)
         if let pos = playbackPosition,
            let rIdx = recordings.firstIndex(where: { $0.id == pos.recordingID }),
            pos.chunkIndex < recordings[rIdx].audioChunks.count {
             resume = (rIdx, pos.chunkIndex)
+        } else if let next = resumePoint(in: recordings) {
+            resume = next
         } else {
-            resume = resumePoint(in: recordings)
+            return
         }
-        if resume.recordingIndex < recordings.count {
-            playbackPosition = PlaybackPosition(
-                recordingID: recordings[resume.recordingIndex].id,
-                chunkIndex: resume.chunkIndex
-            )
-        }
+        isPlaying = true
+        playbackPosition = PlaybackPosition(
+            recordingID: recordings[resume.recordingIndex].id,
+            chunkIndex: resume.chunkIndex
+        )
         task = Task { await consumePlayback(recordings, from: resume) }
     }
 
@@ -48,7 +48,7 @@ final class DemoPlaybackService: PlaybackService {
         isPlaying = false
     }
 
-    private func resumePoint(in recordings: [Recording]) -> (recordingIndex: Int, chunkIndex: Int) {
+    private func resumePoint(in recordings: [Recording]) -> (recordingIndex: Int, chunkIndex: Int)? {
         for (rIdx, recording) in recordings.enumerated() {
             for (cIdx, chunk) in recording.audioChunks.enumerated() {
                 if !chunk.listened {
@@ -56,7 +56,7 @@ final class DemoPlaybackService: PlaybackService {
                 }
             }
         }
-        return (recordings.count, 0)
+        return nil
     }
 
     private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
@@ -81,11 +81,9 @@ final class DemoPlaybackService: PlaybackService {
 
         if !Task.isCancelled {
             await Task.yield()
-            let currentRecordings = database.recordings
-            let next = resumePoint(in: currentRecordings)
-            if next.recordingIndex < currentRecordings.count {
+            if let next = resumePoint(in: database.recordings) {
                 playbackPosition = PlaybackPosition(
-                    recordingID: currentRecordings[next.recordingIndex].id,
+                    recordingID: database.recordings[next.recordingIndex].id,
                     chunkIndex: next.chunkIndex
                 )
             } else {
