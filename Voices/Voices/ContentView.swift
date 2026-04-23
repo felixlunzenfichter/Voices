@@ -55,7 +55,7 @@ struct ContentView: View {
             // Control area: SwiftUI scrubber behind, buttons + chunk number on top
             ZStack {
                 if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
-                    SwiftUIScrubber(vm: vm, initialIndex: vm.cursorGlobalIndex)
+                    SwiftUIScrubber(vm: vm)
                 }
 
                 HStack {
@@ -101,7 +101,6 @@ struct ContentView: View {
 
 struct SwiftUIScrubber: View {
     @Bindable var vm: VoicesViewModel
-    var initialIndex: Int
     @State private var scrolledID: Int?
 
     private static let itemWidth: CGFloat = 20
@@ -123,7 +122,7 @@ struct SwiftUIScrubber: View {
             .scrollPosition(id: $scrolledID, anchor: .center)
         }
         .onAppear {
-            scrolledID = initialIndex
+            scrolledID = vm.cursorGlobalIndex
         }
         .onChange(of: scrolledID) { _, newID in
             if let id = newID {
