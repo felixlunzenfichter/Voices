@@ -26,8 +26,7 @@ final class DemoPlaybackService: PlaybackService {
         let recordings = database.recordings
         let resume: (recordingIndex: Int, chunkIndex: Int)
         if let pos = playbackPosition,
-           let rIdx = recordings.firstIndex(where: { $0.id == pos.recordingID }),
-           pos.chunkIndex < recordings[rIdx].audioChunks.count {
+           let rIdx = recordings.firstIndex(where: { $0.id == pos.recordingID }) {
             resume = (rIdx, pos.chunkIndex)
         } else if let next = resumePoint(in: recordings) {
             resume = next
