@@ -28,16 +28,6 @@ final class VoicesViewModel {
         recordings.reduce(0) { $0 + $1.audioChunks.count }
     }
 
-    var firstUnlistenedGlobalIndex: Int {
-        var index = 0
-        for rec in recordings {
-            for chunk in rec.audioChunks {
-                if !chunk.listened { return index }
-                index += 1
-            }
-        }
-        return 0
-    }
 
     var cursorGlobalIndex: Int {
         guard let pos = playbackPosition else { return 0 }

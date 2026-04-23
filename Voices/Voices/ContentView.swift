@@ -14,7 +14,6 @@ struct ContentView: View {
         )
     }()
     @State private var isRecordingAnimated = false
-    @State private var lastCursorIndex = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,7 +58,7 @@ struct ContentView: View {
             // Control area: SwiftUI scrubber behind, buttons + chunk number on top
             ZStack {
                 if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
-                    SwiftUIScrubber(vm: vm, initialIndex: lastCursorIndex)
+                    SwiftUIScrubber(vm: vm, initialIndex: vm.cursorGlobalIndex)
                 }
 
                 HStack {
@@ -93,13 +92,6 @@ struct ContentView: View {
             .padding(.bottom, 20)
         }
         .sensoryFeedback(.selection, trigger: vm.playbackPosition)
-        .onChange(of: vm.playbackPosition) { _, newPos in
-            if newPos != nil {
-                lastCursorIndex = vm.cursorGlobalIndex
-            } else if vm.hasUnplayedChunks {
-                lastCursorIndex = vm.firstUnlistenedGlobalIndex
-            }
-        }
         .onChange(of: vm.isRecording) { _, newValue in
             withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
                 isRecordingAnimated = newValue
