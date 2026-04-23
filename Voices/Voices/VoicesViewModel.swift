@@ -28,7 +28,9 @@ final class VoicesViewModel {
         recordings.reduce(0) { $0 + $1.audioChunks.count }
     }
 
-    var displayIndex: Int {
+    /// Scrubber slot index: 0..<totalChunkCount for real chunks,
+    /// totalChunkCount for the terminal (end) position.
+    var scrubberIndex: Int {
         if let pos = playbackPosition {
             var index = 0
             for rec in recordings {
@@ -37,6 +39,11 @@ final class VoicesViewModel {
             }
         }
         return totalChunkCount
+    }
+
+    /// User-visible chunk number, capped to the last real chunk.
+    var displayChunkNumber: Int {
+        min(scrubberIndex, max(totalChunkCount - 1, 0))
     }
 
     var hasUnplayedChunks: Bool {

@@ -432,7 +432,7 @@ struct SeekTests {
 
         vm.seekTo(99)
         #expect(vm.playbackPosition == nil, "Clamps to terminal, clears position")
-        #expect(vm.displayIndex == 5)
+        #expect(vm.scrubberIndex == 5)
 
         vm.seekTo(5)
         #expect(vm.playbackPosition == nil, "Terminal index clears position")
@@ -541,6 +541,6 @@ struct SeekTests {
         }
 
         #expect(vm.playbackPosition == nil)
-        #expect(vm.displayIndex == 5, "Terminal slot: totalChunkCount")
+        #expect(vm.scrubberIndex == 5, "Terminal slot: totalChunkCount")
     }
 }

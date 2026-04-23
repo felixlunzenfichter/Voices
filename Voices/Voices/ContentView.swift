@@ -70,7 +70,7 @@ struct ContentView: View {
 
                     if vm.totalChunkCount > 0 {
                         VStack {
-                            Text("\(min(vm.displayIndex, vm.totalChunkCount - 1))")
+                            Text("\(vm.displayChunkNumber)")
                                 .font(.system(size: 28, weight: .bold, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding(.top, 10)
@@ -121,14 +121,14 @@ struct SwiftUIScrubber: View {
             .scrollPosition(id: $scrolledID, anchor: .center)
         }
         .onAppear {
-            scrolledID = vm.displayIndex
+            scrolledID = vm.scrubberIndex
         }
         .onChange(of: scrolledID) { _, new in
             guard let id = new else { return }
             vm.shouldAnimateChunks = false
             vm.seekTo(id)
         }
-        .onChange(of: vm.displayIndex) { _, newIndex in
+        .onChange(of: vm.scrubberIndex) { _, newIndex in
             if scrolledID != newIndex {
                 vm.shouldAnimateChunks = true
                 scrolledID = newIndex
