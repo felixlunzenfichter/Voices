@@ -36,9 +36,7 @@ final class VoicesViewModel {
                 index += rec.audioChunks.count
             }
         }
-        let total = totalChunkCount
-        if total > 0 && !hasUnplayedChunks { return total - 1 }
-        return 0
+        return totalChunkCount
     }
 
     var hasUnplayedChunks: Bool {
@@ -67,9 +65,13 @@ final class VoicesViewModel {
             rec.audioChunks.map { (rec.id, $0.index) }
         }
         guard !allChunks.isEmpty else { return }
-        let clamped = max(0, min(globalIndex, allChunks.count - 1))
-        let (rid, idx) = allChunks[clamped]
-        playbackService.playbackPosition = PlaybackPosition(recordingID: rid, chunkIndex: idx)
+        let clamped = max(0, min(globalIndex, allChunks.count))
+        if clamped >= allChunks.count {
+            playbackService.playbackPosition = nil
+        } else {
+            let (rid, idx) = allChunks[clamped]
+            playbackService.playbackPosition = PlaybackPosition(recordingID: rid, chunkIndex: idx)
+        }
     }
 
     func toggleRecording() {

@@ -70,7 +70,7 @@ struct ContentView: View {
 
                     if vm.totalChunkCount > 0 {
                         VStack {
-                            Text("\(vm.displayIndex)")
+                            Text("\(min(vm.displayIndex, vm.totalChunkCount - 1))")
                                 .font(.system(size: 28, weight: .bold, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding(.top, 10)
@@ -109,7 +109,7 @@ struct SwiftUIScrubber: View {
             let inset = geo.size.width / 2 - Self.itemWidth / 2
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 0) {
-                    ForEach(0..<vm.totalChunkCount, id: \.self) { i in
+                    ForEach(0...vm.totalChunkCount, id: \.self) { i in
                         Color.clear
                             .frame(width: Self.itemWidth, height: 1)
                             .id(i)
@@ -123,8 +123,8 @@ struct SwiftUIScrubber: View {
         .onAppear {
             scrolledID = vm.displayIndex
         }
-        .onChange(of: scrolledID) { old, new in
-            guard old != nil, let id = new else { return }
+        .onChange(of: scrolledID) { _, new in
+            guard let id = new else { return }
             vm.shouldAnimateChunks = false
             vm.seekTo(id)
         }
