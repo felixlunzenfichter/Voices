@@ -128,12 +128,6 @@ struct SwiftUIScrubber: View {
             vm.shouldAnimateChunks = false
             vm.seekTo(id)
         }
-        .onChange(of: vm.scrubberIndex) { _, newIndex in
-            if scrolledID != newIndex {
-                vm.shouldAnimateChunks = true
-                scrolledID = newIndex
-            }
-        }
         .onDisappear {
             vm.shouldAnimateChunks = true
         }
