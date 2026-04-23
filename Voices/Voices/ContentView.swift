@@ -70,7 +70,7 @@ struct ContentView: View {
 
                     if vm.totalChunkCount > 0 {
                         VStack {
-                            Text("\(vm.cursorGlobalIndex)")
+                            Text("\(vm.displayIndex)")
                                 .font(.system(size: 28, weight: .bold, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding(.top, 10)
@@ -123,10 +123,9 @@ struct SwiftUIScrubber: View {
         .onAppear {
             scrolledID = vm.cursorGlobalIndex
         }
-        .onChange(of: scrolledID) { _, newID in
-            if let id = newID {
-                vm.seekTo(id)
-            }
+        .onChange(of: scrolledID) { old, new in
+            guard old != nil, let id = new else { return }
+            vm.seekTo(id)
         }
         .onChange(of: vm.cursorGlobalIndex) { _, newIndex in
             if scrolledID != newIndex {
