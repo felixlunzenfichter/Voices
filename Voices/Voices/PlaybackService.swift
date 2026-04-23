@@ -81,8 +81,16 @@ final class DemoPlaybackService: PlaybackService {
 
         if !Task.isCancelled {
             await Task.yield()
-            playbackPosition = nil
-            await Task.yield()
+            let currentRecordings = database.recordings
+            let next = resumePoint(in: currentRecordings)
+            if next.recordingIndex < currentRecordings.count {
+                playbackPosition = PlaybackPosition(
+                    recordingID: currentRecordings[next.recordingIndex].id,
+                    chunkIndex: next.chunkIndex
+                )
+            } else {
+                playbackPosition = nil
+            }
             isPlaying = false
         }
     }
