@@ -28,21 +28,14 @@ final class VoicesViewModel {
         recordings.reduce(0) { $0 + $1.audioChunks.count }
     }
 
-    /// Honest cursor: nil when playbackPosition is nil (no active position).
-    var cursorGlobalIndex: Int? {
-        guard let pos = playbackPosition else { return nil }
-        var index = 0
-        for rec in recordings {
-            if rec.id == pos.recordingID { return index + pos.chunkIndex }
-            index += rec.audioChunks.count
-        }
-        return nil
-    }
-
-    /// Display index: always has a value for the UI. Shows cursorGlobalIndex
-    /// when available, otherwise the last chunk (all listened) or 0 (empty).
     var displayIndex: Int {
-        if let cursor = cursorGlobalIndex { return cursor }
+        if let pos = playbackPosition {
+            var index = 0
+            for rec in recordings {
+                if rec.id == pos.recordingID { return index + pos.chunkIndex }
+                index += rec.audioChunks.count
+            }
+        }
         let total = totalChunkCount
         if total > 0 && !hasUnplayedChunks { return total - 1 }
         return 0

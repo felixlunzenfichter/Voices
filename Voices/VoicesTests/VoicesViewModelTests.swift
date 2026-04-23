@@ -534,7 +534,6 @@ struct SeekTests {
         }
 
         #expect(vm.playbackPosition == nil)
-        #expect(vm.cursorGlobalIndex == nil)
         #expect(vm.displayIndex == 4)
     }
 }
