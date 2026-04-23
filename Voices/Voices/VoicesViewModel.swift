@@ -30,11 +30,17 @@ final class VoicesViewModel {
 
 
     var cursorGlobalIndex: Int {
-        guard let pos = playbackPosition else { return 0 }
-        var index = 0
-        for rec in recordings {
-            if rec.id == pos.recordingID { return index + pos.chunkIndex }
-            index += rec.audioChunks.count
+        if let pos = playbackPosition {
+            var index = 0
+            for rec in recordings {
+                if rec.id == pos.recordingID { return index + pos.chunkIndex }
+                index += rec.audioChunks.count
+            }
+        }
+        // No position: if all listened, stay at last chunk; otherwise 0
+        let total = totalChunkCount
+        if total > 0 && !hasUnplayedChunks {
+            return total - 1
         }
         return 0
     }

@@ -523,4 +523,17 @@ struct SeekTests {
         // Position should be chunk 0 (first unlistened), not nil
         #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 0))
     }
+
+    @Test("After full playback, cursor stays at last chunk", .timeLimit(.minutes(1)))
+    func afterFullPlaybackCursorStaysAtLastChunk() async {
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withRecording(chunkCount: 5))
+
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        #expect(vm.playbackPosition == nil)
+        #expect(vm.cursorGlobalIndex == 4)
+    }
 }

@@ -3,10 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
-        for _ in 0..<5 {
-            let chunks = (0..<50).map { AudioChunk(index: $0) }
-            db.addRecording(Recording(audioChunks: chunks))
-        }
+        db.addRecording(Recording(audioChunks: (0..<5).map { AudioChunk(index: $0) }))
         return VoicesViewModel(
             recordingService: DemoRecordingService(database: db, delay: .milliseconds(300)),
             playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
