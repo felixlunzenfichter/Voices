@@ -507,4 +507,20 @@ struct SeekTests {
             PlaybackPosition(recordingID: rid, chunkIndex: 9),
         ])
     }
+
+    @Test("After natural completion, playbackPosition resets to first unlistened chunk", .timeLimit(.minutes(1)))
+    func afterCompletionPositionResetsToFirstUnlistened() async {
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 10))
+        let rid = db.recordings[0].id
+
+        // Seek to chunk 5, play to end (chunks 5-9 listened, 0-4 unlistened)
+        vm.seekTo(5)
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Position should be chunk 0 (first unlistened), not nil
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 0))
+    }
 }
