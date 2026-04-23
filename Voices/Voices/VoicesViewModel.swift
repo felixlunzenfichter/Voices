@@ -54,8 +54,10 @@ final class VoicesViewModel {
         hasUnplayedChunks || playbackPosition != nil
     }
 
+    private(set) var hasEverPlayed = false
+
     var canSeek: Bool {
-        !isListening && !isRecording && totalChunkCount > 0
+        hasEverPlayed && !isListening && !isRecording && totalChunkCount > 0
     }
 
     var shouldAnimateChunks = true
@@ -111,6 +113,7 @@ final class VoicesViewModel {
 
     private func startListening() {
         if isRecording { stopRecording() }
+        hasEverPlayed = true
         playbackService.play()
         log("Listening started")
     }
