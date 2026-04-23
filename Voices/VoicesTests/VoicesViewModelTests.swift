@@ -542,5 +542,6 @@ struct SeekTests {
 
         #expect(vm.playbackPosition == nil)
         #expect(vm.scrubberIndex == 5, "Terminal slot: totalChunkCount")
+        #expect(vm.displayChunkNumber == 4, "User-facing: last real chunk")
     }
 }
