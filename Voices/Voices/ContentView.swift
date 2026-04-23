@@ -25,7 +25,7 @@ struct ContentView: View {
                                         : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(color)
-                                        .animation(vm.isListening ? .easeInOut(duration: 0.3) : nil, value: color)
+                                        .animation(vm.shouldAnimateChunks ? .easeInOut(duration: 0.3) : nil, value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -121,16 +121,21 @@ struct SwiftUIScrubber: View {
             .scrollPosition(id: $scrolledID, anchor: .center)
         }
         .onAppear {
-            scrolledID = vm.cursorGlobalIndex
+            scrolledID = vm.displayIndex
         }
         .onChange(of: scrolledID) { old, new in
             guard old != nil, let id = new else { return }
+            vm.shouldAnimateChunks = false
             vm.seekTo(id)
         }
-        .onChange(of: vm.cursorGlobalIndex) { _, newIndex in
+        .onChange(of: vm.displayIndex) { _, newIndex in
             if scrolledID != newIndex {
+                vm.shouldAnimateChunks = true
                 scrolledID = newIndex
             }
+        }
+        .onDisappear {
+            vm.shouldAnimateChunks = true
         }
     }
 }

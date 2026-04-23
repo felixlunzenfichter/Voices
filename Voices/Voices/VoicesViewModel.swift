@@ -60,6 +60,8 @@ final class VoicesViewModel {
         !isListening && !isRecording && totalChunkCount > 0
     }
 
+    var shouldAnimateChunks = true
+
     func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
         guard let pos = playbackPosition else { return false }
         return pos.recordingID == recording.id && pos.chunkIndex == chunk.index
