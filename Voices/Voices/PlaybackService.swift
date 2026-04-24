@@ -12,6 +12,7 @@ import Observation
 final class DemoPlaybackService: PlaybackService {
     var playbackPosition: PlaybackPosition?
     private(set) var isPlaying = false
+    private(set) var playedChunks: [PlaybackPosition] = []
     private var task: Task<Void, Never>?
     private let database: any Database
 
@@ -33,6 +34,7 @@ final class DemoPlaybackService: PlaybackService {
         } else {
             return
         }
+        playedChunks = []
         isPlaying = true
         playbackPosition = PlaybackPosition(
             recordingID: recordings[resume.recordingIndex].id,
@@ -74,6 +76,7 @@ final class DemoPlaybackService: PlaybackService {
                 guard !Task.isCancelled else { return }
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
+                playedChunks.append(position)
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
             }
         }

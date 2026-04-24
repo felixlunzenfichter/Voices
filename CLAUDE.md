@@ -38,6 +38,16 @@ grep '"isError":true' ~/clawcontraw.log | grep '"device":"Felix'"'"'s iPhone"'
 
 **Requires:** Tailscale VPN on the iPhone and `NSAllowsArbitraryLoads` in `Info.plist` for `ws://` connections.
 
+## Running Tests
+
+Run tests on the connected physical iPhone by default — ~15s vs ~2min on simulator (simulator boot overhead dominates). Use Felix's iPhone 12 Pro Max as the target device.
+
+```bash
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+xcodebuild test -scheme Voices -project Voices/Voices.xcodeproj \
+  -destination 'platform=iOS,id=<DEVICE_ID>' -quiet
+```
+
 ## Extracting Swift Testing Failure Details
 
 Swift Testing does not print assertion failure details to xcodebuild stdout. When a test fails with no visible message, extract it from the xcresult bundle:
