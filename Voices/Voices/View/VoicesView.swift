@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ContentView: View {
+struct VoicesView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
         db.addRecording(Recording(audioChunks: (0..<5).map { AudioChunk(index: $0) }))
@@ -93,91 +93,6 @@ struct ContentView: View {
                 isRecordingAnimated = newValue
             }
         }
-    }
-}
-
-// MARK: - SwiftUI Scrubber
-
-struct SwiftUIScrubber: View {
-    @Bindable var vm: VoicesViewModel
-    @State private var scrolledID: Int?
-
-    private static let itemWidth: CGFloat = 20
-
-    var body: some View {
-        GeometryReader { geo in
-            let inset = geo.size.width / 2 - Self.itemWidth / 2
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 0) {
-                    ForEach(0...vm.totalChunkCount, id: \.self) { i in
-                        Color.clear
-                            .frame(width: Self.itemWidth, height: 1)
-                            .id(i)
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .contentMargins(.horizontal, inset, for: .scrollContent)
-            .scrollPosition(id: $scrolledID, anchor: .center)
-        }
-        .onAppear {
-            scrolledID = vm.scrubberIndex
-        }
-        .onChange(of: scrolledID) { _, new in
-            guard let id = new else { return }
-            vm.shouldAnimateChunks = false
-            vm.seekTo(id)
-        }
-        .onDisappear {
-            vm.shouldAnimateChunks = true
-        }
-    }
-}
-
-// MARK: - Buttons
-
-struct RecordButton: View {
-    let isRecording: Bool
-    let onTap: () -> Void
-
-    private static let circleSize: CGFloat = 100
-    private static let squareSize: CGFloat = circleSize / φ
-    private static let cornerRadius: CGFloat = squareSize / pow(φ, 4)
-
-    var body: some View {
-        Button(action: { onTap() }) {
-            RoundedRectangle(cornerRadius: isRecording ? Self.cornerRadius : Self.circleSize / 2, style: .continuous)
-                .fill(Color.red)
-                .frame(width: isRecording ? Self.squareSize : Self.circleSize, height: isRecording ? Self.squareSize : Self.circleSize)
-                .frame(width: Self.circleSize, height: Self.circleSize)
-                .overlay(
-                    Circle()
-                        .stroke(Color.red, lineWidth: 1)
-                        .frame(width: Self.circleSize, height: Self.circleSize)
-                )
-                .contentShape(Rectangle())
-        }
-    }
-}
-
-struct ListenButton: View {
-    let isListening: Bool
-    let hasUnplayedChunks: Bool
-    let canPlay: Bool
-    let onTap: () -> Void
-
-    private static let size: CGFloat = 100
-
-    var body: some View {
-        Button(action: { onTap() }) {
-            Image(systemName: isListening ? "pause.fill" : "play.fill")
-                .font(.system(size: Self.size))
-                .foregroundColor(hasUnplayedChunks ? .purple : .blue)
-                .opacity(canPlay || isListening ? 1.0 : 0.3)
-                .contentTransition(.symbolEffect(.replace))
-                .frame(width: Self.size, height: Self.size)
-        }
-        .disabled(!canPlay && !isListening)
     }
 }
 
