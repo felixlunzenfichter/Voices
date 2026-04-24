@@ -431,6 +431,13 @@ struct SeekTests {
         #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 0))
 
         vm.seekTo(99)
+        #expect(vm.playbackPosition == nil, "Clamps to terminal, clears position")
+        #expect(vm.scrubberIndex == 5)
+
+        vm.seekTo(5)
+        #expect(vm.playbackPosition == nil, "Terminal index clears position")
+
+        vm.seekTo(4)
         #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 4))
     }
 
@@ -506,5 +513,35 @@ struct SeekTests {
             PlaybackPosition(recordingID: rid, chunkIndex: 8),
             PlaybackPosition(recordingID: rid, chunkIndex: 9),
         ])
+    }
+
+    @Test("After natural completion, playbackPosition resets to first unlistened chunk", .timeLimit(.minutes(1)))
+    func afterCompletionPositionResetsToFirstUnlistened() async {
+        let (vm, db) = VoicesViewModel.fixtureWithDatabase(db: InMemoryDatabase.withRecording(chunkCount: 10))
+        let rid = db.recordings[0].id
+
+        // Seek to chunk 5, play to end (chunks 5-9 listened, 0-4 unlistened)
+        vm.seekTo(5)
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Position should be chunk 0 (first unlistened), not nil
+        #expect(vm.playbackPosition == PlaybackPosition(recordingID: rid, chunkIndex: 0))
+    }
+
+    @Test("After full playback, cursor stays at last chunk", .timeLimit(.minutes(1)))
+    func afterFullPlaybackCursorStaysAtLastChunk() async {
+        let vm = VoicesViewModel.fixture(db: InMemoryDatabase.withRecording(chunkCount: 5))
+
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        #expect(vm.playbackPosition == nil)
+        #expect(vm.scrubberIndex == 5, "Terminal slot: totalChunkCount")
+        #expect(vm.displayChunkNumber == 4, "User-facing: last real chunk")
     }
 }

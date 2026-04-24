@@ -3,10 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var vm: VoicesViewModel = {
         let db = InMemoryDatabase()
-        for _ in 0..<5 {
-            let chunks = (0..<50).map { AudioChunk(index: $0) }
-            db.addRecording(Recording(audioChunks: chunks))
-        }
+        db.addRecording(Recording(audioChunks: (0..<5).map { AudioChunk(index: $0) }))
         return VoicesViewModel(
             recordingService: DemoRecordingService(database: db, delay: .milliseconds(300)),
             playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
@@ -23,12 +20,12 @@ struct ContentView: View {
                         ForEach(vm.recordings) { recording in
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
-                                    let color = isCurrent(recording: recording, chunk: chunk)
+                                    let color = vm.isCurrent(recording: recording, chunk: chunk)
                                         ? Color.white
                                         : chunk.listened ? Color.blue : Color.purple
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(color)
-                                        .animation(vm.isListening ? .easeInOut(duration: 0.3) : nil, value: color)
+                                        .animation(vm.shouldAnimateChunks ? .easeInOut(duration: 0.3) : nil, value: color)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")
@@ -55,9 +52,8 @@ struct ContentView: View {
                 }
             }
 
-            // Control area: SwiftUI scrubber behind, buttons + chunk number on top
             ZStack {
-                if !vm.isListening && !vm.isRecording && vm.totalChunkCount > 0 {
+                if vm.canSeek {
                     SwiftUIScrubber(vm: vm)
                 }
 
@@ -65,6 +61,7 @@ struct ContentView: View {
                     ListenButton(
                         isListening: vm.isListening,
                         hasUnplayedChunks: vm.hasUnplayedChunks,
+                        canPlay: vm.canPlay,
                         onTap: { vm.toggleListening() }
                     )
                     .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
@@ -73,7 +70,7 @@ struct ContentView: View {
 
                     if vm.totalChunkCount > 0 {
                         VStack {
-                            Text("\(vm.cursorGlobalIndex)")
+                            Text("\(vm.displayChunkNumber)")
                                 .font(.system(size: 28, weight: .bold, design: .monospaced))
                                 .foregroundColor(.white)
                                 .padding(.top, 10)
@@ -90,6 +87,7 @@ struct ContentView: View {
             .frame(height: 120)
             .padding(.bottom, 20)
         }
+        .sensoryFeedback(.selection, trigger: vm.playbackPosition)
         .onChange(of: vm.isRecording) { _, newValue in
             withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
                 isRecordingAnimated = newValue
@@ -111,7 +109,7 @@ struct SwiftUIScrubber: View {
             let inset = geo.size.width / 2 - Self.itemWidth / 2
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 0) {
-                    ForEach(0..<vm.totalChunkCount, id: \.self) { i in
+                    ForEach(0...vm.totalChunkCount, id: \.self) { i in
                         Color.clear
                             .frame(width: Self.itemWidth, height: 1)
                             .id(i)
@@ -122,16 +120,16 @@ struct SwiftUIScrubber: View {
             .contentMargins(.horizontal, inset, for: .scrollContent)
             .scrollPosition(id: $scrolledID, anchor: .center)
         }
-        .sensoryFeedback(.selection, trigger: scrolledID)
-        .onChange(of: scrolledID) { _, newID in
-            if let id = newID {
-                vm.seekTo(id)
-            }
+        .onAppear {
+            scrolledID = vm.scrubberIndex
         }
-        .onChange(of: vm.cursorGlobalIndex) { _, newIndex in
-            if scrolledID != newIndex {
-                scrolledID = newIndex
-            }
+        .onChange(of: scrolledID) { _, new in
+            guard let id = new else { return }
+            vm.shouldAnimateChunks = false
+            vm.seekTo(id)
+        }
+        .onDisappear {
+            vm.shouldAnimateChunks = true
         }
     }
 }
@@ -165,6 +163,7 @@ struct RecordButton: View {
 struct ListenButton: View {
     let isListening: Bool
     let hasUnplayedChunks: Bool
+    let canPlay: Bool
     let onTap: () -> Void
 
     private static let size: CGFloat = 100
@@ -174,18 +173,11 @@ struct ListenButton: View {
             Image(systemName: isListening ? "pause.fill" : "play.fill")
                 .font(.system(size: Self.size))
                 .foregroundColor(hasUnplayedChunks ? .purple : .blue)
+                .opacity(canPlay || isListening ? 1.0 : 0.3)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: Self.size, height: Self.size)
         }
-    }
-}
-
-// MARK: - Helpers
-
-extension ContentView {
-    private func isCurrent(recording: Recording, chunk: AudioChunk) -> Bool {
-        guard let pos = vm.playbackPosition else { return false }
-        return pos.recordingID == recording.id && pos.chunkIndex == chunk.index
+        .disabled(!canPlay && !isListening)
     }
 }
 
