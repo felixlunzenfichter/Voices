@@ -373,21 +373,22 @@ struct ChunkListenedStateTests {
         #expect(chunk.listened == false)
     }
 
-    @Test("Playback marks chunks listened sequentially", .timeLimit(.minutes(1)))
+    @Test("Chunks ahead of cursor remain not-listened during playback", .timeLimit(.minutes(1)))
     func chunksAheadNotListened() async {
-        let (vm, playback, db) = VoicesViewModel.fixtureWithServices(db: InMemoryDatabase.withRecording(chunkCount: 6))
-        let rid = db.recordings[0].id
+        let db = InMemoryDatabase.withRecording(chunkCount: 6)
+        let play = DemoPlaybackService(database: db, delay: .milliseconds(10))
+        let rec = DemoRecordingService(database: db)
+        let vm = VoicesViewModel(recordingService: rec, playbackService: play, database: db)
 
         vm.toggleListening()
-        for await listening in Observations({ vm.isListening }) {
-            if !listening { break }
+        for await pos in Observations({ vm.playbackPosition }) {
+            if let p = pos, p.chunkIndex >= 2 { break }
         }
+        vm.toggleListening()
 
-        // Spy proves sequential order — at any mid-stream point, only played chunks were listened
-        #expect(playback.playedChunks == (0..<6).map {
-            PlaybackPosition(recordingID: rid, chunkIndex: $0)
-        })
-        #expect(db.recordings[0].audioChunks.allSatisfy { $0.listened })
+        let chunks = db.recordings[0].audioChunks
+        #expect(chunks[0...2].allSatisfy { $0.listened })
+        #expect(chunks[3...5].allSatisfy { !$0.listened })
     }
 
     @Test("markListened is observable through ViewModel derived state")
