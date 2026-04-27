@@ -15,16 +15,37 @@ final class DemoPlaybackService: PlaybackService {
     private(set) var playedChunks: [PlaybackPosition] = []
     private var task: Task<Void, Never>?
     private let database: any Database
-
+    private let conversationID: UUID
+    private let viewerID: UUID
     private let delay: Duration
 
-    init(database: any Database, delay: Duration = .zero) {
+    /// New, identity-bearing initializer.
+    init(
+        database: any Database,
+        conversationID: UUID,
+        viewerID: UUID,
+        delay: Duration = .zero
+    ) {
         self.database = database
+        self.conversationID = conversationID
+        self.viewerID = viewerID
         self.delay = delay
     }
 
+    /// Legacy single-user initializer. Routes through the lazily-created
+    /// default conversation and the legacy viewer identity.
+    convenience init(database: any Database, delay: Duration = .zero) {
+        let convoID = _legacyDefaultConversationID(in: database)
+        self.init(
+            database: database,
+            conversationID: convoID,
+            viewerID: Participant.legacyViewer.id,
+            delay: delay
+        )
+    }
+
     func play() {
-        let recordings = database.recordings
+        let recordings = currentRecordings()
         let resume: (recordingIndex: Int, chunkIndex: Int)
         if let pos = playbackPosition,
            let rIdx = recordings.firstIndex(where: { $0.id == pos.recordingID }) {
@@ -49,10 +70,20 @@ final class DemoPlaybackService: PlaybackService {
         isPlaying = false
     }
 
+    // MARK: - Private
+
+    private func currentRecordings() -> [Recording] {
+        database.conversations.first(where: { $0.id == conversationID })?.recordings ?? []
+    }
+
+    /// First chunk that the viewer hasn't listened to yet, in any foreign
+    /// recording. Own recordings are skipped — hearing your own voice
+    /// doesn't count.
     private func resumePoint(in recordings: [Recording]) -> (recordingIndex: Int, chunkIndex: Int)? {
         for (rIdx, recording) in recordings.enumerated() {
+            guard recording.author != viewerID else { continue }
             for (cIdx, chunk) in recording.audioChunks.enumerated() {
-                if !chunk.listened {
+                if !chunk.listenedBy.contains(viewerID) {
                     return (rIdx, cIdx)
                 }
             }
@@ -60,7 +91,10 @@ final class DemoPlaybackService: PlaybackService {
         return nil
     }
 
-    private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
+    private func consumePlayback(
+        _ recordings: [Recording],
+        from start: (recordingIndex: Int, chunkIndex: Int)
+    ) async {
         for recordingIndex in start.recordingIndex..<recordings.count {
             let recording = recordings[recordingIndex]
             let skipCount = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
@@ -77,15 +111,25 @@ final class DemoPlaybackService: PlaybackService {
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 playedChunks.append(position)
-                database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
+
+                // Mark listened only when the viewer is *not* the author.
+                if recording.author != viewerID {
+                    database.markListened(
+                        chunkIndex: chunk.index,
+                        of: recording.id,
+                        in: conversationID,
+                        by: viewerID
+                    )
+                }
             }
         }
 
         if !Task.isCancelled {
             await Task.yield()
-            if let next = resumePoint(in: database.recordings) {
+            let after = currentRecordings()
+            if let next = resumePoint(in: after) {
                 playbackPosition = PlaybackPosition(
-                    recordingID: database.recordings[next.recordingIndex].id,
+                    recordingID: after[next.recordingIndex].id,
                     chunkIndex: next.chunkIndex
                 )
             } else {

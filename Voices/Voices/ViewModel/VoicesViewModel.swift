@@ -5,21 +5,47 @@ import Observation
 final class VoicesViewModel {
     var isRecording: Bool { recordingService.isRecording }
     var isListening: Bool { playbackService.isPlaying }
-    var recordings: [Recording] { database.recordings }
+    var recordings: [Recording] {
+        database.conversations.first(where: { $0.id == conversationID })?.recordings ?? []
+    }
     var playbackPosition: PlaybackPosition? { playbackService.playbackPosition }
+
+    let viewer: Participant
+    let conversationID: UUID
 
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
     private let database: any Database
 
+    /// New, identity-bearing initializer.
     init(
         recordingService: any RecordingService,
         playbackService: any PlaybackService,
-        database: any Database
+        database: any Database,
+        viewer: Participant,
+        conversationID: UUID
     ) {
         self.recordingService = recordingService
         self.playbackService = playbackService
         self.database = database
+        self.viewer = viewer
+        self.conversationID = conversationID
+    }
+
+    /// Legacy single-user initializer.
+    convenience init(
+        recordingService: any RecordingService,
+        playbackService: any PlaybackService,
+        database: any Database
+    ) {
+        let convoID = _legacyDefaultConversationID(in: database)
+        self.init(
+            recordingService: recordingService,
+            playbackService: playbackService,
+            database: database,
+            viewer: .legacyViewer,
+            conversationID: convoID
+        )
     }
 
     // MARK: - State
@@ -46,8 +72,12 @@ final class VoicesViewModel {
         min(scrubberIndex, max(totalChunkCount - 1, 0))
     }
 
+    /// Foreign-authored content the viewer hasn't yet heard.
     var hasUnplayedChunks: Bool {
-        recordings.flatMap(\.audioChunks).contains { !$0.listened }
+        recordings.contains { recording in
+            recording.author != viewer.id
+                && recording.audioChunks.contains { !$0.listenedBy.contains(viewer.id) }
+        }
     }
 
     var canPlay: Bool {
@@ -122,5 +152,4 @@ final class VoicesViewModel {
         playbackService.stop()
         log("Listening stopped")
     }
-
 }
