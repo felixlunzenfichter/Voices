@@ -23,4 +23,25 @@ struct PlaybackOwnershipTests {
         let chunks = db.conversations.first!.recordings.first!.audioChunks
         #expect(chunks.allSatisfy { $0.listenedBy == [mama.id] })
     }
+
+    @Test("Listening to my own message does not mark me as a listener", .timeLimit(.minutes(1)))
+    func listeningToOwnMessageDoesNotMarkSelf() async {
+        let mama = Participant.mama
+        let (vm, db) = VoicesViewModel.viewerWithOwnMessage(
+            viewer: mama,
+            chunkCount: 3
+        )
+
+        // Own messages don't count as unplayed, so toggleListening alone is a
+        // no-op. Force playback by seeking first.
+        vm.seekTo(0)
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        let chunks = db.conversations.first!.recordings.first!.audioChunks
+        #expect(chunks.allSatisfy { $0.listenedBy.isEmpty })
+        #expect(chunks.allSatisfy { !$0.listenedBy.contains(mama.id) })
+    }
 }

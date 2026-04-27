@@ -12,12 +12,11 @@ extension Participant {
     static let marina = Participant(id: UUID(), displayName: "Marina")
 }
 
-// MARK: - VoicesViewModel fixture for "viewer hears a foreign message"
+// MARK: - VoicesViewModel fixtures by message ownership
 
 extension VoicesViewModel {
     /// A viewer with one foreign-authored recording of `chunkCount` chunks
-    /// already in the conversation. Returned tuple lets the test inspect
-    /// chunk-level state without re-deriving ids.
+    /// already in the conversation.
     @MainActor
     static func viewerWithForeignMessage(
         viewer: Participant = .mama,
@@ -26,10 +25,40 @@ extension VoicesViewModel {
     ) -> (vm: VoicesViewModel, db: InMemoryDatabase) {
         let recording = Recording(author: author.id,
                                   audioChunks: (0..<chunkCount).map { AudioChunk(index: $0) })
-        let conversation = Conversation(
-            id: UUID(),
+        return _viewerFixture(
+            viewer: viewer,
             participants: [viewer, author],
             recordings: [recording]
+        )
+    }
+
+    /// A viewer with one of their own recordings of `chunkCount` chunks
+    /// already in the conversation. Used to pin down the rule that hearing
+    /// your own voice doesn't count as listening.
+    @MainActor
+    static func viewerWithOwnMessage(
+        viewer: Participant = .mama,
+        chunkCount: Int
+    ) -> (vm: VoicesViewModel, db: InMemoryDatabase) {
+        let recording = Recording(author: viewer.id,
+                                  audioChunks: (0..<chunkCount).map { AudioChunk(index: $0) })
+        return _viewerFixture(
+            viewer: viewer,
+            participants: [viewer],
+            recordings: [recording]
+        )
+    }
+
+    @MainActor
+    private static func _viewerFixture(
+        viewer: Participant,
+        participants: [Participant],
+        recordings: [Recording]
+    ) -> (vm: VoicesViewModel, db: InMemoryDatabase) {
+        let conversation = Conversation(
+            id: UUID(),
+            participants: participants,
+            recordings: recordings
         )
         let db = InMemoryDatabase()
         db.addConversation(conversation)
