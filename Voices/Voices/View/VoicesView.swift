@@ -87,7 +87,10 @@ struct VoicesView: View {
             .frame(height: 120)
             .padding(.bottom, 20)
         }
+        .background(Color.black.ignoresSafeArea())
+        .preferredColorScheme(.dark)
         .sensoryFeedback(.selection, trigger: vm.playbackPosition)
+        .sensoryFeedback(.selection, trigger: vm.totalChunkCount)
         .onChange(of: vm.isRecording) { _, newValue in
             withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
                 isRecordingAnimated = newValue
