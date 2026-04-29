@@ -19,7 +19,8 @@ final class DemoPlaybackService: PlaybackService {
     private let viewerID: UUID
     private let delay: Duration
 
-    /// New, identity-bearing initializer.
+    /// Multi-user initializer. Caller specifies the conversation to play
+    /// from and the viewer whose listenership is being recorded.
     init(
         database: any Database,
         conversationID: UUID,
@@ -32,14 +33,19 @@ final class DemoPlaybackService: PlaybackService {
         self.delay = delay
     }
 
-    /// Legacy single-user initializer. Routes through the lazily-created
-    /// default conversation and the legacy viewer identity.
+    /// Single-user-mode initializer. Plays from the implicit solo
+    /// conversation with `Participant.solo` as the viewer. The matching
+    /// `DemoRecordingService` solo init uses `Participant.soloAuthor`
+    /// as the author; because the two sentinels have distinct UUIDs,
+    /// the listenership rule "your own voice doesn't count" does not
+    /// suppress marking, so single-user playback marks chunks listened
+    /// exactly the way the journaling flow expects.
     convenience init(database: any Database, delay: Duration = .zero) {
-        let convoID = _legacyDefaultConversationID(in: database)
+        let convoID = soloConversationID(in: database)
         self.init(
             database: database,
             conversationID: convoID,
-            viewerID: Participant.legacyViewer.id,
+            viewerID: Participant.solo.id,
             delay: delay
         )
     }

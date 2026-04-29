@@ -17,7 +17,8 @@ final class VoicesViewModel {
     private let playbackService: any PlaybackService
     private let database: any Database
 
-    /// New, identity-bearing initializer.
+    /// Multi-user initializer. Caller specifies who the viewer is and
+    /// which conversation this VM is bound to.
     init(
         recordingService: any RecordingService,
         playbackService: any PlaybackService,
@@ -32,18 +33,23 @@ final class VoicesViewModel {
         self.conversationID = conversationID
     }
 
-    /// Legacy single-user initializer.
+    /// Single-user-mode initializer. Binds the VM to the implicit solo
+    /// conversation with `Participant.solo` as the viewer. The
+    /// recording service that runs alongside it uses `Participant.soloAuthor`
+    /// as the author; the two sentinels are deliberately distinct so
+    /// listenership tracking behaves like the single-user flow expects.
+    /// Use this when the app runs as a one-person journal.
     convenience init(
         recordingService: any RecordingService,
         playbackService: any PlaybackService,
         database: any Database
     ) {
-        let convoID = _legacyDefaultConversationID(in: database)
+        let convoID = soloConversationID(in: database)
         self.init(
             recordingService: recordingService,
             playbackService: playbackService,
             database: database,
-            viewer: .legacyViewer,
+            viewer: .solo,
             conversationID: convoID
         )
     }

@@ -5,19 +5,24 @@ import Observation
     /// All conversations in the database.
     var conversations: [Conversation] { get }
 
-    /// Legacy convenience: all recordings flattened across every conversation.
-    /// Single-user code paths read this directly. New multi-user code should
-    /// reach into a specific `Conversation`.
+    /// Single-user-mode convenience: all recordings flattened across every
+    /// conversation. In solo mode there is exactly one conversation, so
+    /// this is just "the recordings." Multi-user code should reach into
+    /// a specific `Conversation` instead.
     var recordings: [Recording] { get }
 
     func addConversation(_ conversation: Conversation)
 
-    /// New, conversation-aware mutators.
+    /// Multi-user, conversation-aware mutators. These are the canonical
+    /// API; the single-user-mode mutators below delegate to these via
+    /// the implicit solo conversation.
     func addRecording(_ recording: Recording, to conversationID: UUID)
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID, in conversationID: UUID)
     func markListened(chunkIndex: Int, of recordingID: UUID, in conversationID: UUID, by listenerID: UUID)
 
-    /// Legacy single-user mutators (route through a default conversation).
+    /// Single-user-mode mutators. They route through the implicit solo
+    /// conversation (created lazily on first use) so callers that don't
+    /// care about identity can stay terse.
     func addRecording(_ recording: Recording)
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID)
     func markListened(recordingID: UUID, chunkIndex: Int)
@@ -39,7 +44,7 @@ final class InMemoryDatabase: Database {
         conversations.append(conversation)
     }
 
-    // MARK: - New conversation-aware API
+    // MARK: - Multi-user, conversation-aware API
 
     func addRecording(_ recording: Recording, to conversationID: UUID) {
         guard let cIdx = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
@@ -69,10 +74,14 @@ final class InMemoryDatabase: Database {
         conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenedBy.insert(listenerID)
     }
 
-    // MARK: - Legacy single-user API
+    // MARK: - Single-user-mode API
+    //
+    // These mutators target the implicit solo conversation, created on
+    // first use. They keep call sites short for code that only ever runs
+    // in single-user mode (one device, one author == viewer == `.solo`).
 
     func addRecording(_ recording: Recording) {
-        addRecording(recording, to: defaultConversationID())
+        addRecording(recording, to: soloConversationID())
     }
 
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID) {
@@ -89,7 +98,7 @@ final class InMemoryDatabase: Database {
             if let rIdx = conversations[cIdx].recordings.firstIndex(where: { $0.id == recordingID }),
                chunkIndex >= 0,
                chunkIndex < conversations[cIdx].recordings[rIdx].audioChunks.count {
-                conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenedBy.insert(Participant.legacyViewer.id)
+                conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenedBy.insert(Participant.solo.id)
                 return
             }
         }
@@ -101,13 +110,18 @@ final class InMemoryDatabase: Database {
         }
     }
 
-    // MARK: - Default conversation (lazy, populated with legacy participants)
+    // MARK: - Solo conversation (single-user mode)
+    //
+    // Single-user mode runs in one implicit conversation with one
+    // participant (`Participant.solo`) who is both author and viewer.
+    // Created on first use so single-user callers never have to
+    // construct a `Conversation` themselves.
 
-    func defaultConversationID() -> UUID {
+    func soloConversationID() -> UUID {
         if let first = conversations.first { return first.id }
         let convo = Conversation(
             id: UUID(),
-            participants: [Participant.legacyViewer, Participant.legacyAuthor],
+            participants: [Participant.solo, Participant.soloAuthor],
             recordings: []
         )
         conversations.append(convo)
@@ -115,19 +129,23 @@ final class InMemoryDatabase: Database {
     }
 }
 
-// MARK: - Helper used by legacy convenience inits across services / VM
+// MARK: - Single-user-mode helper
+//
+// Used by the single-user convenience inits on `VoicesViewModel`,
+// `DemoPlaybackService`, and `DemoRecordingService`. Returns the ID of
+// the implicit solo conversation, creating it on first use.
 
 @MainActor
-internal func _legacyDefaultConversationID(in database: any Database) -> UUID {
+internal func soloConversationID(in database: any Database) -> UUID {
     if let inMem = database as? InMemoryDatabase {
-        return inMem.defaultConversationID()
+        return inMem.soloConversationID()
     }
     if let firstID = database.conversations.first?.id {
         return firstID
     }
     let convo = Conversation(
         id: UUID(),
-        participants: [Participant.legacyViewer, Participant.legacyAuthor],
+        participants: [Participant.solo, Participant.soloAuthor],
         recordings: []
     )
     database.addConversation(convo)

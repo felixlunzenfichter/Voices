@@ -18,7 +18,8 @@ final class DemoRecordingService: RecordingService {
     private var currentRecordingID: UUID?
     private var task: Task<Void, Never>?
 
-    /// New, identity-bearing initializer.
+    /// Multi-user initializer. Caller specifies the conversation to
+    /// record into and the author of the recordings being produced.
     init(
         database: any Database,
         conversationID: UUID,
@@ -33,15 +34,18 @@ final class DemoRecordingService: RecordingService {
         self.delay = delay
     }
 
-    /// Legacy single-user initializer. Routes through the lazily-created
-    /// default conversation and the legacy author identity so existing
-    /// fixtures keep compiling and producing equivalent state.
+    /// Single-user-mode initializer. Records into the implicit solo
+    /// conversation with `Participant.soloAuthor` as the author. The
+    /// matching `DemoPlaybackService` solo init uses `Participant.solo`
+    /// as the viewer; the two sentinels are deliberately distinct so
+    /// the listenership rule "your own voice doesn't count" doesn't
+    /// fire for solo-mode playback.
     convenience init(database: any Database, count: Int = .max, delay: Duration = .zero) {
-        let convoID = _legacyDefaultConversationID(in: database)
+        let convoID = soloConversationID(in: database)
         self.init(
             database: database,
             conversationID: convoID,
-            authorID: Participant.legacyAuthor.id,
+            authorID: Participant.soloAuthor.id,
             count: count,
             delay: delay
         )

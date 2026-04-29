@@ -4,8 +4,10 @@ struct AudioChunk: Equatable {
     let index: Int
     var listenedBy: Set<UUID> = []
 
-    /// Legacy single-user shorthand: any listener has heard the chunk.
-    /// New per-listener checks should test `listenedBy.contains(viewerID)`.
+    /// Single-user-mode shorthand: in solo mode there is at most one
+    /// possible listener, so "any listener has heard this chunk" and
+    /// "the viewer has heard this chunk" coincide. Multi-user code
+    /// should always test `listenedBy.contains(viewerID)` directly.
     var listened: Bool { !listenedBy.isEmpty }
 }
 
@@ -16,7 +18,7 @@ struct Recording: Identifiable {
 
     init(
         id: UUID = UUID(),
-        author: UUID = Participant.legacyAuthor.id,
+        author: UUID = Participant.soloAuthor.id,
         audioChunks: [AudioChunk] = []
     ) {
         self.id = id
