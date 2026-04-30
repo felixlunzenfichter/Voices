@@ -111,12 +111,15 @@ final class VoicesViewModel {
     /// Between heartbeats, the cursor lingers on the most recent chunk
     /// they reported. Returns `nil` when no heartbeats from that
     /// participant have been observed yet.
-    ///
-    /// Stubbed to `nil` so the contract is declared but unimplemented.
-    /// The matching test goes red on the post-heartbeat assertion; a
-    /// follow-up commit will implement the heartbeat-derived cursor.
     func simulatedPlaybackCursor(for participantID: UUID) -> PlaybackPosition? {
-        nil
+        for recording in recordings.reversed() {
+            if let chunk = recording.audioChunks.reversed().first(where: {
+                $0.listenedBy.contains(participantID)
+            }) {
+                return PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
+            }
+        }
+        return nil
     }
 
     // MARK: - Actions
