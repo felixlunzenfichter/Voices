@@ -71,7 +71,7 @@ final class InMemoryDatabase: Database {
               chunkIndex >= 0,
               chunkIndex < conversations[cIdx].recordings[rIdx].audioChunks.count
         else { return }
-        conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenedBy.insert(listenerID)
+        conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenCounts[listenerID, default: 0] += 1
     }
 
     // MARK: - Single-user-mode API
@@ -98,7 +98,7 @@ final class InMemoryDatabase: Database {
             if let rIdx = conversations[cIdx].recordings.firstIndex(where: { $0.id == recordingID }),
                chunkIndex >= 0,
                chunkIndex < conversations[cIdx].recordings[rIdx].audioChunks.count {
-                conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenedBy.insert(Participant.solo.id)
+                conversations[cIdx].recordings[rIdx].audioChunks[chunkIndex].listenCounts[Participant.solo.id, default: 0] += 1
                 return
             }
         }

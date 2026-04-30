@@ -66,4 +66,29 @@ struct PlaybackOwnershipTests {
         )
         #expect(recorderVM.simulatedPlaybackCursor(for: Participant.mama.id) == lastChunk)
     }
+
+    @Test("Repeated listening by the same non-author increases the listen count",
+          .timeLimit(.minutes(1)))
+    func repeatedListenIncreasesCount() async {
+        let mama = Participant.mama
+        let (vm, db) = VoicesViewModel.viewerWithForeignMessage(
+            viewer: mama, author: .marina, chunkCount: 3
+        )
+
+        // First listen-through.
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        // Seek back and listen again — same non-author, same chunks.
+        vm.seekTo(0)
+        vm.toggleListening()
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        let chunks = db.conversations.first!.recordings.first!.audioChunks
+        #expect(chunks.allSatisfy { $0.listenCount(by: mama.id) == 2 })
+    }
 }
