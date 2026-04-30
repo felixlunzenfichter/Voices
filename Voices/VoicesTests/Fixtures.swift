@@ -49,6 +49,54 @@ extension VoicesViewModel {
         )
     }
 
+    /// Two viewers sharing one conversation, plus one foreign-authored
+    /// recording the listener can play. Each viewer gets its own VM
+    /// pointed at the shared database. Used to pin down what one viewer
+    /// can observe about the other while the other is listening — the
+    /// predicate behind the "other cursor" UI state.
+    @MainActor
+    static func pairOfViewers(
+        recorder: Participant = .marina,
+        listener: Participant = .mama,
+        chunkCount: Int
+    ) -> (recorderVM: VoicesViewModel, listenerVM: VoicesViewModel, db: InMemoryDatabase) {
+        let recording = Recording(
+            author: recorder.id,
+            audioChunks: (0..<chunkCount).map { AudioChunk(index: $0) }
+        )
+        let conversation = Conversation(
+            id: UUID(),
+            participants: [recorder, listener],
+            recordings: [recording]
+        )
+        let db = InMemoryDatabase()
+        db.addConversation(conversation)
+
+        let recorderVM = VoicesViewModel(
+            recordingService: DemoRecordingService(
+                database: db, conversationID: conversation.id, authorID: recorder.id
+            ),
+            playbackService: DemoPlaybackService(
+                database: db, conversationID: conversation.id, viewerID: recorder.id
+            ),
+            database: db,
+            viewer: recorder,
+            conversationID: conversation.id
+        )
+        let listenerVM = VoicesViewModel(
+            recordingService: DemoRecordingService(
+                database: db, conversationID: conversation.id, authorID: listener.id
+            ),
+            playbackService: DemoPlaybackService(
+                database: db, conversationID: conversation.id, viewerID: listener.id
+            ),
+            database: db,
+            viewer: listener,
+            conversationID: conversation.id
+        )
+        return (recorderVM, listenerVM, db)
+    }
+
     @MainActor
     private static func _viewerFixture(
         viewer: Participant,

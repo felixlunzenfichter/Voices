@@ -103,6 +103,22 @@ final class VoicesViewModel {
         return pos.recordingID == recording.id && pos.chunkIndex == chunk.index
     }
 
+    /// Position of a remote participant's playhead, inferred from the
+    /// `markListened` heartbeats we have observed so far. We are not
+    /// actually playing the remote person's audio on this device — we
+    /// only know which chunks they have marked listened, and from that
+    /// stream of heartbeats we simulate where their cursor must be.
+    /// Between heartbeats, the cursor lingers on the most recent chunk
+    /// they reported. Returns `nil` when no heartbeats from that
+    /// participant have been observed yet.
+    ///
+    /// Stubbed to `nil` so the contract is declared but unimplemented.
+    /// The matching test goes red on the post-heartbeat assertion; a
+    /// follow-up commit will implement the heartbeat-derived cursor.
+    func simulatedPlaybackCursor(for participantID: UUID) -> PlaybackPosition? {
+        nil
+    }
+
     // MARK: - Actions
 
     func seekTo(_ globalIndex: Int) {

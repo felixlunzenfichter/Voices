@@ -44,4 +44,26 @@ struct PlaybackOwnershipTests {
         #expect(chunks.allSatisfy { $0.listenedBy.isEmpty })
         #expect(chunks.allSatisfy { !$0.listenedBy.contains(mama.id) })
     }
+
+    @Test("Remote simulated cursor is nil before heartbeats and points to the last listened chunk after",
+          .timeLimit(.minutes(1)))
+    func simulatedCursorIsNilBeforeAndLastChunkAfter() async throws {
+        let (recorderVM, listenerVM, _) = VoicesViewModel.pairOfViewers(
+            recorder: .marina, listener: .mama, chunkCount: 3
+        )
+
+        #expect(recorderVM.simulatedPlaybackCursor(for: Participant.mama.id) == nil)
+
+        listenerVM.toggleListening()
+        for await playing in Observations({ listenerVM.isListening }) {
+            if !playing { break }
+        }
+
+        let recording = try #require(recorderVM.recordings.first)
+        let lastChunk = PlaybackPosition(
+            recordingID: recording.id,
+            chunkIndex: recording.audioChunks.count - 1
+        )
+        #expect(recorderVM.simulatedPlaybackCursor(for: Participant.mama.id) == lastChunk)
+    }
 }
