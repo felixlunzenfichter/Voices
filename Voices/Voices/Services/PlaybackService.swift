@@ -53,6 +53,7 @@ final class DemoPlaybackService: PlaybackService {
 
     private func resumePoint(in recordings: [Recording]) -> (recordingIndex: Int, chunkIndex: Int)? {
         for (rIdx, recording) in recordings.enumerated() {
+            guard recording.author != viewer else { continue }
             for (cIdx, chunk) in recording.audioChunks.enumerated() {
                 if !chunk.listened {
                     return (rIdx, cIdx)
