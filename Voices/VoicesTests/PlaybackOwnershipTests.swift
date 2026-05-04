@@ -38,4 +38,29 @@ struct PlaybackOwnershipTests {
 
         #expect(db.recordings.first?.audioChunks.first?.listened == false)
     }
+
+    /// Read-side viewer-relative rule: my own unlistened chunks must
+    /// not count toward `hasUnplayedChunks`. Pure synchronous read of
+    /// a derived property — no playback, no async wait. Today's
+    /// author-blind `recordings.flatMap(\.audioChunks).contains { !$0.listened }`
+    /// returns true for an own-only DB, violating the rule.
+    @Test("hasUnplayedChunks ignores my own recordings")
+    func hasUnplayedChunksIgnoresOwnRecordings() {
+        let me = UUID()
+        let db = InMemoryDatabase()
+        db.addRecording(Recording(
+            id: UUID(),
+            author: me,
+            audioChunks: [AudioChunk(index: 0)]
+        ))
+
+        let vm = VoicesViewModel(
+            recordingService: DemoRecordingService(database: db),
+            playbackService: DemoPlaybackService(database: db, viewer: me),
+            database: db,
+            viewer: me
+        )
+
+        #expect(vm.hasUnplayedChunks == false)
+    }
 }

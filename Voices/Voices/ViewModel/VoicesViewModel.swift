@@ -50,7 +50,10 @@ final class VoicesViewModel {
     }
 
     var hasUnplayedChunks: Bool {
-        recordings.flatMap(\.audioChunks).contains { !$0.listened }
+        recordings.contains { recording in
+            recording.author != viewer
+                && recording.audioChunks.contains { !$0.listened }
+        }
     }
 
     var canPlay: Bool {
