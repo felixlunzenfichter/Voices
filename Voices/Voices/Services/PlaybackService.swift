@@ -65,12 +65,15 @@ final class DemoPlaybackService: PlaybackService {
 
     private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
         for recordingIndex in start.recordingIndex..<recordings.count {
-            let recording = recordings[recordingIndex]
-            let skipCount = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
-            let chunks = Array(recording.audioChunks.dropFirst(skipCount))
-
-            for chunk in chunks {
-                guard !Task.isCancelled else { return }
+            let recordingID = recordings[recordingIndex].id
+            var cIdx = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
+            // Re-read the live recording each iteration so chunks
+            // appended to it during this session are picked up in the
+            // same play, instead of the loop walking only the snapshot.
+            while !Task.isCancelled {
+                guard let recording = database.recordings.first(where: { $0.id == recordingID }),
+                      cIdx < recording.audioChunks.count else { break }
+                let chunk = recording.audioChunks[cIdx]
                 if delay > .zero {
                     try? await Task.sleep(for: delay)
                 } else {
@@ -81,6 +84,7 @@ final class DemoPlaybackService: PlaybackService {
                 playbackPosition = position
                 playedChunks.append(position)
                 database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex, by: viewer)
+                cIdx += 1
             }
         }
 

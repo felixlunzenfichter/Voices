@@ -1,104 +1,44 @@
 import SwiftUI
 
 struct VoicesView: View {
-    @State private var vm: VoicesViewModel = {
-        let db = InMemoryDatabase()
-        db.addRecording(Recording(audioChunks: (0..<5).map { AudioChunk(index: $0) }))
-        return VoicesViewModel(
-            recordingService: DemoRecordingService(database: db, delay: .milliseconds(300)),
-            playbackService: DemoPlaybackService(database: db, delay: .milliseconds(300)),
-            database: db
-        )
-    }()
-    @State private var isRecordingAnimated = false
+    @State private var harness = TwoPageHarness()
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(vm.recordings) { recording in
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
-                                ForEach(recording.audioChunks, id: \.index) { chunk in
-                                    let color = vm.isCurrent(recording: recording, chunk: chunk)
-                                        ? Color.white
-                                        : chunk.listened ? Color.blue : Color.purple
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(color)
-                                        .animation(vm.shouldAnimateChunks ? .easeInOut(duration: 0.3) : nil, value: color)
-                                        .frame(height: 48)
-                                        .transition(.scale.combined(with: .opacity))
-                                        .id("\(recording.id)-\(chunk.index)")
-                                }
-                            }
-                            .animation(.easeInOut(duration: 0.3), value: recording.audioChunks.count)
-                        }
-                        Color.clear.frame(height: 40).id("bottom")
-                    }
-                    .padding()
-                }
-                .scrollDisabled(vm.isRecording || vm.isListening)
-                .onChange(of: vm.recordings.last?.audioChunks.count ?? 0) {
-                    if vm.isRecording {
-                        withAnimation { proxy.scrollTo("bottom") }
-                    }
-                }
-                .onChange(of: vm.playbackPosition) {
-                    if let pos = vm.playbackPosition {
-                        withAnimation {
-                            proxy.scrollTo("\(pos.recordingID)-\(pos.chunkIndex)", anchor: .center)
-                        }
-                    }
-                }
-            }
-
-            ZStack {
-                if vm.canSeek {
-                    SwiftUIScrubber(vm: vm)
-                }
-
-                HStack {
-                    ListenButton(
-                        isListening: vm.isListening,
-                        hasUnplayedChunks: vm.hasUnplayedChunks,
-                        canPlay: vm.canPlay,
-                        onTap: { vm.toggleListening() }
-                    )
-                    .animation(.easeInOut(duration: 0.3), value: vm.hasUnplayedChunks)
-
-                    Spacer()
-
-                    if vm.totalChunkCount > 0 {
-                        VStack {
-                            Text("\(vm.displayChunkNumber)")
-                                .font(.system(size: 28, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white)
-                                .padding(.top, 10)
-                            Spacer()
-                        }
-                    }
-
-                    Spacer()
-
-                    RecordButton(isRecording: isRecordingAnimated, onTap: { vm.toggleRecording() })
-                }
-                .padding(.horizontal, 40)
-            }
-            .frame(height: 120)
-            .padding(.bottom, 20)
+        TabView {
+            ConversationPageView(vm: harness.mamaVM, title: "Mama")
+            ConversationPageView(vm: harness.marinaVM, title: "Marina")
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
         .background(Color.black.ignoresSafeArea())
-        .preferredColorScheme(.dark)
-        .sensoryFeedback(.selection, trigger: vm.playbackPosition)
-        .sensoryFeedback(.selection, trigger: vm.totalChunkCount)
-        .onChange(of: vm.isRecording) { _, newValue in
-            withAnimation(.spring(duration: 1.0 / φ, bounce: 1.0 - 1.0 / φ)) {
-                isRecordingAnimated = newValue
-            }
-        }
     }
 }
 
-// MARK: - Constants
+/// Builds two VMs with distinct viewers and matching author-stamping
+/// recording services, all sharing one `InMemoryDatabase`. No server,
+/// no persistence, no launch args.
+@MainActor
+final class TwoPageHarness {
+    let mamaVM: VoicesViewModel
+    let marinaVM: VoicesViewModel
 
-private let φ: CGFloat = (1 + sqrt(5)) / 2
+    static let mama   = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+    static let marina = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+
+    init() {
+        let db = InMemoryDatabase()
+
+        mamaVM = VoicesViewModel(
+            recordingService: DemoRecordingService(database: db, author: Self.mama, delay: .milliseconds(300)),
+            playbackService: DemoPlaybackService(database: db, viewer: Self.mama, delay: .milliseconds(300)),
+            database: db,
+            viewer: Self.mama
+        )
+
+        marinaVM = VoicesViewModel(
+            recordingService: DemoRecordingService(database: db, author: Self.marina, delay: .milliseconds(300)),
+            playbackService: DemoPlaybackService(database: db, viewer: Self.marina, delay: .milliseconds(300)),
+            database: db,
+            viewer: Self.marina
+        )
+    }
+}

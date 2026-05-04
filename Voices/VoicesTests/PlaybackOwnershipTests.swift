@@ -111,4 +111,53 @@ struct PlaybackOwnershipTests {
         #expect(playback.playedChunks == expectedForeignOnly)
         #expect(vm.hasUnplayedChunks == false)
     }
+
+    /// Continuity: chunks appended into a foreign recording during a
+    /// live listening session must be consumed in that same session.
+    /// Explicit 10 ms cadence so playback is genuinely in flight when
+    /// the test injects the new chunks; the gate `playedChunks.count
+    /// >= 1` proves the session is alive before the append happens.
+    @Test("Playback continues into chunks appended during the same session",
+          .timeLimit(.minutes(1)))
+    func playbackContinuesIntoChunksAppendedDuringSameSession() async throws {
+        let me = UUID()
+        let other = UUID()
+        let db = InMemoryDatabase()
+        let rid = UUID()
+        db.addRecording(Recording(
+            id: rid,
+            author: other,
+            audioChunks: (0..<5).map { AudioChunk(index: $0) }
+        ))
+
+        let playback = DemoPlaybackService(database: db, viewer: me, delay: .milliseconds(10))
+        let vm = VoicesViewModel(
+            recordingService: DemoRecordingService(database: db),
+            playbackService: playback,
+            database: db,
+            viewer: me
+        )
+
+        vm.toggleListening()
+
+        // Confirm the session is underway before mutating the database.
+        for await count in Observations({ playback.playedChunks.count }) {
+            if count >= 1 { break }
+        }
+
+        // Inject three new chunks into the same recording, mid-session.
+        db.appendChunk(AudioChunk(index: 5), to: rid)
+        db.appendChunk(AudioChunk(index: 6), to: rid)
+        db.appendChunk(AudioChunk(index: 7), to: rid)
+
+        // Wait for playback to quiesce on its own.
+        for await listening in Observations({ vm.isListening }) {
+            if !listening { break }
+        }
+
+        let played = playback.playedChunks
+        #expect(played.contains(PlaybackPosition(recordingID: rid, chunkIndex: 5)))
+        #expect(played.contains(PlaybackPosition(recordingID: rid, chunkIndex: 6)))
+        #expect(played.contains(PlaybackPosition(recordingID: rid, chunkIndex: 7)))
+    }
 }

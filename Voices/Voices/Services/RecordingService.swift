@@ -13,18 +13,20 @@ final class DemoRecordingService: RecordingService {
     private let count: Int
     private let delay: Duration
     private let database: any Database
+    private let author: UUID
     private var currentRecordingID: UUID?
     private var task: Task<Void, Never>?
 
-    init(database: any Database, count: Int = .max, delay: Duration = .zero) {
+    init(database: any Database, author: UUID = UUID(), count: Int = .max, delay: Duration = .zero) {
         self.database = database
+        self.author = author
         self.count = count
         self.delay = delay
     }
 
     func start() {
         isRecording = true
-        let recording = Recording()
+        let recording = Recording(author: author)
         currentRecordingID = recording.id
         database.addRecording(recording)
         task = Task { await produceChunks() }
