@@ -11,15 +11,18 @@ final class VoicesViewModel {
     private let recordingService: any RecordingService
     private let playbackService: any PlaybackService
     private let database: any Database
+    let viewer: UUID
 
     init(
         recordingService: any RecordingService,
         playbackService: any PlaybackService,
-        database: any Database
+        database: any Database,
+        viewer: UUID = UUID()
     ) {
         self.recordingService = recordingService
         self.playbackService = playbackService
         self.database = database
+        self.viewer = viewer
     }
 
     // MARK: - State

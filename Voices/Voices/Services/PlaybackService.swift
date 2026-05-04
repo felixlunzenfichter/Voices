@@ -15,11 +15,13 @@ final class DemoPlaybackService: PlaybackService {
     private(set) var playedChunks: [PlaybackPosition] = []
     private var task: Task<Void, Never>?
     private let database: any Database
+    private let viewer: UUID
 
     private let delay: Duration
 
-    init(database: any Database, delay: Duration = .zero) {
+    init(database: any Database, viewer: UUID = UUID(), delay: Duration = .zero) {
         self.database = database
+        self.viewer = viewer
         self.delay = delay
     }
 
@@ -77,7 +79,7 @@ final class DemoPlaybackService: PlaybackService {
                 let position = PlaybackPosition(recordingID: recording.id, chunkIndex: chunk.index)
                 playbackPosition = position
                 playedChunks.append(position)
-                database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex)
+                database.markListened(recordingID: position.recordingID, chunkIndex: position.chunkIndex, by: viewer)
             }
         }
 
