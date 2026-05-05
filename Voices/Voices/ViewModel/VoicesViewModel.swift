@@ -27,21 +27,52 @@ final class VoicesViewModel {
 
     // MARK: - State
 
+    // Memoized prefix-sum of chunk counts across `recordings`, plus
+    // the running total. Lets `totalChunkCount`, `scrubberIndex`, and
+    // `displayChunkNumber` answer in O(1) when the cache is fresh.
+    // Invalidated lazily on the next read whenever `recordings.count`
+    // or the last recording's chunk count changes — the only mutation
+    // shapes the codebase produces today (append-only via
+    // DemoRecordingService.produceChunks; new recordings appended via
+    // DemoRecordingService.start). The cache fields are
+    // ObservationIgnored so writing them does not invalidate observers.
+    @ObservationIgnored
+    private var cachedChunkOffsetsByID: [UUID: Int] = [:]
+    @ObservationIgnored
+    private var cachedTotalChunkCount: Int = 0
+    @ObservationIgnored
+    private var cachedRecordingsSignature: (count: Int, lastChunkCount: Int) = (0, 0)
+
+    private func refreshOffsetCacheIfNeeded() {
+        let recs = recordings
+        let signature = (count: recs.count, lastChunkCount: recs.last?.audioChunks.count ?? 0)
+        if signature == cachedRecordingsSignature { return }
+        var offsets: [UUID: Int] = [:]
+        offsets.reserveCapacity(recs.count)
+        var running = 0
+        for rec in recs {
+            offsets[rec.id] = running
+            running += rec.audioChunks.count
+        }
+        cachedChunkOffsetsByID = offsets
+        cachedTotalChunkCount = running
+        cachedRecordingsSignature = signature
+    }
+
     var totalChunkCount: Int {
-        recordings.reduce(0) { $0 + $1.audioChunks.count }
+        refreshOffsetCacheIfNeeded()
+        return cachedTotalChunkCount
     }
 
     /// Scrubber slot index: 0..<totalChunkCount for real chunks,
     /// totalChunkCount for the terminal (end) position.
     var scrubberIndex: Int {
-        if let pos = playbackPosition {
-            var index = 0
-            for rec in recordings {
-                if rec.id == pos.recordingID { return index + pos.chunkIndex }
-                index += rec.audioChunks.count
-            }
+        refreshOffsetCacheIfNeeded()
+        if let pos = playbackPosition,
+           let base = cachedChunkOffsetsByID[pos.recordingID] {
+            return base + pos.chunkIndex
         }
-        return totalChunkCount
+        return cachedTotalChunkCount
     }
 
     /// User-visible chunk number, capped to the last real chunk.
