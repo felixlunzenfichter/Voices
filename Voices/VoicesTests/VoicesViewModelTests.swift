@@ -529,4 +529,57 @@ struct SeekTests {
         #expect(vm.scrubberIndex == 5, "Terminal slot: totalChunkCount")
         #expect(vm.displayChunkNumber == 4, "User-facing: last real chunk")
     }
+
+    /// Proves the chunk-offset memoization stays correct across the
+    /// two mutations the codebase actually produces: appending chunks
+    /// to the last (active) recording, and adding a new recording at
+    /// the end. Both invalidation triggers fire here; failure means
+    /// the cache went stale.
+    @Test("scrubberIndex and totalChunkCount stay correct across appends")
+    @MainActor
+    func chunkOffsetCacheStaysCorrectAcrossAppends() {
+        let me = UUID()
+        let other = UUID()
+        let db = InMemoryDatabase()
+        let rec1 = Recording(id: UUID(), author: other,
+                             audioChunks: (0..<5).map { AudioChunk(index: $0) })
+        let rec2 = Recording(id: UUID(), author: other,
+                             audioChunks: (0..<3).map { AudioChunk(index: $0) })
+        let rec3 = Recording(id: UUID(), author: other, audioChunks: [])
+        db.addRecording(rec1)
+        db.addRecording(rec2)
+        db.addRecording(rec3)
+
+        let playback = DemoPlaybackService(database: db, viewer: me)
+        let vm = VoicesViewModel(
+            recordingService: DemoRecordingService(database: db),
+            playbackService: playback,
+            database: db,
+            viewer: me
+        )
+
+        // Initial cache build: 5 + 3 + 0 = 8.
+        #expect(vm.totalChunkCount == 8)
+        playback.playbackPosition = PlaybackPosition(recordingID: rec2.id, chunkIndex: 1)
+        #expect(vm.scrubberIndex == 6) // 5 + 1
+
+        // Append two chunks to the last recording (rec3). Invalidates
+        // the cache via the lastChunkCount field of the signature.
+        db.appendChunk(AudioChunk(index: 0), to: rec3.id)
+        db.appendChunk(AudioChunk(index: 1), to: rec3.id)
+        #expect(vm.totalChunkCount == 10)
+        playback.playbackPosition = PlaybackPosition(recordingID: rec3.id, chunkIndex: 1)
+        #expect(vm.scrubberIndex == 9) // 5 + 3 + 1
+
+        // Add a fourth recording. Invalidates the cache via the count
+        // field of the signature.
+        let rec4 = Recording(id: UUID(), author: other,
+                             audioChunks: (0..<4).map { AudioChunk(index: $0) })
+        db.addRecording(rec4)
+        #expect(vm.totalChunkCount == 14)
+        playback.playbackPosition = PlaybackPosition(recordingID: rec4.id, chunkIndex: 2)
+        #expect(vm.scrubberIndex == 12) // 5 + 3 + 2 + 2
+
+        #expect(vm.displayChunkNumber == 12)
+    }
 }
