@@ -7,10 +7,12 @@ struct AudioChunk: Equatable {
 
 struct Recording: Identifiable {
     let id: UUID
+    var author: UUID
     var audioChunks: [AudioChunk] = []
 
-    init(id: UUID = UUID(), audioChunks: [AudioChunk] = []) {
+    init(id: UUID = UUID(), author: UUID = UUID(), audioChunks: [AudioChunk] = []) {
         self.id = id
+        self.author = author
         self.audioChunks = audioChunks
     }
 }
