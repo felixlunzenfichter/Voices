@@ -14,8 +14,9 @@ struct VoicesView: View {
 }
 
 /// Builds two VMs with distinct viewers and matching author-stamping
-/// recording services, all sharing one `InMemoryDatabase`. No server,
-/// no persistence, no launch args.
+/// recording services, all sharing one local persistent `Database`.
+/// Recordings survive app relaunch via `FileSystemDatabase` writing
+/// to `Documents/voices/metadata.json`. No server, no launch args.
 @MainActor
 final class TwoPageHarness {
     let mamaVM: VoicesViewModel
@@ -25,7 +26,15 @@ final class TwoPageHarness {
     static let marina = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
 
     init() {
-        let db = InMemoryDatabase()
+        let db: any Database
+        do {
+            db = try FileSystemDatabase()
+        } catch {
+            logError("TwoPageHarness: FileSystemDatabase init failed, falling back to in-memory: \(error)")
+            db = InMemoryDatabase()
+        }
+        let totalChunks = db.recordings.reduce(0) { $0 + $1.audioChunks.count }
+        log("TwoPageHarness: loaded \(db.recordings.count) recording(s), \(totalChunks) chunk(s)")
 
         mamaVM = VoicesViewModel(
             recordingService: DemoRecordingService(database: db, author: Self.mama, delay: .milliseconds(300)),
