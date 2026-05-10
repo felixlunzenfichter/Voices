@@ -46,25 +46,25 @@ struct RealDatabaseTests {
 
         // Stage 1: A creates locally.
         dbA.addRecording(rec)
-        var s = try #require(dbA.recordings.first { $0.id == rec.id })
+        var s = try #require(dbA.recordings.first { $0.recording.id == rec.id })
         #expect(s.isStoredLocally == true)
         #expect(s.isStoredRemotely == false)
 
         // Stage 2: A pushes to the cloud.
         try await dbA.pushToRemote()
-        s = try #require(dbA.recordings.first { $0.id == rec.id })
+        s = try #require(dbA.recordings.first { $0.recording.id == rec.id })
         #expect(s.isStoredLocally == true)
         #expect(s.isStoredRemotely == true)
 
         // Stage 3: B pulls from the cloud (in-memory only, not yet on B's disk).
         try await dbB.pullFromRemote()
-        s = try #require(dbB.recordings.first { $0.id == rec.id })
+        s = try #require(dbB.recordings.first { $0.recording.id == rec.id })
         #expect(s.isStoredRemotely == true)
         #expect(s.isStoredLocally == false)
 
         // Stage 4: B persists locally.
         try await dbB.persistToLocal()
-        s = try #require(dbB.recordings.first { $0.id == rec.id })
+        s = try #require(dbB.recordings.first { $0.recording.id == rec.id })
         #expect(s.isStoredLocally == true)
         #expect(s.isStoredRemotely == true)
     }

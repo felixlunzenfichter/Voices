@@ -4,6 +4,11 @@ import Foundation
 /// deltas, no per-record CRUD. The single conformer in the scratch is
 /// `InMemoryCloud` in the test target; a real `MacServerCloud` (or
 /// equivalent) is a later concern.
+///
+/// The cloud carries plain `[Recording]`. Per-device storage state
+/// (whether *this* device has a recording on disk, whether *this*
+/// device has confirmed it sent that recording to the cloud) is not a
+/// property of the recording itself and never crosses the wire.
 @MainActor
 protocol Cloud: AnyObject {
     func get() async throws -> [Recording]
@@ -22,22 +27,42 @@ protocol Cloud: AnyObject {
 /// to pull.
 @MainActor
 final class PersistentDatabase {
+    /// Local envelope around a `Recording` that carries this device's
+    /// per-recording storage state. Lives entirely on disk and in
+    /// memory; never sent to the cloud. Two `PersistentDatabase`
+    /// instances looking at the same `Recording.id` may have
+    /// different `isStoredLocally` / `isStoredRemotely` values
+    /// because the flags describe *each device's* knowledge.
+    struct StoredRecording: Equatable, Codable {
+        var recording: Recording
+        var isStoredLocally: Bool
+        var isStoredRemotely: Bool
+
+        init(recording: Recording,
+             isStoredLocally: Bool = false,
+             isStoredRemotely: Bool = false) {
+            self.recording = recording
+            self.isStoredLocally = isStoredLocally
+            self.isStoredRemotely = isStoredRemotely
+        }
+    }
+
     private let url: URL
     private let cloud: Cloud
-    private var inner: [Recording]
+    private var inner: [StoredRecording]
 
     init(localFileURL: URL, cloud: Cloud) {
         self.url = localFileURL
         self.cloud = cloud
         if let data = try? Data(contentsOf: localFileURL),
-           let loaded = try? JSONDecoder().decode([Recording].self, from: data) {
+           let loaded = try? JSONDecoder().decode([StoredRecording].self, from: data) {
             self.inner = loaded
         } else {
             self.inner = []
         }
     }
 
-    var recordings: [Recording] { inner }
+    var recordings: [StoredRecording] { inner }
 
     // MARK: - Lifecycle methods that drive flag transitions
 
@@ -46,19 +71,19 @@ final class PersistentDatabase {
     /// after the on-disk write actually succeeds; if the write fails,
     /// the recording stays in memory with `isStoredLocally == false`.
     func addRecording(_ recording: Recording) {
-        inner.append(recording)
+        inner.append(StoredRecording(recording: recording))
         guard save() else { return }
-        if let i = inner.firstIndex(where: { $0.id == recording.id }) {
+        if let i = inner.firstIndex(where: { $0.recording.id == recording.id }) {
             inner[i].isStoredLocally = true
         }
     }
 
-    /// Pushes the current `inner` to the cloud, then marks every local
-    /// recording `isStoredRemotely = true` and persists. After this
-    /// returns, every recording on this device is `isStoredLocally &&
-    /// isStoredRemotely`.
+    /// Pushes the current recordings (plain payload, no flags) to the
+    /// cloud, then marks every local entry `isStoredRemotely = true`
+    /// and persists. After this returns, every entry on this device
+    /// is `isStoredLocally && isStoredRemotely`.
     func pushToRemote() async throws {
-        try await cloud.set(inner)
+        try await cloud.set(inner.map { $0.recording })
         for i in inner.indices {
             inner[i].isStoredRemotely = true
         }
@@ -73,12 +98,13 @@ final class PersistentDatabase {
     /// "remote-only" intermediate state observable.
     func pullFromRemote() async throws {
         let remote = try await cloud.get()
-        let localIDs = Set(inner.map { $0.id })
+        let localIDs = Set(inner.map { $0.recording.id })
         for r in remote where !localIDs.contains(r.id) {
-            var rec = r
-            rec.isStoredLocally = false
-            rec.isStoredRemotely = true
-            inner.append(rec)
+            inner.append(StoredRecording(
+                recording: r,
+                isStoredLocally: false,
+                isStoredRemotely: true
+            ))
         }
     }
 
