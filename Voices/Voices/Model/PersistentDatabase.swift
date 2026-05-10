@@ -82,14 +82,16 @@ final class PersistentDatabase {
         }
     }
 
-    /// Writes the in-memory `inner` to disk and marks every recording
-    /// `isStoredLocally = true`. Intended to be called after
-    /// `pullFromRemote()` to finalise newly-arrived recordings.
+    /// Writes the in-memory `inner` to disk; if the write succeeds,
+    /// every recording is marked `isStoredLocally = true`. The flag
+    /// is earned by the actual disk write, not asserted before it.
+    /// Intended to be called after `pullFromRemote()` to finalise
+    /// newly-arrived recordings.
     func persistToLocal() async throws {
+        guard save() else { return }
         for i in inner.indices {
             inner[i].isStoredLocally = true
         }
-        save()
     }
 
     // MARK: - Private
