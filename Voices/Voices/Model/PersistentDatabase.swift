@@ -41,15 +41,16 @@ final class PersistentDatabase {
 
     // MARK: - Lifecycle methods that drive flag transitions
 
-    /// Adds a recording locally. The new recording is `isStoredLocally
-    /// == true`, `isStoredRemotely == false`. Persists to disk
-    /// synchronously.
+    /// Adds a recording locally. `isStoredRemotely` is left at its
+    /// default of `false`. `isStoredLocally` is set to `true` only
+    /// after the on-disk write actually succeeds; if the write fails,
+    /// the recording stays in memory with `isStoredLocally == false`.
     func addRecording(_ recording: Recording) {
-        var rec = recording
-        rec.isStoredLocally = true
-        rec.isStoredRemotely = false
-        inner.append(rec)
-        save()
+        inner.append(recording)
+        guard save() else { return }
+        if let i = inner.firstIndex(where: { $0.id == recording.id }) {
+            inner[i].isStoredLocally = true
+        }
     }
 
     /// Pushes the current `inner` to the cloud, then marks every local
@@ -93,8 +94,14 @@ final class PersistentDatabase {
 
     // MARK: - Private
 
-    private func save() {
-        guard let data = try? JSONEncoder().encode(inner) else { return }
-        try? data.write(to: url, options: .atomic)
+    @discardableResult
+    private func save() -> Bool {
+        guard let data = try? JSONEncoder().encode(inner) else { return false }
+        do {
+            try data.write(to: url, options: .atomic)
+            return true
+        } catch {
+            return false
+        }
     }
 }
