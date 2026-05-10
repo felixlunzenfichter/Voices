@@ -129,7 +129,9 @@ final class PersistentDatabase: Database {
     // MARK: - Database protocol methods (stubbed — green commits will fill them in)
 
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID) {
-        // Stub.
+        guard let i = inner.firstIndex(where: { $0.recording.id == recordingID }) else { return }
+        inner[i].recording.audioChunks.append(chunk)
+        save()
     }
 
     func removeRecording(_ recordingID: UUID) {
