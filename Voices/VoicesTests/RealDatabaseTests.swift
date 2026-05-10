@@ -46,26 +46,66 @@ struct RealDatabaseTests {
 
         // Stage 1: A creates locally.
         dbA.addRecording(rec)
-        var s = try #require(dbA.recordings.first { $0.recording.id == rec.id })
+        var s = try #require(dbA.stored.first { $0.recording.id == rec.id })
         #expect(s.isStoredLocally == true)
         #expect(s.isStoredRemotely == false)
 
         // Stage 2: A pushes to the cloud.
         try await dbA.pushToRemote()
-        s = try #require(dbA.recordings.first { $0.recording.id == rec.id })
+        s = try #require(dbA.stored.first { $0.recording.id == rec.id })
         #expect(s.isStoredLocally == true)
         #expect(s.isStoredRemotely == true)
 
         // Stage 3: B pulls from the cloud (in-memory only, not yet on B's disk).
         try await dbB.pullFromRemote()
-        s = try #require(dbB.recordings.first { $0.recording.id == rec.id })
+        s = try #require(dbB.stored.first { $0.recording.id == rec.id })
         #expect(s.isStoredRemotely == true)
         #expect(s.isStoredLocally == false)
 
         // Stage 4: B persists locally.
         try await dbB.persistToLocal()
-        s = try #require(dbB.recordings.first { $0.recording.id == rec.id })
+        s = try #require(dbB.stored.first { $0.recording.id == rec.id })
         #expect(s.isStoredLocally == true)
         #expect(s.isStoredRemotely == true)
+    }
+
+    /// First red of the "marina sees mama's chunks" arc, scoped down
+    /// to a single device: mama's view model produces ten audio chunks
+    /// against a `PersistentDatabase`. The cloud is constructed but
+    /// untouched; no marina; no remote propagation.
+    ///
+    /// Forces `PersistentDatabase` to declare `Database` conformance
+    /// (so `VoicesViewModel(database:)` accepts it) and to actually
+    /// implement `appendChunk(_:to:)` — without it, `DemoRecordingService
+    /// .produceChunks` calls a no-op ten times and the recording stays
+    /// at zero chunks.
+    @Test("Mama records 10 chunks locally via her view model")
+    func mamaRecordsTenChunksLocallyViaHerViewModel() async throws {
+        let urlMama = FileManager.default.temporaryDirectory
+            .appending(path: "scratch-mama-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: urlMama) }
+
+        let cloud = InMemoryCloud()
+        let mamaDB = PersistentDatabase(localFileURL: urlMama, cloud: cloud)
+
+        let mamaID = UUID()
+        let mama = VoicesViewModel(
+            recordingService: DemoRecordingService(database: mamaDB, author: mamaID, count: 10),
+            playbackService: DemoPlaybackService(database: mamaDB, viewer: mamaID),
+            database: mamaDB,
+            viewer: mamaID
+        )
+
+        mama.toggleRecording()
+        // delay: .zero makes produceChunks yield via Task.yield(); the
+        // 250 ms cap is a fail-fast bound, not a sleep.
+        let deadline = ContinuousClock.now.advanced(by: .milliseconds(250))
+        while ContinuousClock.now < deadline,
+              mama.recordings.flatMap({ $0.audioChunks }).count < 10 {
+            await Task.yield()
+        }
+        mama.toggleRecording()
+
+        #expect(mama.recordings.flatMap { $0.audioChunks }.count == 10)
     }
 }

@@ -26,7 +26,7 @@ protocol Cloud: AnyObject {
 /// mechanism — B only knows about A's recording when the test asks B
 /// to pull.
 @MainActor
-final class PersistentDatabase {
+final class PersistentDatabase: Database {
     /// Local envelope around a `Recording` that carries this device's
     /// per-recording storage state. Lives entirely on disk and in
     /// memory; never sent to the cloud. Two `PersistentDatabase`
@@ -62,7 +62,13 @@ final class PersistentDatabase {
         }
     }
 
-    var recordings: [StoredRecording] { inner }
+    /// `Database` protocol view: plain `[Recording]` for `VoicesViewModel`
+    /// and friends, who don't know about per-device storage state.
+    var recordings: [Recording] { inner.map { $0.recording } }
+
+    /// Storage-state-aware view: full `[StoredRecording]` for tests and
+    /// future UI that wants to display the propagation lifecycle.
+    var stored: [StoredRecording] { inner }
 
     // MARK: - Lifecycle methods that drive flag transitions
 
@@ -118,6 +124,24 @@ final class PersistentDatabase {
         for i in inner.indices {
             inner[i].isStoredLocally = true
         }
+    }
+
+    // MARK: - Database protocol methods (stubbed — green commits will fill them in)
+
+    func appendChunk(_ chunk: AudioChunk, to recordingID: UUID) {
+        // Stub.
+    }
+
+    func removeRecording(_ recordingID: UUID) {
+        // Stub.
+    }
+
+    func markListened(recordingID: UUID, chunkIndex: Int) {
+        // Stub.
+    }
+
+    func markListened(recordingID: UUID, chunkIndex: Int, by viewerID: UUID) {
+        // Stub.
     }
 
     // MARK: - Private
