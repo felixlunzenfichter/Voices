@@ -2,16 +2,6 @@ import Foundation
 import Testing
 @testable import Voices
 
-/// Test-only in-memory `Cloud` fake. Both PersistentDatabase instances
-/// in the test share one of these to model the cross-device propagation
-/// path. No network, no Mac server — that's a later commit.
-@MainActor
-private final class InMemoryCloud: Cloud {
-    private var stored: [Recording] = []
-    func get() async throws -> [Recording] { stored }
-    func set(_ recordings: [Recording]) async throws { stored = recordings }
-}
-
 @MainActor
 struct RealDatabaseTests {
 
@@ -69,46 +59,6 @@ struct RealDatabaseTests {
         #expect(s.isStoredRemotely == true)
     }
 
-    /// First red of the "marina sees mama's chunks" arc, scoped down
-    /// to a single device: mama's view model produces ten audio chunks
-    /// against a `PersistentDatabase`. The cloud is constructed but
-    /// untouched; no marina; no remote propagation.
-    ///
-    /// Forces `PersistentDatabase` to declare `Database` conformance
-    /// (so `VoicesViewModel(database:)` accepts it) and to actually
-    /// implement `appendChunk(_:to:)` — without it, `DemoRecordingService
-    /// .produceChunks` calls a no-op ten times and the recording stays
-    /// at zero chunks.
-    @Test("Mama records 10 chunks locally via her view model")
-    func mamaRecordsTenChunksLocallyViaHerViewModel() async throws {
-        let urlMama = FileManager.default.temporaryDirectory
-            .appending(path: "scratch-mama-\(UUID().uuidString).json")
-        defer { try? FileManager.default.removeItem(at: urlMama) }
-
-        let cloud = InMemoryCloud()
-        let mamaDB = PersistentDatabase(localFileURL: urlMama, cloud: cloud)
-
-        let mamaID = UUID()
-        let mama = VoicesViewModel(
-            recordingService: DemoRecordingService(database: mamaDB, author: mamaID, count: 10),
-            playbackService: DemoPlaybackService(database: mamaDB, viewer: mamaID),
-            database: mamaDB,
-            viewer: mamaID
-        )
-
-        mama.toggleRecording()
-        // delay: .zero makes produceChunks yield via Task.yield(); the
-        // 250 ms cap is a fail-fast bound, not a sleep.
-        let deadline = ContinuousClock.now.advanced(by: .milliseconds(250))
-        while ContinuousClock.now < deadline,
-              mama.recordings.flatMap({ $0.audioChunks }).count < 10 {
-            await Task.yield()
-        }
-        mama.toggleRecording()
-
-        #expect(mama.recordings.flatMap { $0.audioChunks }.count == 10)
-    }
-
     /// Two view models on one phone, two `PersistentDatabase` instances
     /// with distinct local file URLs, sharing exactly one `Cloud`.
     /// Mama records; once marina (the listener side) can see more than
@@ -132,7 +82,7 @@ struct RealDatabaseTests {
             try? FileManager.default.removeItem(at: urlMarina)
         }
 
-        let cloud = InMemoryCloud()
+        let cloud = HTTPCloud(url: URL(string: "http://felixs-macbook-pro.tailcfdca5.ts.net:9995")!)
         let mamaDB = PersistentDatabase(localFileURL: urlMama, cloud: cloud)
         let marinaDB = PersistentDatabase(localFileURL: urlMarina, cloud: cloud)
 
