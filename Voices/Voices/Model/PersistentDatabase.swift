@@ -13,6 +13,11 @@ import Foundation
 protocol Cloud: AnyObject {
     func get() async throws -> [Recording]
     func set(_ recordings: [Recording]) async throws
+    /// Long-lived push channel. Each yield is the cloud's full
+    /// `[Recording]` snapshot at some revision — sent on the first
+    /// subscription (catch-up) and after every accepted POST /state.
+    /// The stream ends on transport error or cancellation.
+    func events() -> AsyncStream<[Recording]>
 }
 
 /// Local on-disk database keyed by a caller-supplied file URL, paired
@@ -50,6 +55,7 @@ final class PersistentDatabase: Database {
     private let url: URL
     private let cloud: Cloud
     private var inner: [StoredRecording]
+    private var subscriptionTask: Task<Void, Never>?
 
     init(localFileURL: URL, cloud: Cloud) {
         self.url = localFileURL
@@ -59,6 +65,55 @@ final class PersistentDatabase: Database {
             self.inner = loaded
         } else {
             self.inner = []
+        }
+        self.subscriptionTask = nil
+        self.subscriptionTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await remote in self.cloud.events() {
+                self.applyRemote(remote)
+            }
+        }
+    }
+
+    deinit {
+        subscriptionTask?.cancel()
+    }
+
+    /// Folds a remote `[Recording]` snapshot into `inner`. New
+    /// recordings arrive with `isStoredLocally == false`,
+    /// `isStoredRemotely == true` (the same flag pattern
+    /// `pullFromRemote()` uses). For recordings already known
+    /// locally, `audioChunks` is per-index OR-merged on `listened`
+    /// (`local || remote`) and extended to the longer of the two
+    /// arrays. Flag fields on existing `StoredRecording`s are left
+    /// untouched — local storage state is per-device.
+    private func applyRemote(_ remote: [Recording]) {
+        let localIDs = Set(inner.map { $0.recording.id })
+        for r in remote where !localIDs.contains(r.id) {
+            inner.append(StoredRecording(
+                recording: r,
+                isStoredLocally: false,
+                isStoredRemotely: true
+            ))
+        }
+        for i in inner.indices {
+            guard let r = remote.first(where: { $0.id == inner[i].recording.id }) else { continue }
+            let local = inner[i].recording.audioChunks
+            let n = max(local.count, r.audioChunks.count)
+            var merged: [AudioChunk] = []
+            merged.reserveCapacity(n)
+            for j in 0..<n {
+                let l = j < local.count ? local[j] : nil
+                let rc = j < r.audioChunks.count ? r.audioChunks[j] : nil
+                if let l, let rc {
+                    merged.append(AudioChunk(index: l.index, listened: l.listened || rc.listened))
+                } else if let l {
+                    merged.append(l)
+                } else if let rc {
+                    merged.append(rc)
+                }
+            }
+            inner[i].recording.audioChunks = merged
         }
     }
 
