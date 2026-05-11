@@ -175,4 +175,67 @@ struct RealDatabaseTests {
             #expect(listenedOnMama)
         }
     }
+
+    /// Live-refresh contract: `VoicesViewModel.recordings` must wake
+    /// up observers when the underlying `PersistentDatabase` mutates.
+    /// No polling — the test subscribes via Swift's `Observations`
+    /// AsyncSequence, then triggers `db.appendChunk` on a separate
+    /// turn so the wake-up is the *only* path that can complete it.
+    /// Fail-fast bound is 2 s; expected wake-up under a working
+    /// implementation is <100 ms.
+    ///
+    /// Fails if `PersistentDatabase` is not `@Observable`: the
+    /// `inner` mutation never reaches the Observation framework,
+    /// the observer Task never sets `observed`, and the deadline
+    /// expires with `#expect(observed)` failing.
+    @Test("VoicesViewModel observes database mutations reactively, without polling")
+    func vmObservesDatabaseMutationsLive() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appending(path: "live-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let cloud = HTTPCloud(url: URL(string: "http://felixs-macbook-pro.tailcfdca5.ts.net:9995")!)
+        let db = PersistentDatabase(localFileURL: url, cloud: cloud)
+
+        let viewer = UUID()
+        let author = UUID()
+        let vm = VoicesViewModel(
+            recordingService: DemoRecordingService(database: db, author: author),
+            playbackService: DemoPlaybackService(database: db, viewer: viewer),
+            database: db,
+            viewer: viewer
+        )
+
+        let target = UUID()
+        db.addRecording(Recording(id: target, author: author))
+
+        // Reactive observer: yields once on first evaluation, then again
+        // every time the @Observable storage backing `vm.recordings`
+        // is modified. Sets `observed` when a chunk lands.
+        nonisolated(unsafe) var observed = false
+        let observer = Task { @MainActor in
+            for await count in Observations({
+                vm.recordings.first(where: { $0.id == target })?.audioChunks.count ?? 0
+            }) {
+                if count >= 1 {
+                    observed = true
+                    return
+                }
+            }
+        }
+
+        // Mutate on a future turn so the observer is already subscribed
+        // before the change happens; otherwise the first iteration
+        // would yield the post-mutation value trivially.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
+            db.appendChunk(AudioChunk(index: 0), to: target)
+        }
+
+        // Tight fail-fast — a working implementation wakes in <100 ms.
+        try? await Task.sleep(for: .seconds(2))
+        observer.cancel()
+
+        #expect(observed)
+    }
 }
