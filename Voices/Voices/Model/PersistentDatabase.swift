@@ -30,7 +30,7 @@ protocol Cloud: AnyObject {
 /// `pushToRemote()` / `pullFromRemote()`. There is no notification
 /// mechanism — B only knows about A's recording when the test asks B
 /// to pull.
-@MainActor
+@Observable @MainActor
 final class PersistentDatabase: Database {
     /// Local envelope around a `Recording` that carries this device's
     /// per-recording storage state. Lives entirely on disk and in
@@ -55,7 +55,7 @@ final class PersistentDatabase: Database {
     private let url: URL
     private let cloud: Cloud
     private var inner: [StoredRecording]
-    private var subscriptionTask: Task<Void, Never>?
+    @ObservationIgnored private var subscriptionTask: Task<Void, Never>?
 
     init(localFileURL: URL, cloud: Cloud) {
         self.url = localFileURL
