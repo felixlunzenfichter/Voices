@@ -76,12 +76,15 @@ final class PersistentDatabase: Database {
     /// default of `false`. `isStoredLocally` is set to `true` only
     /// after the on-disk write actually succeeds; if the write fails,
     /// the recording stays in memory with `isStoredLocally == false`.
+    /// After a successful save the current snapshot is also written
+    /// through to the cloud as a fire-and-forget Task.
     func addRecording(_ recording: Recording) {
         inner.append(StoredRecording(recording: recording))
         guard save() else { return }
         if let i = inner.firstIndex(where: { $0.recording.id == recording.id }) {
             inner[i].isStoredLocally = true
         }
+        writeThroughToCloud()
     }
 
     /// Pushes the current recordings (plain payload, no flags) to the
@@ -132,6 +135,7 @@ final class PersistentDatabase: Database {
         guard let i = inner.firstIndex(where: { $0.recording.id == recordingID }) else { return }
         inner[i].recording.audioChunks.append(chunk)
         save()
+        writeThroughToCloud()
     }
 
     func removeRecording(_ recordingID: UUID) {
@@ -142,8 +146,17 @@ final class PersistentDatabase: Database {
         // Stub.
     }
 
+    /// Author-aware mark — mirrors `InMemoryDatabase`'s rule that a
+    /// viewer who is the recording's own author cannot turn their own
+    /// chunk listened. On a real flip we save locally and write the
+    /// snapshot through to the cloud.
     func markListened(recordingID: UUID, chunkIndex: Int, by viewerID: UUID) {
-        // Stub.
+        guard let i = inner.firstIndex(where: { $0.recording.id == recordingID }),
+              inner[i].recording.author != viewerID,
+              chunkIndex < inner[i].recording.audioChunks.count else { return }
+        inner[i].recording.audioChunks[chunkIndex].listened = true
+        save()
+        writeThroughToCloud()
     }
 
     // MARK: - Private
@@ -157,5 +170,14 @@ final class PersistentDatabase: Database {
         } catch {
             return false
         }
+    }
+
+    /// Fire-and-forget snapshot push. Captures the current recordings
+    /// synchronously, then POSTs from a detached Task so callers stay
+    /// synchronous. No baseRevision yet, no conflict handling yet — a
+    /// later step adds compare-and-swap against the server's cursor.
+    private func writeThroughToCloud() {
+        let snapshot = inner.map { $0.recording }
+        Task { try? await cloud.set(snapshot) }
     }
 }
