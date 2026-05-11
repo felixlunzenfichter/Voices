@@ -122,28 +122,25 @@ struct RealDatabaseTests {
     /// Both A and B advance their local state while offline, then both
     /// reconnect to the real Mac and have to merge.
     ///
-    /// Phase 1 — offline:
-    ///   - dbA on disk url-A, cloud pointed at an unreachable URL.
-    ///   - dbA.addRecording(rA, author: αA) and appendChunk × 5.
-    ///   - dbA is released. Its outbound queue is on disk.
-    ///   - same for dbB on disk url-B, recording rB.
+    /// Phase 1 — both flipped offline at init. Each writes locally
+    /// (add a recording + 5 chunks). Mutations apply to the local
+    /// projection immediately; the outbound queue accumulates and
+    /// the drainer parks because `online == false`.
     ///
-    /// Phase 2 — reconnect:
-    ///   - Construct dbA2 from url-A with cloud = real Mac.
-    ///   - Construct dbB2 from url-B with cloud = real Mac.
-    ///   - The persisted outbound queues resume; the drainer races
-    ///     both batches to the server, 409s force CAS re-bases, both
-    ///     queues drain to completion.
+    /// Phase 2 — both flipped online. Each drainer pumps its queue
+    /// against the real Mac. One side wins the race; the other gets
+    /// 409, applies the missed events, and retries from its head
+    /// with the new cursor. Both subscriber streams open with
+    /// `since: cursor` and pick up everything the other side wrote.
     ///
-    /// Expected merged result:
-    ///   - Both dbA2 and dbB2 see TWO recordings (rA and rB),
-    ///     5 chunks each, 10 chunks total.
-    ///   - Both projections are byte-identical (same UUIDs, same
-    ///     chunk indices in each recording).
+    /// Expected merged result: both dbA and dbB see TWO recordings
+    /// (rA and rB), 5 chunks each, 10 chunks total, and the same
+    /// set of recording ids.
     ///
-    /// Production seam: PersistentDatabase needs a persisted
-    /// outbound queue + drainer with CAS-retry. Today every
-    /// mutation fires fire-and-forget; offline writes are lost.
+    /// Production seam: a persisted outbound queue on
+    /// PersistentDatabase + a drainer that respects an `online`
+    /// gate and handles CAS retry on 409. Today every mutation
+    /// fires fire-and-forget; offline writes are lost.
     @Test("Both devices advanced offline, then merge cleanly on reconnect",
           .timeLimit(.minutes(1)))
     func bothSidesAdvancedOfflineThenMerge() async throws {
@@ -167,33 +164,31 @@ struct RealDatabaseTests {
         let rA = Recording(author: αA)
         let rB = Recording(author: αB)
 
-        // Phase 1 — offline. 127.0.0.1:1 is a closed port; sends fail.
-        let unreachable = HTTPCloud(url: URL(string: "http://127.0.0.1:1")!)
-        do {
-            let dbA = PersistentDatabase(localFileURL: urlA, cloud: unreachable)
-            dbA.addRecording(rA)
-            for i in 0..<5 { dbA.appendChunk(AudioChunk(index: i), to: rA.id) }
-            // Allow a couple of failed drain attempts so the queue
-            // proves it survives transport errors.
-            try? await Task.sleep(for: .milliseconds(50))
-        }
-        do {
-            let dbB = PersistentDatabase(localFileURL: urlB, cloud: unreachable)
-            dbB.addRecording(rB)
-            for i in 0..<5 { dbB.appendChunk(AudioChunk(index: i), to: rB.id) }
-            try? await Task.sleep(for: .milliseconds(50))
-        }
+        let cloud = HTTPCloud(url: macURL)
 
-        // Phase 2 — reconnect. New instances on same disk paths, real cloud.
-        let real = HTTPCloud(url: macURL)
-        let dbA2 = PersistentDatabase(localFileURL: urlA, cloud: real)
-        let dbB2 = PersistentDatabase(localFileURL: urlB, cloud: real)
+        // Phase 1 — both offline. Single instance per side; survives
+        // the offline → online transition without reinstantiation.
+        let dbA = PersistentDatabase(localFileURL: urlA, cloud: cloud, online: false)
+        let dbB = PersistentDatabase(localFileURL: urlB, cloud: cloud, online: false)
 
-        // Wait for both queues to drain and both projections to converge.
+        dbA.addRecording(rA)
+        for i in 0..<5 { dbA.appendChunk(AudioChunk(index: i), to: rA.id) }
+        dbB.addRecording(rB)
+        for i in 0..<5 { dbB.appendChunk(AudioChunk(index: i), to: rB.id) }
+
+        // Local writes applied immediately; neither side sees the other yet.
+        #expect(dbA.recordings.count == 1)
+        #expect(dbB.recordings.count == 1)
+
+        // Phase 2 — both online. Drainers pump, CAS retries, subscribers
+        // pick up each other's events.
+        dbA.setOnline(true)
+        dbB.setOnline(true)
+
         let deadline = ContinuousClock.now.advanced(by: .seconds(10))
         while ContinuousClock.now < deadline {
-            let aRecs = dbA2.recordings
-            let bRecs = dbB2.recordings
+            let aRecs = dbA.recordings
+            let bRecs = dbB.recordings
             let aChunks = aRecs.flatMap { $0.audioChunks }.count
             let bChunks = bRecs.flatMap { $0.audioChunks }.count
             if aRecs.count == 2, bRecs.count == 2, aChunks == 10, bChunks == 10 {
@@ -202,15 +197,13 @@ struct RealDatabaseTests {
             await Task.yield()
         }
 
-        let aRecs = dbA2.recordings
-        let bRecs = dbB2.recordings
+        let aRecs = dbA.recordings
+        let bRecs = dbB.recordings
         #expect(aRecs.count == 2)
         #expect(bRecs.count == 2)
         #expect(aRecs.flatMap { $0.audioChunks }.count == 10)
         #expect(bRecs.flatMap { $0.audioChunks }.count == 10)
-        // Same set of recording ids on both sides.
         #expect(Set(aRecs.map(\.id)) == Set(bRecs.map(\.id)))
-        // Both contain rA and rB.
         #expect(aRecs.contains(where: { $0.id == rA.id }))
         #expect(aRecs.contains(where: { $0.id == rB.id }))
         #expect(bRecs.contains(where: { $0.id == rA.id }))
