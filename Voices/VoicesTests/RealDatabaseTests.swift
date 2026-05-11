@@ -143,6 +143,18 @@ struct RealDatabaseTests {
             await Task.yield()
         }
 
+        // Wait until mama's view has caught up: every mark marina
+        // locally minted should have round-tripped through POST →
+        // server broadcast → mama's SSE → applyRemote before we
+        // assert. spy is frozen here because consumePlayback has
+        // already exited (wait3).
+        let spyTarget = marinaPlayback.playedChunks.count
+        let deadline4 = ContinuousClock.now.advanced(by: .seconds(2))
+        while ContinuousClock.now < deadline4,
+              mama.recordings.flatMap({ $0.audioChunks }).filter({ $0.listened }).count < spyTarget {
+            await Task.yield()
+        }
+
         // Compare: chunks the listener's spy captured vs. chunks marked
         // listened on the recorder's side.
         let spy = marinaPlayback.playedChunks
