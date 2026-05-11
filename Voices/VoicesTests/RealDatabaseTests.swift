@@ -118,4 +118,102 @@ struct RealDatabaseTests {
             #expect(listenedOnMama)
         }
     }
+
+    /// Both A and B advance their local state while offline, then both
+    /// reconnect to the real Mac and have to merge.
+    ///
+    /// Phase 1 — offline:
+    ///   - dbA on disk url-A, cloud pointed at an unreachable URL.
+    ///   - dbA.addRecording(rA, author: αA) and appendChunk × 5.
+    ///   - dbA is released. Its outbound queue is on disk.
+    ///   - same for dbB on disk url-B, recording rB.
+    ///
+    /// Phase 2 — reconnect:
+    ///   - Construct dbA2 from url-A with cloud = real Mac.
+    ///   - Construct dbB2 from url-B with cloud = real Mac.
+    ///   - The persisted outbound queues resume; the drainer races
+    ///     both batches to the server, 409s force CAS re-bases, both
+    ///     queues drain to completion.
+    ///
+    /// Expected merged result:
+    ///   - Both dbA2 and dbB2 see TWO recordings (rA and rB),
+    ///     5 chunks each, 10 chunks total.
+    ///   - Both projections are byte-identical (same UUIDs, same
+    ///     chunk indices in each recording).
+    ///
+    /// Production seam: PersistentDatabase needs a persisted
+    /// outbound queue + drainer with CAS-retry. Today every
+    /// mutation fires fire-and-forget; offline writes are lost.
+    @Test("Both devices advanced offline, then merge cleanly on reconnect",
+          .timeLimit(.minutes(1)))
+    func bothSidesAdvancedOfflineThenMerge() async throws {
+        let urlA = FileManager.default.temporaryDirectory
+            .appending(path: "offline-A-\(UUID().uuidString).json")
+        let urlB = FileManager.default.temporaryDirectory
+            .appending(path: "offline-B-\(UUID().uuidString).json")
+        defer {
+            try? FileManager.default.removeItem(at: urlA)
+            try? FileManager.default.removeItem(at: urlB)
+        }
+
+        // Reset the real Mac to empty history.
+        let macURL = URL(string: "http://felixs-macbook-pro.tailcfdca5.ts.net:9995")!
+        var resetRequest = URLRequest(url: macURL.appending(path: "reset"))
+        resetRequest.httpMethod = "POST"
+        _ = try? await URLSession.shared.data(for: resetRequest)
+
+        let αA = UUID()
+        let αB = UUID()
+        let rA = Recording(author: αA)
+        let rB = Recording(author: αB)
+
+        // Phase 1 — offline. 127.0.0.1:1 is a closed port; sends fail.
+        let unreachable = HTTPCloud(url: URL(string: "http://127.0.0.1:1")!)
+        do {
+            let dbA = PersistentDatabase(localFileURL: urlA, cloud: unreachable)
+            dbA.addRecording(rA)
+            for i in 0..<5 { dbA.appendChunk(AudioChunk(index: i), to: rA.id) }
+            // Allow a couple of failed drain attempts so the queue
+            // proves it survives transport errors.
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        do {
+            let dbB = PersistentDatabase(localFileURL: urlB, cloud: unreachable)
+            dbB.addRecording(rB)
+            for i in 0..<5 { dbB.appendChunk(AudioChunk(index: i), to: rB.id) }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+
+        // Phase 2 — reconnect. New instances on same disk paths, real cloud.
+        let real = HTTPCloud(url: macURL)
+        let dbA2 = PersistentDatabase(localFileURL: urlA, cloud: real)
+        let dbB2 = PersistentDatabase(localFileURL: urlB, cloud: real)
+
+        // Wait for both queues to drain and both projections to converge.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+        while ContinuousClock.now < deadline {
+            let aRecs = dbA2.recordings
+            let bRecs = dbB2.recordings
+            let aChunks = aRecs.flatMap { $0.audioChunks }.count
+            let bChunks = bRecs.flatMap { $0.audioChunks }.count
+            if aRecs.count == 2, bRecs.count == 2, aChunks == 10, bChunks == 10 {
+                break
+            }
+            await Task.yield()
+        }
+
+        let aRecs = dbA2.recordings
+        let bRecs = dbB2.recordings
+        #expect(aRecs.count == 2)
+        #expect(bRecs.count == 2)
+        #expect(aRecs.flatMap { $0.audioChunks }.count == 10)
+        #expect(bRecs.flatMap { $0.audioChunks }.count == 10)
+        // Same set of recording ids on both sides.
+        #expect(Set(aRecs.map(\.id)) == Set(bRecs.map(\.id)))
+        // Both contain rA and rB.
+        #expect(aRecs.contains(where: { $0.id == rA.id }))
+        #expect(aRecs.contains(where: { $0.id == rB.id }))
+        #expect(bRecs.contains(where: { $0.id == rA.id }))
+        #expect(bRecs.contains(where: { $0.id == rB.id }))
+    }
 }
