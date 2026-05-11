@@ -141,10 +141,12 @@ struct RealDatabaseTests {
 
         // Hold marina's playback service explicitly so the test can read
         // its `playedChunks` spy after the action sequence completes.
-        let marinaPlayback = DemoPlaybackService(database: marinaDB, viewer: marinaID)
+        // 10 ms cadence so playback transitions are visible at human-ish rates.
+        let marinaPlayback = DemoPlaybackService(database: marinaDB, viewer: marinaID, delay: .milliseconds(10))
 
         let mama = VoicesViewModel(
-            recordingService: DemoRecordingService(database: mamaDB, author: mamaID),
+            // 10 ms cadence on the recording side too — a chunk every 10 ms.
+            recordingService: DemoRecordingService(database: mamaDB, author: mamaID, delay: .milliseconds(10)),
             playbackService: DemoPlaybackService(database: mamaDB, viewer: mamaID),
             database: mamaDB,
             viewer: mamaID
@@ -181,6 +183,14 @@ struct RealDatabaseTests {
 
         // Mama stops.
         mama.toggleRecording()
+
+        // Wait until marina's playback has drained — `isListening == false` —
+        // so the spy vs. recorder comparison happens against settled state,
+        // not while playback is mid-flight.
+        let deadline3 = ContinuousClock.now.advanced(by: .seconds(3))
+        while ContinuousClock.now < deadline3, marina.isListening {
+            await Task.yield()
+        }
 
         // Compare: chunks the listener's spy captured vs. chunks marked
         // listened on the recorder's side.
