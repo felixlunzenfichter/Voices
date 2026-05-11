@@ -115,6 +115,9 @@ struct RealDatabaseTests {
 
         // Wait for marina to see > 1 chunk via cross-device propagation.
         // The test does nothing to make that happen — it just observes.
+        // The player no longer stops on momentary catch-up (it idle-waits
+        // up to 5 s for the next chunk), so a 1-chunk head start is
+        // enough.
         let deadline1 = ContinuousClock.now.advanced(by: .seconds(3))
         while ContinuousClock.now < deadline1,
               marina.recordings.flatMap({ $0.audioChunks }).count <= 1 {
@@ -156,15 +159,18 @@ struct RealDatabaseTests {
         }
 
         // Compare: chunks the listener's spy captured vs. chunks marked
-        // listened on the recorder's side.
+        // listened on the recorder's side. State is settled (wait3+wait4),
+        // so snapshot mama-side bindings once and read from them.
         let spy = marinaPlayback.playedChunks
-        try #require(mama.recordings.flatMap({ $0.audioChunks }).count > 10)
-        try #require(spy.count > 0)
+        let mamaRecordings = mama.recordings
+        let mamaChunks = mamaRecordings.flatMap { $0.audioChunks }
+        let mamaListenedCount = mamaChunks.filter(\.listened).count
 
-        let mamaListenedCount = mama.recordings.flatMap({ $0.audioChunks }).filter({ $0.listened }).count
+        try #require(mamaChunks.count > 10)
+        try #require(spy.count > 10)
         #expect(spy.count == mamaListenedCount)
         for pos in spy {
-            let listenedOnMama = mama.recordings.first { $0.id == pos.recordingID }?
+            let listenedOnMama = mamaRecordings.first { $0.id == pos.recordingID }?
                 .audioChunks.first { $0.index == pos.chunkIndex }?.listened == true
             #expect(listenedOnMama)
         }
