@@ -50,6 +50,7 @@ final class PersistentDatabase: Database {
     private let url: URL
     private let cloud: Cloud
     private var inner: [StoredRecording]
+    private var autosyncTask: Task<Void, Never>?
 
     init(localFileURL: URL, cloud: Cloud) {
         self.url = localFileURL
@@ -59,6 +60,48 @@ final class PersistentDatabase: Database {
             self.inner = loaded
         } else {
             self.inner = []
+        }
+        self.autosyncTask = nil
+        self.autosyncTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                await self.autoSync()
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+        }
+    }
+
+    deinit {
+        autosyncTask?.cancel()
+    }
+
+    /// Background reconcile against the shared cloud: pull anything new
+    /// into `inner` (with `isStoredLocally == false` so it mirrors the
+    /// existing pullFromRemote semantics), grow `audioChunks` from
+    /// whichever side currently has more, then push the merged state.
+    /// Minimum scope — does not preserve `listened` markers when
+    /// arrays are the same length; the next red after this one is
+    /// where that gap gets pressured.
+    private func autoSync() async {
+        do {
+            let remote = try await cloud.get()
+            let localIDs = Set(inner.map { $0.recording.id })
+            for r in remote where !localIDs.contains(r.id) {
+                inner.append(StoredRecording(
+                    recording: r,
+                    isStoredLocally: false,
+                    isStoredRemotely: true
+                ))
+            }
+            for i in inner.indices {
+                if let r = remote.first(where: { $0.id == inner[i].recording.id }),
+                   r.audioChunks.count > inner[i].recording.audioChunks.count {
+                    inner[i].recording.audioChunks = r.audioChunks
+                }
+            }
+            try await cloud.set(inner.map { $0.recording })
+        } catch {
+            // Autosync swallows errors; nothing to do here.
         }
     }
 
