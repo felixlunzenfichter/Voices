@@ -38,7 +38,9 @@ struct RealDatabaseTests {
             try? FileManager.default.removeItem(at: urlB)
         }
 
-        let cloud = InMemoryCloud()
+        let server = try await Server.start()
+        defer { Task { await server.stop() } }
+        let cloud = HTTPCloud(url: server.url)
         let dbA = PersistentDatabase(localFileURL: urlA, cloud: cloud)
         let dbB = PersistentDatabase(localFileURL: urlB, cloud: cloud)
 
