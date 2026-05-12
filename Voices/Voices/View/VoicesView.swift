@@ -14,8 +14,12 @@ struct VoicesView: View {
 }
 
 /// Builds two VMs with distinct viewers and matching author-stamping
-/// recording services, all sharing one `InMemoryDatabase`. No server,
-/// no persistence, no launch args.
+/// recording services, all sharing one `PersistentDatabase` wired to
+/// the Mac-hosted voices-server. Local state on disk; cross-device
+/// propagation through HTTPCloud (POST /events + GET /events?since=N
+/// SSE). The mama and marina UUIDs are stable across devices, so two
+/// pages on phone A talk to the same conceptual mama and marina that
+/// phone B is talking to.
 @MainActor
 final class TwoPageHarness {
     let mamaVM: VoicesViewModel
@@ -25,7 +29,11 @@ final class TwoPageHarness {
     static let marina = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
 
     init() {
-        let db = InMemoryDatabase()
+        let url = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask).first!
+            .appending(path: "voices-state.json")
+        let cloud = HTTPCloud(url: URL(string: "http://felixs-macbook-pro.tailcfdca5.ts.net:9995")!)
+        let db = PersistentDatabase(localFileURL: url, cloud: cloud)
 
         mamaVM = VoicesViewModel(
             recordingService: DemoRecordingService(database: db, author: Self.mama, delay: .milliseconds(300)),
