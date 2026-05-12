@@ -64,15 +64,33 @@ final class DemoPlaybackService: PlaybackService {
     }
 
     private func consumePlayback(_ recordings: [Recording], from start: (recordingIndex: Int, chunkIndex: Int)) async {
+        // On catch-up, wait up to `idleTimeout` for the next chunk to
+        // arrive via cloud propagation before giving up on the
+        // recording. The "is the author done?" signal is simply
+        // absence of new chunks for `idleTimeout`. Every successful
+        // play resets the clock, so playback tolerates an arbitrary
+        // number of (play → catch-up → resume) cycles in one session.
+        let idleTimeout: Duration = .seconds(2)
+        let pollInterval: Duration = .milliseconds(50)
+
         for recordingIndex in start.recordingIndex..<recordings.count {
             let recordingID = recordings[recordingIndex].id
             var cIdx = (recordingIndex == start.recordingIndex) ? start.chunkIndex : 0
+            var idleDeadline: ContinuousClock.Instant? = nil
             // Re-read the live recording each iteration so chunks
             // appended to it during this session are picked up in the
             // same play, instead of the loop walking only the snapshot.
             while !Task.isCancelled {
-                guard let recording = database.recordings.first(where: { $0.id == recordingID }),
-                      cIdx < recording.audioChunks.count else { break }
+                guard let recording = database.recordings.first(where: { $0.id == recordingID }) else { break }
+                if cIdx >= recording.audioChunks.count {
+                    if idleDeadline == nil {
+                        idleDeadline = ContinuousClock.now.advanced(by: idleTimeout)
+                    }
+                    if ContinuousClock.now >= idleDeadline! { break }
+                    try? await Task.sleep(for: pollInterval)
+                    continue
+                }
+                idleDeadline = nil
                 let chunk = recording.audioChunks[cIdx]
                 if delay > .zero {
                     try? await Task.sleep(for: delay)
