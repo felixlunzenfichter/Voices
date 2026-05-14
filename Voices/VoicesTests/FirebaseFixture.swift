@@ -10,9 +10,6 @@ import FirebaseFirestore
 enum FirebaseFixture {
     static let projectID = "demo-voices"
     static let host = "100.73.64.63:8080"
-    /// Tests that need writer/reader instances to see each other's
-    /// listened-marks share this viewer ID.
-    static let sharedViewer = UUID()
 
     static func fresh() async throws {
         configureDefaultAppIfNeeded()
@@ -36,11 +33,9 @@ enum FirebaseFixture {
     /// Vends an isolated FirebaseDatabase backed by a named FirebaseApp.
     /// Two instances with different `appName` have independent Firestore
     /// clients and independent caches — cross-instance propagation must
-    /// go through the backend. Defaults to the shared viewer so that
-    /// writer/reader pairs observe each other's listened marks.
-    static func makeDatabase(appName: String, viewer: UUID = sharedViewer) -> FirebaseDatabase {
-        let firestore = firestoreForNamedApp(appName)
-        return FirebaseDatabase(firestore: firestore, viewer: viewer)
+    /// go through the backend.
+    static func makeDatabase(appName: String) -> FirebaseDatabase {
+        FirebaseDatabase(firestore: firestoreForNamedApp(appName))
     }
 
     private static var configuredDefaultApp = false

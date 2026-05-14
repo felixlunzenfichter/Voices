@@ -10,18 +10,14 @@ final class FirebaseDatabase: Database {
     nonisolated private let firestore: Firestore
 
     @ObservationIgnored
-    nonisolated private let viewer: UUID
-
-    @ObservationIgnored
     nonisolated(unsafe) private var listenerRegistration: ListenerRegistration?
 
-    init(firestore: Firestore = Firestore.firestore(), viewer: UUID = UUID()) {
+    init(firestore: Firestore = Firestore.firestore()) {
         self.firestore = firestore
-        self.viewer = viewer
         listenerRegistration = firestore.collection("recordings").addSnapshotListener { [weak self] snapshot, _ in
             MainActor.assumeIsolated {
                 guard let self, let docs = snapshot?.documents else { return }
-                self.recordings = docs.compactMap { self.recording(from: $0) }
+                self.recordings = docs.compactMap(Self.recording(from:))
             }
         }
     }
@@ -35,7 +31,7 @@ final class FirebaseDatabase: Database {
             "id": recording.id.uuidString,
             "author": recording.author.uuidString,
             "chunks": recording.audioChunks.map(\.index),
-            "listened": [String: [Int]]()
+            "listened": [Int]()
         ])
     }
 
@@ -48,15 +44,15 @@ final class FirebaseDatabase: Database {
     func removeRecording(_ recordingID: UUID) {}
 
     func markListened(recordingID: UUID, chunkIndex: Int) {
-        markListened(recordingID: recordingID, chunkIndex: chunkIndex, by: viewer)
+        firestore.collection("recordings").document(recordingID.uuidString).updateData([
+            "listened": FieldValue.arrayUnion([chunkIndex])
+        ])
     }
 
+    /// Viewer-aware: a viewer cannot mark their own recording's chunks
+    /// listened. Author is immutable after addRecording, so the
+    /// read-then-conditional-write is race-free.
     func markListened(recordingID: UUID, chunkIndex: Int, by viewerID: UUID) {
-        // Async two-step: the snapshot listener may not yet have
-        // populated the local recordings cache when this is called
-        // immediately after addRecording. Fetching the doc gives us
-        // the author for the own-recording guard. Author is immutable
-        // after addRecording, so no transaction is needed.
         let docRef = firestore.collection("recordings").document(recordingID.uuidString)
         Task {
             guard let snap = try? await docRef.getDocument(),
@@ -65,20 +61,18 @@ final class FirebaseDatabase: Database {
                   authorID != viewerID
             else { return }
             try? await docRef.updateData([
-                "listened.\(viewerID.uuidString)": FieldValue.arrayUnion([chunkIndex])
+                "listened": FieldValue.arrayUnion([chunkIndex])
             ])
         }
     }
 
-    private func recording(from doc: QueryDocumentSnapshot) -> Recording? {
+    private static func recording(from doc: QueryDocumentSnapshot) -> Recording? {
         let data = doc.data()
         guard let idStr = data["id"] as? String, let id = UUID(uuidString: idStr),
               let authorStr = data["author"] as? String, let author = UUID(uuidString: authorStr)
         else { return nil }
         let indices = (data["chunks"] as? [Any] ?? []).compactMap { $0 as? Int }
-        let listenedRaw = data["listened"] as? [String: Any] ?? [:]
-        let viewerKey = viewer.uuidString
-        let listenedSet = Set((listenedRaw[viewerKey] as? [Any] ?? []).compactMap { $0 as? Int })
+        let listenedSet = Set((data["listened"] as? [Any] ?? []).compactMap { $0 as? Int })
         let chunks = indices.map { AudioChunk(index: $0, listened: listenedSet.contains($0)) }
         return Recording(id: id, author: author, audioChunks: chunks)
     }

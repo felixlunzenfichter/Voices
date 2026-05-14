@@ -184,7 +184,7 @@ struct FirebaseDatabaseTests {
     func ownListenedNotMarkedLocally() async throws {
         try await FirebaseFixture.fresh()
         let viewer = UUID()
-        let db = FirebaseDatabase(viewer: viewer)
+        let db = FirebaseDatabase()
         let recording = Recording(id: UUID(), author: viewer)
         db.addRecording(recording)
         db.appendChunk(AudioChunk(index: 0), to: recording.id)
@@ -210,7 +210,7 @@ struct FirebaseDatabaseTests {
           .timeLimit(.minutes(1)))
     func ownListenedNotMarkedCrossInstance() async throws {
         try await FirebaseFixture.fresh()
-        let viewer = FirebaseFixture.sharedViewer
+        let viewer = UUID()
         let writer = FirebaseFixture.makeDatabase(appName: "writer")
         let reader = FirebaseFixture.makeDatabase(appName: "reader")
 
@@ -226,6 +226,37 @@ struct FirebaseDatabaseTests {
         try? await Task.sleep(for: .milliseconds(500))
 
         #expect(reader.recordings.first?.audioChunks.first?.listened == false)
+    }
+
+    /// In a two-person conversation, "listened" is shared: once anyone
+    /// has heard a chunk, every view should reflect that. Marking under
+    /// one viewer must surface as listened from a different viewer's
+    /// perspective on the same backend.
+    @Test("Marking listened by one viewer surfaces from a different viewer's view",
+          .timeLimit(.minutes(1)))
+    func listenedSharedAcrossViewers() async throws {
+        try await FirebaseFixture.fresh()
+        let mama = UUID()
+        let dbMama = FirebaseDatabase()
+        let dbMarina = FirebaseDatabase()
+
+        let recording = Recording(id: UUID(), author: UUID())   // foreign to both
+        dbMama.addRecording(recording)
+        dbMama.appendChunk(AudioChunk(index: 0), to: recording.id)
+
+        // Make sure dbMarina has observed the chunk before mama marks.
+        let chunkDeadline = Date().addingTimeInterval(3)
+        while dbMarina.recordings.first?.audioChunks.isEmpty != false, Date() < chunkDeadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+
+        dbMama.markListened(recordingID: recording.id, chunkIndex: 0, by: mama)
+
+        let listenedDeadline = Date().addingTimeInterval(3)
+        while dbMarina.recordings.first?.audioChunks.first?.listened != true, Date() < listenedDeadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(dbMarina.recordings.first?.audioChunks.first?.listened == true)
     }
 
     private static func produce(target: Int, into db: FirebaseDatabase, recordingID: UUID) async {

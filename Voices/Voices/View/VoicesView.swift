@@ -37,20 +37,19 @@ final class TwoPageHarness {
     static let marina = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
 
     init() {
-        let mamaDB = FirebaseDatabase(viewer: Self.mama)
-        let marinaDB = FirebaseDatabase(viewer: Self.marina)
+        let db = FirebaseDatabase()
 
         mamaVM = VoicesViewModel(
-            recordingService: DemoRecordingService(database: mamaDB, author: Self.mama, delay: .milliseconds(300)),
-            playbackService: DemoPlaybackService(database: mamaDB, viewer: Self.mama, delay: .milliseconds(300)),
-            database: mamaDB,
+            recordingService: DemoRecordingService(database: db, author: Self.mama, delay: .milliseconds(300)),
+            playbackService: DemoPlaybackService(database: db, viewer: Self.mama, delay: .milliseconds(300)),
+            database: db,
             viewer: Self.mama
         )
 
         marinaVM = VoicesViewModel(
-            recordingService: DemoRecordingService(database: marinaDB, author: Self.marina, delay: .milliseconds(300)),
-            playbackService: DemoPlaybackService(database: marinaDB, viewer: Self.marina, delay: .milliseconds(300)),
-            database: marinaDB,
+            recordingService: DemoRecordingService(database: db, author: Self.marina, delay: .milliseconds(300)),
+            playbackService: DemoPlaybackService(database: db, viewer: Self.marina, delay: .milliseconds(300)),
+            database: db,
             viewer: Self.marina
         )
     }
