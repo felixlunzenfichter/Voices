@@ -49,8 +49,14 @@ enum FirebaseFixture {
     private static func configureDefaultAppIfNeeded() {
         guard !configuredDefaultApp else { return }
         configuredDefaultApp = true
-        FirebaseApp.configure(options: makeOptions())
-        applyEmulatorSettings(to: Firestore.firestore())
+        // The host app's VoicesApp.init may have already configured the
+        // default FirebaseApp + Firestore settings against the same
+        // emulator. If so, leave it alone — re-setting Firestore
+        // settings after first use is a fatal error.
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure(options: makeOptions())
+            applyEmulatorSettings(to: Firestore.firestore())
+        }
     }
 
     private static func firestoreForNamedApp(_ name: String) -> Firestore {

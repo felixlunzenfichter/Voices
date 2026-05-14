@@ -12,12 +12,16 @@ struct VoicesView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .background(Color.black.ignoresSafeArea())
         .onAppear {
-            guard !didAutoStart else { return }
+            guard !didAutoStart, !isRunningUnderTest else { return }
             didAutoStart = true
             harness.mamaVM.toggleRecording()
             harness.marinaVM.toggleRecording()
         }
     }
+}
+
+private var isRunningUnderTest: Bool {
+    ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 }
 
 /// Builds two VMs with distinct viewers and matching author-stamping
