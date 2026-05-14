@@ -14,12 +14,14 @@ final class FirebaseDatabase: Database {
 
     init(firestore: Firestore = Firestore.firestore()) {
         self.firestore = firestore
-        listenerRegistration = firestore.collection("recordings").addSnapshotListener { [weak self] snapshot, _ in
-            MainActor.assumeIsolated {
-                guard let self, let docs = snapshot?.documents else { return }
-                self.recordings = docs.compactMap(Self.recording(from:))
+        listenerRegistration = firestore.collection("recordings")
+            .order(by: "createdAt")
+            .addSnapshotListener { [weak self] snapshot, _ in
+                MainActor.assumeIsolated {
+                    guard let self, let docs = snapshot?.documents else { return }
+                    self.recordings = docs.compactMap(Self.recording(from:))
+                }
             }
-        }
     }
 
     nonisolated deinit {
@@ -31,7 +33,8 @@ final class FirebaseDatabase: Database {
             "id": recording.id.uuidString,
             "author": recording.author.uuidString,
             "chunks": recording.audioChunks.map(\.index),
-            "listened": [Int]()
+            "listened": [Int](),
+            "createdAt": FieldValue.serverTimestamp()
         ])
     }
 

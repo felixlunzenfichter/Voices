@@ -259,6 +259,33 @@ struct FirebaseDatabaseTests {
         #expect(dbMarina.recordings.first?.audioChunks.first?.listened == true)
     }
 
+    /// Recordings must surface in the order they were added. Firestore
+    /// doesn't sort by anything implicitly chronological — without a
+    /// `createdAt` field + `order(by:)`, documents come back in random
+    /// (UUID) order.
+    @Test("Recordings surface in insertion order",
+          .timeLimit(.minutes(1)))
+    func recordingsInInsertionOrder() async throws {
+        try await FirebaseFixture.fresh()
+        let db = FirebaseDatabase()
+        // First-inserted UUID sorts AFTER the second-inserted one
+        // alphabetically, so a UUID-ordered query would put them in
+        // reverse-insertion order. Forces deterministic red without
+        // chronological ordering.
+        let r1 = Recording(id: UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFE")!, author: UUID())
+        let r2 = Recording(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!, author: UUID())
+        db.addRecording(r1)
+        db.addRecording(r2)
+
+        // Poll on the exact order — serverTimestamp resolves after the
+        // local optimistic write, so the array briefly reorders.
+        let deadline = Date().addingTimeInterval(3)
+        while db.recordings.map(\.id) != [r1.id, r2.id], Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(db.recordings.map(\.id) == [r1.id, r2.id])
+    }
+
     private static func produce(target: Int, into db: FirebaseDatabase, recordingID: UUID) async {
         for i in 0..<target {
             db.appendChunk(AudioChunk(index: i), to: recordingID)
