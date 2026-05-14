@@ -52,9 +52,22 @@ final class FirebaseDatabase: Database {
     }
 
     func markListened(recordingID: UUID, chunkIndex: Int, by viewerID: UUID) {
-        firestore.collection("recordings").document(recordingID.uuidString).updateData([
-            "listened.\(viewerID.uuidString)": FieldValue.arrayUnion([chunkIndex])
-        ])
+        // Async two-step: the snapshot listener may not yet have
+        // populated the local recordings cache when this is called
+        // immediately after addRecording. Fetching the doc gives us
+        // the author for the own-recording guard. Author is immutable
+        // after addRecording, so no transaction is needed.
+        let docRef = firestore.collection("recordings").document(recordingID.uuidString)
+        Task {
+            guard let snap = try? await docRef.getDocument(),
+                  let authorStr = snap.data()?["author"] as? String,
+                  let authorID = UUID(uuidString: authorStr),
+                  authorID != viewerID
+            else { return }
+            try? await docRef.updateData([
+                "listened.\(viewerID.uuidString)": FieldValue.arrayUnion([chunkIndex])
+            ])
+        }
     }
 
     private func recording(from doc: QueryDocumentSnapshot) -> Recording? {

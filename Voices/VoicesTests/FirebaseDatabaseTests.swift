@@ -176,6 +176,58 @@ struct FirebaseDatabaseTests {
         #expect(bSeesA >= target)
     }
 
+    /// Contract: a viewer cannot mark their OWN recording's chunks
+    /// listened (matches InMemoryDatabase.markListened(…, by:) and the
+    /// invariant PlaybackOwnershipTests asserts on the playback path).
+    @Test("Marking my own recording's chunk listened leaves it unlistened (same instance)",
+          .timeLimit(.minutes(1)))
+    func ownListenedNotMarkedLocally() async throws {
+        try await FirebaseFixture.fresh()
+        let viewer = UUID()
+        let db = FirebaseDatabase(viewer: viewer)
+        let recording = Recording(id: UUID(), author: viewer)
+        db.addRecording(recording)
+        db.appendChunk(AudioChunk(index: 0), to: recording.id)
+
+        // Wait for the chunk to materialize locally, then attempt the
+        // forbidden mark and give any spurious write time to land.
+        let deadline = Date().addingTimeInterval(3)
+        while db.recordings.first?.audioChunks.isEmpty != false, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        db.markListened(recordingID: recording.id, chunkIndex: 0, by: viewer)
+        try? await Task.sleep(for: .milliseconds(500))
+
+        #expect(db.recordings.first?.audioChunks.first?.listened == false)
+    }
+
+    /// Same contract across two instances: the writer marks its own
+    /// recording, which must NOT flip the chunk's listened flag on the
+    /// reader either. We wait for the chunk to *propagate* (proves the
+    /// channel is live), then a small extra window so that any spurious
+    /// listened-mark would have arrived before the assertion.
+    @Test("Marking my own recording's chunk listened stays unlistened on a peer instance",
+          .timeLimit(.minutes(1)))
+    func ownListenedNotMarkedCrossInstance() async throws {
+        try await FirebaseFixture.fresh()
+        let viewer = FirebaseFixture.sharedViewer
+        let writer = FirebaseFixture.makeDatabase(appName: "writer")
+        let reader = FirebaseFixture.makeDatabase(appName: "reader")
+
+        let recording = Recording(id: UUID(), author: viewer)
+        writer.addRecording(recording)
+        writer.appendChunk(AudioChunk(index: 0), to: recording.id)
+
+        let deadline = Date().addingTimeInterval(5)
+        while reader.recordings.first?.audioChunks.isEmpty != false, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        writer.markListened(recordingID: recording.id, chunkIndex: 0, by: viewer)
+        try? await Task.sleep(for: .milliseconds(500))
+
+        #expect(reader.recordings.first?.audioChunks.first?.listened == false)
+    }
+
     private static func produce(target: Int, into db: FirebaseDatabase, recordingID: UUID) async {
         for i in 0..<target {
             db.appendChunk(AudioChunk(index: i), to: recordingID)
