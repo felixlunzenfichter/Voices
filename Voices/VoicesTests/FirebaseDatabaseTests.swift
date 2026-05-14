@@ -130,4 +130,60 @@ struct FirebaseDatabaseTests {
         }
         #expect(reader.recordings.first?.audioChunks.first?.listened == true)
     }
+
+    /// Exploratory performance harness — NOT a correctness gate.
+    /// Two FirebaseDatabase instances run concurrent producers,
+    /// each appending 10 chunks into its own recording. The test
+    /// passes when each side has observed ≥10 chunks of the other's
+    /// recording within 60 s. The values to read are the printed
+    /// `[PERF]` lines.
+    @Test("PERF: two concurrent producers each cross-publish 10 chunks",
+          .timeLimit(.minutes(2)))
+    func twoConcurrentRecordersCrossVisible() async throws {
+        try await FirebaseFixture.fresh()
+        let a = FirebaseFixture.makeDatabase(appName: "a")
+        let b = FirebaseFixture.makeDatabase(appName: "b")
+
+        let aRec = Recording(id: UUID(), author: UUID())
+        let bRec = Recording(id: UUID(), author: UUID())
+        a.addRecording(aRec)
+        b.addRecording(bRec)
+
+        let target = 10
+        let t0 = Date()
+
+        async let pa: Void = Self.produce(target: target, into: a, recordingID: aRec.id)
+        async let pb: Void = Self.produce(target: target, into: b, recordingID: bRec.id)
+        _ = await (pa, pb)
+        let tProducersDone = Date()
+
+        let deadline = t0.addingTimeInterval(60)
+        while (Self.count(a, of: bRec.id) < target || Self.count(b, of: aRec.id) < target),
+              Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        let tCrossVisible = Date()
+
+        let aSeesB = Self.count(a, of: bRec.id)
+        let bSeesA = Self.count(b, of: aRec.id)
+
+        print(String(format: "[PERF] producers done @ %.3fs", tProducersDone.timeIntervalSince(t0)))
+        print(String(format: "[PERF] cross-visible  @ %.3fs", tCrossVisible.timeIntervalSince(t0)))
+        print("[PERF] a sees b: \(aSeesB)/\(target)")
+        print("[PERF] b sees a: \(bSeesA)/\(target)")
+
+        #expect(aSeesB >= target)
+        #expect(bSeesA >= target)
+    }
+
+    private static func produce(target: Int, into db: FirebaseDatabase, recordingID: UUID) async {
+        for i in 0..<target {
+            db.appendChunk(AudioChunk(index: i), to: recordingID)
+            await Task.yield()
+        }
+    }
+
+    private static func count(_ db: FirebaseDatabase, of recordingID: UUID) -> Int {
+        db.recordings.first(where: { $0.id == recordingID })?.audioChunks.count ?? 0
+    }
 }
