@@ -46,4 +46,88 @@ struct FirebaseDatabaseTests {
         }
         #expect(reader.recordings.map(\.id) == [recording.id])
     }
+
+    /// Smallest same-instance check for chunk append: after adding a
+    /// recording and appending a chunk, the same database's observed
+    /// `audioChunks` must reflect the appended chunk.
+    @Test("Appending a chunk surfaces in the same database's recording within 3s",
+          .timeLimit(.minutes(1)))
+    func appendedChunkAppears() async throws {
+        try await FirebaseFixture.fresh()
+        let db = FirebaseDatabase()
+
+        let recording = Recording(id: UUID(), author: UUID())
+        db.addRecording(recording)
+        db.appendChunk(AudioChunk(index: 0), to: recording.id)
+
+        let deadline = Date().addingTimeInterval(3)
+        while db.recordings.first?.audioChunks.isEmpty != false, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(db.recordings.first?.audioChunks == [AudioChunk(index: 0)])
+    }
+
+    /// Cross-instance chunk propagation: a chunk appended through one
+    /// FirebaseDatabase must surface in another, independently-backed
+    /// instance via the emulator's listen stream.
+    @Test("A chunk appended through one Firebase instance reaches another via the emulator",
+          .timeLimit(.minutes(1)))
+    func appendedChunkPropagates() async throws {
+        try await FirebaseFixture.fresh()
+        let writer = FirebaseFixture.makeDatabase(appName: "writer")
+        let reader = FirebaseFixture.makeDatabase(appName: "reader")
+
+        let recording = Recording(id: UUID(), author: UUID())
+        writer.addRecording(recording)
+        writer.appendChunk(AudioChunk(index: 0), to: recording.id)
+
+        let deadline = Date().addingTimeInterval(5)
+        while reader.recordings.first?.audioChunks.isEmpty != false, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(reader.recordings.first?.audioChunks == [AudioChunk(index: 0)])
+    }
+
+    /// Smallest same-instance check for listened-mark propagation:
+    /// marking a chunk listened must flip its `listened` flag in the
+    /// same database's observed `audioChunks` within 3 s.
+    @Test("Marking a chunk listened surfaces in the same database within 3s",
+          .timeLimit(.minutes(1)))
+    func markListenedSurfacesLocally() async throws {
+        try await FirebaseFixture.fresh()
+        let db = FirebaseDatabase()
+
+        let recording = Recording(id: UUID(), author: UUID())
+        db.addRecording(recording)
+        db.appendChunk(AudioChunk(index: 0), to: recording.id)
+        db.markListened(recordingID: recording.id, chunkIndex: 0)
+
+        let deadline = Date().addingTimeInterval(3)
+        while db.recordings.first?.audioChunks.first?.listened != true, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(db.recordings.first?.audioChunks.first?.listened == true)
+    }
+
+    /// Cross-instance listened-mark propagation: marking a chunk
+    /// listened through one FirebaseDatabase must flip the flag in
+    /// another, independently-backed instance via the emulator.
+    @Test("A listened-mark made through one Firebase instance reaches another via the emulator",
+          .timeLimit(.minutes(1)))
+    func markListenedPropagates() async throws {
+        try await FirebaseFixture.fresh()
+        let writer = FirebaseFixture.makeDatabase(appName: "writer")
+        let reader = FirebaseFixture.makeDatabase(appName: "reader")
+
+        let recording = Recording(id: UUID(), author: UUID())
+        writer.addRecording(recording)
+        writer.appendChunk(AudioChunk(index: 0), to: recording.id)
+        writer.markListened(recordingID: recording.id, chunkIndex: 0)
+
+        let deadline = Date().addingTimeInterval(5)
+        while reader.recordings.first?.audioChunks.first?.listened != true, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(reader.recordings.first?.audioChunks.first?.listened == true)
+    }
 }
