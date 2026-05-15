@@ -14,7 +14,9 @@ struct VoicesApp: App {
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
     init() {
+#if canImport(FirebaseCore)
         configureFirebaseForEmulator()
+#endif
     }
 
     var body: some Scene {

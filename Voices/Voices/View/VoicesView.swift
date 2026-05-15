@@ -37,7 +37,11 @@ final class TwoPageHarness {
     static let marina = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
 
     init() {
-        let db = FirebaseDatabase()
+#if canImport(FirebaseCore)
+        let db: any Database = FirebaseDatabase()
+#else
+        let db: any Database = InMemoryDatabase()
+#endif
 
         mamaVM = VoicesViewModel(
             recordingService: DemoRecordingService(database: db, author: Self.mama, delay: .milliseconds(300)),
