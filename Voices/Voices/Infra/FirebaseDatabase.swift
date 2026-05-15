@@ -18,8 +18,25 @@ final class FirebaseDatabase: Database {
             .order(by: "createdAt")
             .addSnapshotListener { [weak self] snapshot, _ in
                 MainActor.assumeIsolated {
-                    guard let self, let docs = snapshot?.documents else { return }
-                    self.recordings = docs.compactMap(Self.recording(from:))
+                    guard let self, let snapshot else { return }
+                    for change in snapshot.documentChanges {
+                        guard let recording = Self.recording(from: change.document) else { continue }
+                        switch change.type {
+                        case .added:
+                            self.recordings.insert(recording, at: Int(change.newIndex))
+                        case .modified:
+                            if change.oldIndex == change.newIndex {
+                                self.recordings[Int(change.newIndex)] = recording
+                            } else {
+                                self.recordings.remove(at: Int(change.oldIndex))
+                                self.recordings.insert(recording, at: Int(change.newIndex))
+                            }
+                        case .removed:
+                            self.recordings.remove(at: Int(change.oldIndex))
+                        @unknown default:
+                            break
+                        }
+                    }
                 }
             }
     }
