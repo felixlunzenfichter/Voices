@@ -2,7 +2,7 @@
 
 ## Voices v1 — Talk to Felix
 
-Voice messaging app for a small family-and-friends circle. The data model is locked from v0.9 onward: the same Firestore shape supports the v0.9 TestFlight (everyone has a conversation with Felix) and the v1.0 release (anyone talks to anyone, including groups). v1.0 is UI-only on top of v0.9 — no schema changes, no data migration.
+Voice messaging app for a small family-and-friends circle. Every conversation is between exactly two people. Anyone can talk to anyone.
 
 1. Apple Sign-In
 2. Recording list shown as bars only — no visible transcript text
@@ -11,22 +11,22 @@ Voice messaging app for a small family-and-friends circle. The data model is loc
 5. Play button (bottom left)
 6. Record button (bottom right)
 
-## Locked data model (v0.9 and v1.0)
+## Data model
 
-Two flat top-level Firestore collections. The same shape supports two-person conversations and groups — a two-person conversation is just `members.count == 2`.
+Two flat top-level Firestore collections.
 
 ### `conversations`
 
 ```
 {
   id: String,
-  members: [uid],          // identity of the conversation
+  members: [uid],          // exactly two; identity of the conversation
   createdAt: Timestamp,
   lastActivityAt: Timestamp
 }
 ```
 
-Member list IS the conversation identity. For two-person conversations membership is immutable; for groups (v1.0 UI) it can change with bounded fan-out.
+Member list IS the conversation identity. Membership is immutable.
 
 ### `recordings`
 
@@ -44,13 +44,11 @@ Member list IS the conversation identity. For two-person conversations membershi
 
 The `members` array is the one piece of denormalization. Firestore has no joins, so without it you couldn't ask "all recordings I'm allowed to see" in a single query. The duplicate is the price of the single-listener model.
 
-**Maintenance cost of the denormalization:**
-- Two-person conversations: membership never changes → duplicate is effectively immutable, zero ongoing cost.
-- Groups (v1.0): any member add/remove must batch-update `members` on every existing recording in that conversation. Bounded fan-out, scales with recording count in that one conversation.
+Because membership is immutable in v1, the duplicate is effectively immutable too — zero ongoing maintenance cost.
 
 ### No `recipient` field
 
-The "who is this for" is always derivable as `members \ {author}`. For two-person conversations that's exactly the other party; for groups it's everyone else. A separate `recipient` field would duplicate `members` and force an asymmetric Felix-versus-everyone query — both unnecessary.
+The "who is this for" is always derivable as `members \ {author}` — exactly the other participant. A separate `recipient` field would duplicate `members` and force an asymmetric Felix-versus-everyone query — both unnecessary.
 
 ## Subscription model (two listeners, identical for every user)
 
@@ -70,11 +68,11 @@ Listener 2 — recordings (across all my conversations):
 ```
 
 **Why this works:**
-- One stream gives a user every recording they're allowed to see, in any conversation, in chronological order. Client-side groups by `conversationID` to render per-conversation views.
+- One stream gives a user every recording they're allowed to see, in any conversation, in chronological order. Client-side grouping by `conversationID` renders per-conversation views.
 - Firestore's snapshot listener doubles as the offline cache. Whatever you subscribe to is available offline automatically. No separate sync mechanism, no APNs for state.
 - Cross-conversation activity is signalled by Listener 1 — `lastActivityAt` bumps on every new recording, the row reorders, the UI updates even while the user is inside a different conversation.
 
-In v0.9 every non-Felix user has exactly one conversation, so their UX is a single thread. Felix is in every conversation, so his Listener 1 surfaces a list. Same query, different rendering.
+Felix is in every conversation, so his Listener 1 surfaces a list. Other users are typically in one conversation (with Felix), so their Listener 1 resolves to a single row — the UI opens directly into that thread. Same query, different rendering.
 
 ## Ordering
 
@@ -96,7 +94,7 @@ Firestore listeners scale comfortably to thousands of docs; they get expensive i
 
 ## Writing recordings (find-or-create conversation)
 
-The one extra cost of locking the v1.0 model from day one is that every "send a message to X" must first ensure a conversation document exists for that pair. Algorithm:
+Every "send a message to X" must first ensure a conversation document exists for that pair. Algorithm:
 
 ```
 1. Compute sorted pair key from [author, otherParticipant].
@@ -106,7 +104,7 @@ The one extra cost of locking the v1.0 model from day one is that every "send a 
 5. Bump conversations.lastActivityAt = serverTimestamp().
 ```
 
-Three writes on first-ever contact (lookup, conversation create, recording create). Two writes per subsequent recording (recording + `lastActivityAt` bump). Negligible cost; the lookup result can be cached client-side per pair for the session.
+Three writes on first-ever contact (lookup, conversation create, recording create). Two writes per subsequent recording (recording + `lastActivityAt` bump). The lookup result is cached client-side per pair for the session.
 
 ## Security rules
 
@@ -125,7 +123,7 @@ match /recordings/{rid} {
 }
 ```
 
-Server-side enforcement mirrors what each client query already expresses. A non-member's query is rejected at the rules layer — they physically cannot subscribe to a conversation they're not in. These rules are the same in v0.9 and v1.0.
+Server-side enforcement mirrors what each client query already expresses. A non-member's query is rejected at the rules layer — they physically cannot subscribe to a conversation they're not in.
 
 ## Release path
 
@@ -150,26 +148,16 @@ Server-side enforcement mirrors what each client query already expresses. A non-
 | #31 | Cursor haptics, honest cursor semantics, end-of-playback fixes |
 | #44 | Firebase Firestore backend for Voices |
 
-### Remaining PRs to v0.9 (TestFlight)
+### Remaining PRs to v1
 
 1. **Real audio recording** — `RealRecordingService` capturing chunked AAC from `AVAudioEngine`.
 2. **Firebase Storage upload** — each chunk uploaded; storage path on the Firestore chunk entry.
 3. **Real audio playback** — `RealPlaybackService` downloads chunks in order, plays gap-free.
-4. **Conversations collection + two-listener subscription model** — introduce the locked v1.0 data shape (conversations doc, denormalized `members` on recordings, find-or-create on send, two listeners per user). Replaces today's flat single-collection shape with the final one.
-5. **Conversation-list view (Felix)** — renders Listener 1's results as grouped rows; for non-Felix users the same listener resolves to one row, opening directly into the thread.
+4. **Conversations collection + two-listener subscription model** — introduce the locked data shape (conversations doc, denormalized `members` on recordings, find-or-create on send, two listeners per user). Replaces today's flat single-collection shape with the final one.
+5. **Conversation-list view** — renders Listener 1's results; for users with one conversation the list collapses to a single row and the UI opens directly into the thread.
 6. **Apple Sign-In + Firebase Auth** — replace harness UUIDs with real `auth.uid`.
 7. **Security rules** — the locked `members`-based rules above.
 8. **Production Firebase project + TestFlight** — single bundled ship PR.
-
-### v1.0 — UI only
-
-v1.0 ships group conversations without changing the database. The model already supports them; v0.9 just had no UI to create one.
-
-9. **New-conversation flow** — UI for starting a conversation with one or more other users; creates a `conversations` document with the chosen `members` array.
-10. **Group-aware rendering** — conversation row shows multi-author labels; in-thread chunks identify their author; per-member unread (if needed) computed client-side from `listened`.
-11. **Membership changes** — UI for adding/removing members from an existing group, with the bounded `members`-fan-out write to recordings in that conversation.
-
-No schema migration, no security rule change, no listener change between v0.9 and v1.0.
 
 ## Highest-risk unknown
 
