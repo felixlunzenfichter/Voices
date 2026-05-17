@@ -2,6 +2,7 @@ import Foundation
 
 struct AudioChunk: Equatable {
     let index: Int
+    var data: Data = Data()
     var listened: Bool = false
 }
 

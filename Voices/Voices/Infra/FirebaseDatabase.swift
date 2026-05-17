@@ -57,7 +57,8 @@ final class FirebaseDatabase: Database {
 
     func appendChunk(_ chunk: AudioChunk, to recordingID: UUID) {
         firestore.collection("recordings").document(recordingID.uuidString).updateData([
-            "chunks": FieldValue.arrayUnion([chunk.index])
+            "chunks": FieldValue.arrayUnion([chunk.index]),
+            "chunkData.\(chunk.index)": chunk.data.base64EncodedString()
         ])
     }
 
@@ -93,7 +94,11 @@ final class FirebaseDatabase: Database {
         else { return nil }
         let indices = (data["chunks"] as? [Any] ?? []).compactMap { $0 as? Int }
         let listenedSet = Set((data["listened"] as? [Any] ?? []).compactMap { $0 as? Int })
-        let chunks = indices.map { AudioChunk(index: $0, listened: listenedSet.contains($0)) }
+        let chunkDataMap = data["chunkData"] as? [String: String] ?? [:]
+        let chunks = indices.map { idx in
+            let bytes = chunkDataMap["\(idx)"].flatMap { Data(base64Encoded: $0) } ?? Data()
+            return AudioChunk(index: idx, data: bytes, listened: listenedSet.contains(idx))
+        }
         return Recording(id: id, author: author, audioChunks: chunks)
     }
 }
