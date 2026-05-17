@@ -2,7 +2,13 @@
 
 ## Voices v1 — Talk to Felix
 
-Voice messaging app for a small family-and-friends circle. Every conversation is between exactly two people. Anyone can talk to anyone.
+Voice messaging app for a small family-and-friends circle. Every conversation is between exactly two people.
+
+**Release split:**
+- **v0.9 (TestFlight)** — hub-and-spoke. Every conversation includes Felix. Mama and Marina each have one conversation: with Felix.
+- **v1.0 (App Store)** — any pair. Mama can start a conversation with Marina without Felix in it.
+
+The data model is the same in both versions. The only difference is the new-conversation UI: v0.9 fixes Felix as one participant, v1.0 lets the user pick any other user. No data migration between versions.
 
 1. Apple Sign-In
 2. Recording list shown as bars only — no visible transcript text
@@ -148,16 +154,24 @@ Server-side enforcement mirrors what each client query already expresses. A non-
 | #31 | Cursor haptics, honest cursor semantics, end-of-playback fixes |
 | #44 | Firebase Firestore backend for Voices |
 
-### Remaining PRs to v1
+### Remaining PRs to v0.9 (TestFlight)
 
 1. **Real audio recording** — `RealRecordingService` capturing chunked AAC from `AVAudioEngine`.
 2. **Firebase Storage upload** — each chunk uploaded; storage path on the Firestore chunk entry.
 3. **Real audio playback** — `RealPlaybackService` downloads chunks in order, plays gap-free.
 4. **Conversations collection + two-listener subscription model** — introduce the locked data shape (conversations doc, denormalized `members` on recordings, find-or-create on send, two listeners per user). Replaces today's flat single-collection shape with the final one.
-5. **Conversation-list view** — renders Listener 1's results; for users with one conversation the list collapses to a single row and the UI opens directly into the thread.
+5. **Conversation-list view** — renders Listener 1's results; for v0.9 users with one conversation the list collapses to a single row and the UI opens directly into the thread.
 6. **Apple Sign-In + Firebase Auth** — replace harness UUIDs with real `auth.uid`.
 7. **Security rules** — the locked `members`-based rules above.
-8. **Production Firebase project + TestFlight** — single bundled ship PR.
+8. **Hub-and-spoke UI constraint** — new-conversation flow fixes Felix as one of the two participants. Felix's app can pick any other user; non-Felix users have no new-conversation entry point (their one conversation already exists).
+9. **Production Firebase project + TestFlight** — single bundled ship PR.
+
+### Remaining PRs to v1.0 (App Store)
+
+Same data model, same listeners, same security rules. The only change is lifting the v0.9 UI constraint.
+
+10. **Open new-conversation flow** — non-Felix users gain a new-conversation entry point; participant picker offers any other user, not just Felix. Existing `find-or-create` write path is unchanged.
+11. **App Store submission** — review-ready build, screenshots, privacy disclosures.
 
 ## Highest-risk unknown
 
