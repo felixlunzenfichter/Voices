@@ -21,7 +21,6 @@ Two flat top-level Firestore collections. The same shape supports two-person con
 {
   id: String,
   members: [uid],          // identity of the conversation
-  title?: String,          // optional, mostly for groups
   createdAt: Timestamp,
   lastActivityAt: Timestamp
 }
