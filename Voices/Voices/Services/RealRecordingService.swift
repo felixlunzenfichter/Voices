@@ -12,6 +12,17 @@ final class RealRecordingService: RecordingService {
     @ObservationIgnored private var engine: AVAudioEngine?
     @ObservationIgnored private var nextChunkIndex: Int = 0
 
+    /// Canonical wire format: 48 kHz mono float32, non-interleaved.
+    /// Producer converts to this; consumer decodes from this. No
+    /// per-recording format metadata needed because the format is
+    /// fixed at the protocol level.
+    static let wireFormat = AVAudioFormat(
+        commonFormat: .pcmFormatFloat32,
+        sampleRate: 48000,
+        channels: 1,
+        interleaved: false
+    )!
+
     init(database: any Database, author: UUID = UUID()) {
         self.database = database
         self.author = author
@@ -34,16 +45,14 @@ final class RealRecordingService: RecordingService {
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
-
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVSampleRateKey: inputFormat.sampleRate,
-            AVNumberOfChannelsKey: inputFormat.channelCount,
-        ]
+        let wireFormat = Self.wireFormat
+        guard let converter = AVAudioConverter(from: inputFormat, to: wireFormat) else {
+            return
+        }
 
         let recordingID = recording.id
         inputNode.installTap(onBus: 0, bufferSize: 8192, format: inputFormat) { [weak self] buffer, _ in
-            guard let data = Self.encodeBufferToM4A(buffer, settings: settings) else { return }
+            guard let data = Self.serializePCM(buffer, with: converter, wireFormat: wireFormat) else { return }
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 let index = self.nextChunkIndex
@@ -65,21 +74,31 @@ final class RealRecordingService: RecordingService {
         currentRecordingID = nil
     }
 
-    /// Encodes one PCM buffer into a complete in-memory M4A file.
-    /// Each chunk is independently decodable; the file goes out of
-    /// scope to flush the AAC stream, then we read the bytes back.
-    private static func encodeBufferToM4A(_ buffer: AVAudioPCMBuffer, settings: [String: Any]) -> Data? {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("chunk-\(UUID().uuidString).m4a")
-        do {
-            let file = try AVAudioFile(forWriting: tempURL, settings: settings)
-            try file.write(from: buffer)
-            // file goes out of scope here → AAC stream flushed and closed
-        } catch {
+    /// Converts one input buffer to the wire format and returns the
+    /// raw float32 channel-0 bytes. No encoder, no container.
+    private static func serializePCM(
+        _ buffer: AVAudioPCMBuffer,
+        with converter: AVAudioConverter,
+        wireFormat: AVAudioFormat
+    ) -> Data? {
+        let outFrames = AVAudioFrameCount(
+            Double(buffer.frameLength) * wireFormat.sampleRate / buffer.format.sampleRate
+        )
+        guard outFrames > 0,
+              let out = AVAudioPCMBuffer(pcmFormat: wireFormat, frameCapacity: outFrames) else {
             return nil
         }
-        let data = try? Data(contentsOf: tempURL)
-        try? FileManager.default.removeItem(at: tempURL)
-        return data
+        var consumed = false
+        var error: NSError?
+        let status = converter.convert(to: out, error: &error) { _, outStatus in
+            if consumed { outStatus.pointee = .noDataNow; return nil }
+            consumed = true
+            outStatus.pointee = .haveData
+            return buffer
+        }
+        guard error == nil, status != .error,
+              let ptr = out.floatChannelData?[0] else { return nil }
+        let byteCount = Int(out.frameLength) * MemoryLayout<Float>.size
+        return Data(bytes: ptr, count: byteCount)
     }
 }

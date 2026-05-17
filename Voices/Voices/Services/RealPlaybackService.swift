@@ -9,9 +9,13 @@ final class RealPlaybackService: PlaybackService {
 
     @ObservationIgnored private let database: any Database
     @ObservationIgnored private let viewer: UUID
-    @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var engine: AVAudioEngine?
     @ObservationIgnored private var playerNode: AVAudioPlayerNode?
+    @ObservationIgnored private var cursorRecordingIndex: Int = 0
+    @ObservationIgnored private var cursorChunkIndex: Int = 0
+    @ObservationIgnored private var inFlight: Int = 0
+
+    private let lookahead = 2
 
     init(database: any Database, viewer: UUID = UUID()) {
         self.database = database
@@ -19,6 +23,7 @@ final class RealPlaybackService: PlaybackService {
     }
 
     func play() {
+        guard !isPlaying else { return }
         let recordings = database.recordings
         let resume: (recordingIndex: Int, chunkIndex: Int)
         if let pos = playbackPosition,
@@ -29,21 +34,81 @@ final class RealPlaybackService: PlaybackService {
         } else {
             return
         }
+        guard let (engine, player) = startEngine() else { return }
+        self.engine = engine
+        self.playerNode = player
+        cursorRecordingIndex = resume.recordingIndex
+        cursorChunkIndex = resume.chunkIndex
+        inFlight = 0
         isPlaying = true
-        playbackPosition = PlaybackPosition(
-            recordingID: recordings[resume.recordingIndex].id,
-            chunkIndex: resume.chunkIndex
-        )
-        task = Task { await self.consumePlayback(from: resume) }
+
+        for _ in 0..<lookahead { scheduleNext() }
+        player.play()
     }
 
     func stop() {
-        task?.cancel()
-        task = nil
+        tearDown()
+    }
+
+    /// Schedules the chunk at the cursor (reading the live database)
+    /// and advances. Called from `play()` for the lookahead, and once
+    /// from each chunk's completion handler.
+    @discardableResult
+    private func scheduleNext() -> Bool {
+        guard let player = playerNode else { return false }
+        let recordings = database.recordings
+        while cursorRecordingIndex < recordings.count {
+            let recording = recordings[cursorRecordingIndex]
+            if cursorChunkIndex < recording.audioChunks.count {
+                let chunk = recording.audioChunks[cursorChunkIndex]
+                cursorChunkIndex += 1
+                schedule(chunk: chunk, recordingID: recording.id, on: player)
+                return true
+            } else {
+                cursorRecordingIndex += 1
+                cursorChunkIndex = 0
+            }
+        }
+        return false
+    }
+
+    private func schedule(chunk: AudioChunk, recordingID: UUID, on player: AVAudioPlayerNode) {
+        let wireFormat = RealRecordingService.wireFormat
+        let frameCount = AVAudioFrameCount(chunk.data.count / MemoryLayout<Float>.size)
+        guard frameCount > 0,
+              let buffer = AVAudioPCMBuffer(pcmFormat: wireFormat, frameCapacity: frameCount) else {
+            return
+        }
+        buffer.frameLength = frameCount
+        chunk.data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+            guard let src = raw.baseAddress,
+                  let dest = buffer.floatChannelData?[0] else { return }
+            memcpy(dest, src, chunk.data.count)
+        }
+        inFlight += 1
+
+        let index = chunk.index
+        player.scheduleBuffer(buffer, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.playbackPosition = PlaybackPosition(recordingID: recordingID, chunkIndex: index)
+                self.database.markListened(recordingID: recordingID, chunkIndex: index, by: self.viewer)
+                self.inFlight -= 1
+                if !self.scheduleNext(), self.inFlight == 0 {
+                    self.tearDown()
+                }
+            }
+        }
+    }
+
+    private func tearDown() {
         playerNode?.stop()
         engine?.stop()
         playerNode = nil
         engine = nil
+        cursorRecordingIndex = 0
+        cursorChunkIndex = 0
+        inFlight = 0
         isPlaying = false
     }
 
@@ -57,47 +122,6 @@ final class RealPlaybackService: PlaybackService {
         return nil
     }
 
-    private func consumePlayback(from start: (recordingIndex: Int, chunkIndex: Int)) async {
-        guard let (engine, player) = startEngine() else {
-            isPlaying = false
-            return
-        }
-        defer {
-            player.stop()
-            engine.stop()
-            self.playerNode = nil
-            self.engine = nil
-        }
-
-        let snapshot = database.recordings
-        for rIdx in start.recordingIndex..<snapshot.count {
-            let recordingID = snapshot[rIdx].id
-            var cIdx = (rIdx == start.recordingIndex) ? start.chunkIndex : 0
-            while !Task.isCancelled {
-                guard let recording = database.recordings.first(where: { $0.id == recordingID }),
-                      cIdx < recording.audioChunks.count else { break }
-                let chunk = recording.audioChunks[cIdx]
-                await playChunk(chunk.data, on: player, engine: engine)
-                guard !Task.isCancelled else { return }
-                playbackPosition = PlaybackPosition(recordingID: recordingID, chunkIndex: chunk.index)
-                database.markListened(recordingID: recordingID, chunkIndex: chunk.index, by: viewer)
-                cIdx += 1
-            }
-        }
-
-        if !Task.isCancelled {
-            if let next = resumePoint(in: database.recordings) {
-                playbackPosition = PlaybackPosition(
-                    recordingID: database.recordings[next.recordingIndex].id,
-                    chunkIndex: next.chunkIndex
-                )
-            } else {
-                playbackPosition = nil
-            }
-            isPlaying = false
-        }
-    }
-
     private func startEngine() -> (AVAudioEngine, AVAudioPlayerNode)? {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .default)
@@ -106,32 +130,12 @@ final class RealPlaybackService: PlaybackService {
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()
         engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: nil)
+        engine.connect(player, to: engine.mainMixerNode, format: RealRecordingService.wireFormat)
         do {
             try engine.start()
         } catch {
             return nil
         }
-        self.engine = engine
-        self.playerNode = player
         return (engine, player)
-    }
-
-    private func playChunk(_ data: Data, on player: AVAudioPlayerNode, engine: AVAudioEngine) async {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("playback-\(UUID().uuidString).m4a")
-        guard (try? data.write(to: tempURL)) != nil,
-              let file = try? AVAudioFile(forReading: tempURL) else {
-            try? FileManager.default.removeItem(at: tempURL)
-            return
-        }
-        defer { try? FileManager.default.removeItem(at: tempURL) }
-
-        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            player.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in
-                cont.resume()
-            }
-            if !player.isPlaying { player.play() }
-        }
     }
 }
