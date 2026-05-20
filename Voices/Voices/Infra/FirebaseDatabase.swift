@@ -21,6 +21,12 @@ final class FirebaseDatabase: Database {
     /// keep multiple in-process instances isolated.
     @ObservationIgnored private let cacheNamespace: String
 
+    /// Read-through in-memory cache of chunk bytes. Populated only
+    /// inside `recording(from:)` on disk-read miss; never written from
+    /// `appendChunk` or `downloadAndStore`. An entry implies the file
+    /// was readable at the time we filled it.
+    @ObservationIgnored private var chunkBytes: [UUID: [Int: Data]] = [:]
+
     // Single-flight guards for the recursive work loops.
     @ObservationIgnored private var uploadingActive = false
     @ObservationIgnored private var downloadingActive = false
@@ -136,10 +142,31 @@ final class FirebaseDatabase: Database {
 
         let indices = pending.union(uploaded).sorted()
         let chunks = indices.map { idx -> AudioChunk in
-            let local = fileExists(rid: id, idx: idx)
-            let bytes = local
-                ? (try? Data(contentsOf: pcmURL(recordingID: id, chunkIndex: idx))) ?? Data()
-                : Data()
+            let local: Bool
+            let bytes: Data
+            if let cached = chunkBytes[id]?[idx] {
+                // Cache hit ⇒ bytes were readable when filled ⇒ local.
+                local = true
+                bytes = cached
+            } else if fileExists(rid: id, idx: idx) {
+                do {
+                    let read = try Data(contentsOf: pcmURL(recordingID: id, chunkIndex: idx))
+                    chunkBytes[id, default: [:]][idx] = read
+                    local = true
+                    bytes = read
+                } catch {
+                    // fileExists said yes but the read failed: state-
+                    // consistency violation. Surface it and self-heal
+                    // by treating as missing so `driveDownloads` will
+                    // re-fetch from the Mac.
+                    logError("chunk \(id)/\(idx) exists on disk but unreadable: \(error); treating as missing")
+                    local = false
+                    bytes = Data()
+                }
+            } else {
+                local = false
+                bytes = Data()
+            }
             return AudioChunk(
                 index: idx,
                 data: bytes,
