@@ -2,7 +2,6 @@ import SwiftUI
 
 struct VoicesView: View {
     @State private var harness = TwoPageHarness()
-    @State private var didAutoStart = false
 
     var body: some View {
         TabView {
@@ -11,17 +10,7 @@ struct VoicesView: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .background(Color.black.ignoresSafeArea())
-        .onAppear {
-            guard !didAutoStart, !isRunningUnderTest else { return }
-            didAutoStart = true
-            harness.mamaVM.toggleRecording()
-            harness.marinaVM.toggleRecording()
-        }
     }
-}
-
-private var isRunningUnderTest: Bool {
-    ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 }
 
 /// Builds two VMs with distinct viewers and matching author-stamping
@@ -44,15 +33,15 @@ final class TwoPageHarness {
 #endif
 
         mamaVM = VoicesViewModel(
-            recordingService: DemoRecordingService(database: db, author: Self.mama, delay: .milliseconds(300)),
-            playbackService: DemoPlaybackService(database: db, viewer: Self.mama, delay: .milliseconds(300)),
+            recordingService: RealRecordingService(database: db, author: Self.mama),
+            playbackService: RealPlaybackService(database: db, viewer: Self.mama),
             database: db,
             viewer: Self.mama
         )
 
         marinaVM = VoicesViewModel(
-            recordingService: DemoRecordingService(database: db, author: Self.marina, delay: .milliseconds(300)),
-            playbackService: DemoPlaybackService(database: db, viewer: Self.marina, delay: .milliseconds(300)),
+            recordingService: RealRecordingService(database: db, author: Self.marina),
+            playbackService: RealPlaybackService(database: db, viewer: Self.marina),
             database: db,
             viewer: Self.marina
         )

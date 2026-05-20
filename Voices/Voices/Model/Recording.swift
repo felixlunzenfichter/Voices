@@ -2,7 +2,10 @@ import Foundation
 
 struct AudioChunk: Equatable {
     let index: Int
+    var data: Data = Data()
     var listened: Bool = false
+    var isAvailableOffline: Bool = false   // bytes are on local disk
+    var isAvailableOnline: Bool = false    // Mac has the bytes; in uploadedChunks
 }
 
 struct Recording: Identifiable {

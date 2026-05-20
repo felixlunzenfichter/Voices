@@ -24,12 +24,21 @@ struct ConversationPageView: View {
                         ForEach(vm.recordings) { recording in
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 8), spacing: 2)], spacing: 2) {
                                 ForEach(recording.audioChunks, id: \.index) { chunk in
-                                    let color = vm.isCurrent(recording: recording, chunk: chunk)
+                                    let baseColor = vm.isCurrent(recording: recording, chunk: chunk)
                                         ? Color.white
                                         : chunk.listened ? Color.blue : Color.purple
+                                    // Sync state: gray if uploaded but
+                                    // not yet downloaded; 80% color if
+                                    // we have it locally but it's not
+                                    // uploaded yet; full color synced.
+                                    let fill: Color = !chunk.isAvailableOffline
+                                        ? Color.gray
+                                        : !chunk.isAvailableOnline
+                                            ? baseColor.opacity(0.8)
+                                            : baseColor
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(color)
-                                        .animation(vm.shouldAnimateChunks ? .easeInOut(duration: 0.3) : nil, value: color)
+                                        .fill(fill)
+                                        .animation(vm.shouldAnimateChunks ? .easeInOut(duration: 0.3) : nil, value: fill)
                                         .frame(height: 48)
                                         .transition(.scale.combined(with: .opacity))
                                         .id("\(recording.id)-\(chunk.index)")

@@ -17,3 +17,7 @@ DerivedData/
 
 # Firebase emulator runtime logs
 firebase/*-debug.log
+
+# mac-server runtime
+mac-server/blobs/
+mac-server/node_modules/
