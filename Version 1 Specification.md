@@ -42,7 +42,8 @@ Member list IS the conversation identity. Membership is immutable.
   conversationID: String,  // pointer to parent conversation
   author: uid,
   members: [uid],          // DENORMALIZED from conversations.members
-  chunks: [Int],
+  pendingChunks:  [Int],   // bytes on producer's device, not yet on Mac
+  uploadedChunks: [Int],   // Mac has the bytes; anyone can GET
   listened: [Int],         // chunk indices marked listened
   createdAt: Timestamp
 }
@@ -52,9 +53,49 @@ The `members` array is the one piece of denormalization. Firestore has no joins,
 
 Because membership is immutable in v1, the duplicate is effectively immutable too — zero ongoing maintenance cost.
 
+The `pendingChunks` / `uploadedChunks` split keeps recordings tiny in Firestore (no bytes, only integers) and lets every client observe each chunk's sync state through the same listener. Per-chunk UI states fall out as set membership: `pending && !uploaded` = recorded here, not yet uploaded; `uploaded && local file present` = synced; `uploaded && local file absent` = uploaded, not yet downloaded.
+
 ### No `recipient` field
 
 The "who is this for" is always derivable as `members \ {author}` — exactly the other participant. A separate `recipient` field would duplicate `members` and force an asymmetric Felix-versus-everyone query — both unnecessary.
+
+## Chunk byte storage (hybrid: Firestore + Mac blob server)
+
+Firestore holds **metadata only**. Raw audio bytes live on a tiny Mac-hosted HTTP service. Three endpoints, filesystem-backed, no DB:
+
+```
+PUT    /blobs/<rid>/<idx>     body = raw PCM bytes
+GET    /blobs/<rid>/<idx>     → bytes (200) / 404
+DELETE /blobs                 wipe (tests only)
+```
+
+**Why not Firebase Storage:** the Storage SDK's dynamic-framework wrapper has a per-app emulator-config restriction that breaks the writer/reader test pair, and the test infra/rules/emulator setup costs more than a 50-line Node service.
+
+**Why not inline base64 in Firestore:** chunks of ~32 KB raw PCM ≈ 43 KB base64. ~22 chunks per recording fits in Firestore's 1 MB per-doc cap, then writes start rejecting silently. Proven dead-end.
+
+**Per-device local cache.** Bytes are written to `Library/Caches/voices-firebase-cache/<namespace>/<rid>/<idx>.pcm` on the device (stable across launches; OS-purge-eligible under disk pressure). Same-device reads never round-trip; only the first reader on each remote device fetches from the Mac.
+
+### Sync handshake
+
+`appendChunk` writes bytes to local disk, then `arrayUnion(pendingChunks, idx)` on Firestore. Firestore's listener fires locally (`hasPendingWrites = true`) so the writer's UI sees the chunk at 80% opacity immediately. A recursive upload loop, driven from the same listener, picks up chunks where bytes are local but not yet on the Mac (i.e. `pending && !uploaded`), PUTs them, then atomically moves the index from `pendingChunks` to `uploadedChunks`. Other devices observe the move server-side; their symmetric download loop GETs newly-uploaded chunks they don't have locally.
+
+**Offline.** Local write always succeeds. The `arrayUnion` is queued by Firestore's offline cache; the listener still fires locally so the writer's UI is correct. The upload loop's `PUT` retries on the next listener fire after reconnect. Order is preserved per-recording because chunk indices are appended in chunk order at the source.
+
+### Audio format
+
+PCM, not AAC. 48 kHz mono float32, non-interleaved — the canonical wire format.
+
+| Setting | Value |
+|---|---|
+| Sample rate | 48 000 Hz |
+| Channels | 1 (mono) |
+| Sample size | 4 B (float32) |
+| Bitrate | ~192 KB/s (≈ 1.54 Mbit/s) |
+| Tap buffer size | 8 192 frames (~170 ms) |
+| Chunk size | ~32 KB |
+| Chunk rate | ~5.9 chunks/s |
+
+AAC was tried and dropped: each independently encoded AAC chunk carries ~44 ms of encoder priming silence, producing audible clicks at chunk boundaries. PCM has no priming, no inter-frame state, and concatenates bit-exact. Later we can revisit Opus if the ~10× bitrate vs AAC becomes a problem; AAC-per-chunk is structurally wrong for streaming.
 
 ## Subscription model (two listeners, identical for every user)
 
@@ -153,18 +194,17 @@ Server-side enforcement mirrors what each client query already expresses. A non-
 | #30 | Invisible inertial seek with SwiftUI scrubber |
 | #31 | Cursor haptics, honest cursor semantics, end-of-playback fixes |
 | #44 | Firebase Firestore backend for Voices |
+| #48 | Real PCM recording + playback, hybrid Firestore/Mac-blob backend, read-through chunk cache (in review) |
 
 ### Remaining PRs to v0.9 (TestFlight)
 
-1. **Real audio recording** — `RealRecordingService` capturing chunked AAC from `AVAudioEngine`.
-2. **Firebase Storage upload** — each chunk uploaded; storage path on the Firestore chunk entry.
-3. **Real audio playback** — `RealPlaybackService` downloads chunks in order, plays gap-free.
-4. **Conversations collection + two-listener subscription model** — introduce the locked data shape (conversations doc, denormalized `members` on recordings, find-or-create on send, two listeners per user). Replaces today's flat single-collection shape with the final one.
-5. **Conversation-list view** — renders Listener 1's results; for v0.9 users with one conversation the list collapses to a single row and the UI opens directly into the thread.
-6. **Apple Sign-In + Firebase Auth** — replace harness UUIDs with real `auth.uid`.
-7. **Security rules** — the locked `members`-based rules above.
-8. **Hub-and-spoke UI constraint** — new-conversation flow fixes Felix as one of the two participants. Felix's app can pick any other user; non-Felix users have no new-conversation entry point (their one conversation already exists).
-9. **Production Firebase project + TestFlight** — single bundled ship PR.
+1. **Conversations collection + two-listener subscription model** — introduce the locked data shape (conversations doc, denormalized `members` on recordings, find-or-create on send, two listeners per user). Replaces today's flat single-collection shape with the final one.
+2. **Conversation-list view** — renders Listener 1's results; for v0.9 users with one conversation the list collapses to a single row and the UI opens directly into the thread.
+3. **Apple Sign-In + Firebase Auth** — replace harness UUIDs with real `auth.uid`.
+4. **Security rules** — the locked `members`-based rules above.
+5. **Hub-and-spoke UI constraint** — new-conversation flow fixes Felix as one of the two participants. Felix's app can pick any other user; non-Felix users have no new-conversation entry point (their one conversation already exists).
+6. **Mac blob server → hosted server** — the in-development backend currently runs as a Node service on Felix's Mac (reached via Tailscale). For TestFlight it has to move to a real server (Fly.io / Render / a small VPS). Same three-route API, same client code; only the base URL changes.
+7. **Production Firebase project + TestFlight** — single bundled ship PR.
 
 ### Remaining PRs to v1.0 (App Store)
 
@@ -175,4 +215,6 @@ Same data model, same listeners, same security rules. The only change is lifting
 
 ## Highest-risk unknown
 
-Gap-free playback after the AAC chunk round-trip. AAC encoders prefix encoded chunks with implicit priming samples; concatenating ~0.5–1s chunks downloaded from Storage may produce audible clicks. The encoder choice has to be made during the "Real audio recording" PR because it constrains everything downstream. Mitigations exist (server-side re-encode, switch to Opus in CAF, accept slight gaps) but the trade-off is unproven in this codebase.
+Moving the Mac-hosted blob server to a real hosted server. Today the bytes live on Felix's Mac reached over Tailscale, which works for development and is what PR #48 ships against. Putting the same Node service behind a public address adds: a deployment target (Fly.io / Render / VPS), TLS termination, persistent disk (or migrating bytes to S3-class object storage), auth tied to Apple Sign-In, and rate/size limits. None of these are technically hard individually; the unknown is whether we land them as a small focused PR or end up rewriting the data path for an object-storage SDK along the way.
+
+Previously the high-risk item was gap-free playback after the AAC chunk round-trip. That risk is **closed**: we ship raw PCM, which has no encoder priming and concatenates bit-exact. Storage size is higher (~192 KB/s vs ~8 KB/s for AAC) but irrelevant at v0.9 scale; Opus is the long-term lever if/when bandwidth matters.
