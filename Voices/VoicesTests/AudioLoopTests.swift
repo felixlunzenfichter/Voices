@@ -14,7 +14,7 @@ struct AudioLoopTests {
     /// marked listened by the viewer, which is the contract the
     /// demo player already fulfils against the in-memory database.
     @Test("Audio loop: record → persist via FirebaseDatabase → play back, every chunk listened",
-          .timeLimit(.minutes(1)))
+          .timeLimit(.minutes(3)))
     func audioLoopRecordsPersistsAndPlaysBack() async throws {
         try await FirebaseFixture.fresh()
         let suffix = UUID().uuidString.prefix(6)
@@ -31,7 +31,7 @@ struct AudioLoopTests {
         // Wait for the READER to see 30 chunks — i.e. they round-tripped
         // through the emulator, not through writer-side cache.
         for await count in Observations({ reader.recordings.first?.audioChunks.count })
-            where (count ?? 0) >= 30 { break }
+            where (count ?? 0) >= 100 { break }
         recorder.stop()
         let recordDuration = Date().timeIntervalSince(recordStart)
 

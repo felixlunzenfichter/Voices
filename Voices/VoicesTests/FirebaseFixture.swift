@@ -10,11 +10,25 @@ import FirebaseFirestore
 enum FirebaseFixture {
     static let projectID = "demo-voices"
     static let host = "100.73.64.63:8080"
+    static let macServerBase = URL(string: "http://100.73.64.63:7654")!
 
     static func fresh() async throws {
         configureDefaultAppIfNeeded()
         try await drainPendingWrites()
         try await clearEmulator()
+        try await clearMacServer()
+    }
+
+    private static func clearMacServer() async throws {
+        var req = URLRequest(url: macServerBase.appendingPathComponent("blobs"))
+        req.httpMethod = "DELETE"
+        req.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        let (_, response) = try await URLSession(configuration: .ephemeral).data(for: req)
+        guard let http = response as? HTTPURLResponse,
+              (200...299).contains(http.statusCode) else {
+            throw NSError(domain: "FirebaseFixture", code: -2,
+                          userInfo: [NSLocalizedDescriptionKey: "mac server clear failed"])
+        }
     }
 
     /// Wait until every Firestore client we've previously vended has
@@ -35,7 +49,12 @@ enum FirebaseFixture {
     /// clients and independent caches — cross-instance propagation must
     /// go through the backend.
     static func makeDatabase(appName: String) -> FirebaseDatabase {
-        FirebaseDatabase(firestore: firestoreForNamedApp(appName))
+        // Distinct cache namespaces so writer/reader pairs in the same
+        // process don't share local files via disk.
+        FirebaseDatabase(
+            firestore: firestoreForNamedApp(appName),
+            cacheNamespace: "test-\(appName)"
+        )
     }
 
     private static var configuredDefaultApp = false
