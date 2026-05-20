@@ -44,9 +44,14 @@ Run tests on the connected physical iPhone by default — ~15s vs ~2min on simul
 
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-xcodebuild test -scheme Voices -project Voices/Voices.xcodeproj \
+FIREBASE_SOURCE_FIRESTORE=1 xcodebuild test \
+  -scheme Voices -project Voices/Voices.xcodeproj \
   -destination 'platform=iOS,id=<DEVICE_ID>' -quiet
 ```
+
+**Why `FIREBASE_SOURCE_FIRESTORE=1`?** Firestore ships as a binary static framework. When linked into two modules (the app target *and* the test target), the SPM-generated dynamic-framework wrapper fails to resolve abseil symbols — see [firebase-ios-sdk#14464](https://github.com/firebase/firebase-ios-sdk/issues/14464). The env var tells Firebase's `Package.swift` to build Firestore + gRPC + abseil from source instead, which avoids the broken wrapper. First test run takes ~4 minutes (source compile of Firestore + gRPC + abseil); subsequent runs are fast.
+
+Code coverage is disabled on the shared `Voices.xcscheme` because the source-built BoringSSL-GRPC target doesn't link the LLVM profiling runtime, which causes `___llvm_profile_runtime` undefined when coverage is on.
 
 ## Extracting Swift Testing Failure Details
 
